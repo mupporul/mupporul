@@ -84,3 +84,22 @@ CREATE POLICY "Allow write on bookmarks" ON bookmarks FOR ALL USING (true);
 INSERT INTO users (id, name, username, password, email, role, avatar_text, avatar_color, contributions_count, approved_count)
 VALUES ('user-admin', 'Admin Murugan', 'admin', 'admin123', 'admin@mupporul.app', 'admin', 'AM', '#e53e3e', 0, 0)
 ON CONFLICT (username) DO NOTHING;
+
+-- ============================================================
+-- 6. Storage Bucket for Temple Photos ('temple-images')
+-- ============================================================
+-- Create public storage bucket if not already created:
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('temple-images', 'temple-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Allow public read access to all temple photos in the bucket:
+CREATE POLICY "Public Temple Images Access"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'temple-images');
+
+-- Allow uploading photos into 'temple-images':
+CREATE POLICY "Public Temple Images Upload"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'temple-images');
+

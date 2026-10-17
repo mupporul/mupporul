@@ -190,3 +190,49 @@ export async function deleteUserFromSupabase(userId: string): Promise<boolean> {
   const { error } = await supabase.from('users').delete().eq('id', userId);
   return !error;
 }
+
+// ==========================================
+// SUPABASE STORAGE (IMAGE UPLOADS)
+// ==========================================
+
+export async function uploadImageToSupabaseStorage(
+  base64Data: string,
+  fileName: string,
+  mimeType: string = 'image/jpeg'
+): Promise<{ url: string | null; error?: string }> {
+  if (!supabase) {
+    return { url: null, error: 'Supabase is not configured on the backend server.' };
+  }
+
+  try {
+    const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Clean, 'base64');
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'temple-images';
+
+    const ext = fileName.includes('.') ? fileName.split('.').pop() : 'jpg';
+    const cleanName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filePath = `temples/${Date.now()}-${cleanName}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.warn(`[Supabase Storage] Upload error to bucket '${bucket}':`, error.message);
+      return { url: null, error: error.message };
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(data.path);
+
+    return { url: publicUrlData.publicUrl };
+  } catch (err: any) {
+    console.error('[Supabase Storage] Exception during upload:', err.message);
+    return { url: null, error: err.message };
+  }
+}
+

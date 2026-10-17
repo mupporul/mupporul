@@ -242,6 +242,26 @@ class ApiService {
     return { bookmarked: json.bookmarked, bookmarks: json.data };
   }
 
+  // Upload Image to Supabase Storage
+  async uploadImage(base64Data: string, fileName: string): Promise<{ url: string; source: string } | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Data, fileName }),
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      if (json.success && json.url) {
+        return { url: json.url, source: json.source || 'supabase' };
+      }
+      return null;
+    } catch (e) {
+      console.warn('[ApiService] Image upload to backend failed, using fallback:', e);
+      return null;
+    }
+  }
+
   // Stats
   async getStats() {
     try {

@@ -5,6 +5,7 @@ import { submissionsRouter } from './routes/submissions.js';
 import { usersRouter } from './routes/users.js';
 import { bookmarksRouter } from './routes/bookmarks.js';
 import { metaRouter } from './routes/meta.js';
+import { uploadRouter } from './routes/upload.js';
 
 export function createBackendApp(): Express {
   const app = express();
@@ -23,6 +24,7 @@ export function createBackendApp(): Express {
   app.use('/api/submissions', submissionsRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/bookmarks', bookmarksRouter);
+  app.use('/api/upload', uploadRouter);
   app.use('/api', metaRouter);
 
   return app;
