@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createBackendApp } from './backend/src/app.js';
@@ -31,12 +32,25 @@ async function startServer() {
 
     app.use(vite.middlewares);
   } else {
-    // Production mode: Serve built static files from dist
+    // Production mode: Serve built static files if dist exists, or provide API landing message
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
-    });
+    const indexPath = path.resolve(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      app.use(express.static(distPath));
+      app.get('*', (_req, res) => {
+        res.sendFile(indexPath);
+      });
+    } else {
+      app.get('/', (_req, res) => {
+        res.json({
+          status: 'online',
+          service: 'Mupporul Backend API',
+          message: 'Backend server is running on Render. Access /api/health or /api/temples.',
+          health: '/api/health',
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {

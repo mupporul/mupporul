@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: './',
     root: path.resolve(__dirname, 'frontend'),
     build: {
       outDir: path.resolve(__dirname, 'dist'),
