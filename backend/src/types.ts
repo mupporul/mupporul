@@ -11,6 +11,7 @@ export interface UserProfile {
   avatarColor: string;
   contributionsCount: number;
   approvedCount: number;
+  createdAt?: string;
 }
 
 export interface Planet {

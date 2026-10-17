@@ -87,6 +87,7 @@ interface AppContextType {
   approveSubmission: (submissionId: string, notes?: string) => void;
   rejectSubmission: (submissionId: string, notes: string) => void;
   deleteTemple: (templeId: string) => void;
+  clearAllTemples: () => Promise<boolean>;
   resetToDefaultData: () => void;
 }
 
@@ -203,10 +204,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ]);
 
           if (isMounted) {
-            if (remoteTemples.status === 'fulfilled' && remoteTemples.value.length > 0) {
+            if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
               setTemples(remoteTemples.value);
+              try {
+                localStorage.setItem('mupporul_temples_v2', JSON.stringify(remoteTemples.value));
+              } catch {}
             }
-            if (remoteSubmissions.status === 'fulfilled' && remoteSubmissions.value.length > 0) {
+            if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
               setSubmissions(remoteSubmissions.value);
             }
           }
@@ -717,6 +721,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     api.deleteTemple(templeId).catch(e => console.warn('[AppContext] Background API delete failed:', e));
   };
 
+  const clearAllTemples = async (): Promise<boolean> => {
+    setTemples([]);
+    try {
+      localStorage.setItem('mupporul_temples_v2', JSON.stringify([]));
+    } catch {}
+    const ok = await api.clearAllTemples();
+    return ok;
+  };
+
   const resetToDefaultData = () => {
     localStorage.removeItem('mupporul_temples_v2');
     localStorage.removeItem('mupporul_submissions_v2');
@@ -786,6 +799,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         approveSubmission,
         rejectSubmission,
         deleteTemple,
+        clearAllTemples,
         resetToDefaultData,
         backendStatus,
         isArchitectureModalOpen,

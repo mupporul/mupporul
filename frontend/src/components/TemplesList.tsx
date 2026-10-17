@@ -182,8 +182,29 @@ export const TemplesList: React.FC = () => {
                 <TempleCard key={temple.id} temple={temple} />
               ))}
             </div>
+          ) : temples.length === 0 ? (
+            /* Database is empty (Clean Slate) */
+            <div className="text-center py-20 px-4 rounded-3xl bg-[#141624] border border-[#22253a] space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <Sparkles className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-100">
+                Temple Catalog is Clean (0 Temples)
+              </h3>
+              <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+                All sample temples have been cleared. You now have a clean slate ready for your team's authentic temple entries and Supabase cloud sync.
+              </p>
+              <div className="pt-2 flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={openAddModal}
+                  className="px-5 py-2.5 rounded-xl bg-[#f5a623] text-black font-bold text-xs hover:bg-[#e69818] shadow-lg cursor-pointer"
+                >
+                  + Add First Temple
+                </button>
+              </div>
+            </div>
           ) : (
-            /* Empty State */
+            /* Empty Filter State */
             <div className="text-center py-16 px-4 rounded-3xl bg-[#141624] border border-[#22253a] space-y-4">
               <div className="w-14 h-14 mx-auto rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center">
                 <SlidersHorizontal className="w-7 h-7" />

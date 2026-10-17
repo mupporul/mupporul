@@ -104,7 +104,17 @@ templesRouter.put('/:id', (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/temples/:id - delete temple
+// DELETE /api/temples - clear all temples (Admin purge action)
+templesRouter.delete('/', async (_req: Request, res: Response) => {
+  try {
+    await db.clearAllTemples();
+    res.json({ success: true, message: 'All temples successfully cleared from database' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/temples/:id - delete single temple
 templesRouter.delete('/:id', (req: Request, res: Response) => {
   try {
     const deleted = db.deleteTemple(req.params.id);

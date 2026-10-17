@@ -34,6 +34,7 @@ export const AdminAnalytics: React.FC = () => {
     openAddModal,
     openAddUserModal,
     deleteUser,
+    clearAllTemples,
     resetToDefaultData,
     setActiveTab,
   } = useApp();
@@ -42,6 +43,7 @@ export const AdminAnalytics: React.FC = () => {
   const [roleUpdatedMsg, setRoleUpdatedMsg] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
 
@@ -534,28 +536,80 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       )}
 
-      {/* System Maintenance & Seed Reset */}
-      <div className="p-5 rounded-2xl bg-[#141626] border border-[#262a42] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-            <span>Seed Database & Demo Reset</span>
-          </h4>
-          <p className="text-xs text-gray-400 mt-1">
-            Need a fresh start? Reset database to authentic sample temples, contributors, and pending reviews anytime.
-          </p>
+      {/* Database Maintenance & Clear Options */}
+      <div className="space-y-4">
+        {/* Supabase Status Banner */}
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-[#141829] to-[#121c2c] border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+                Supabase Integration Ready
+              </h4>
+            </div>
+            <p className="text-xs text-gray-300">
+              Run <code className="bg-[#1c223a] text-cyan-200 px-1.5 py-0.5 rounded text-[11px]">supabase-schema.sql</code> in your Supabase SQL editor, then add <code className="bg-[#1c223a] text-amber-200 px-1.5 py-0.5 rounded text-[11px]">SUPABASE_URL</code> and <code className="bg-[#1c223a] text-amber-200 px-1.5 py-0.5 rounded text-[11px]">SUPABASE_KEY</code> to Render Environment.
+            </p>
+          </div>
         </div>
 
-        <button
-          onClick={() => {
-            if (confirm('Reset temples and submissions back to initial seed data?')) {
-              resetToDefaultData();
-            }
-          }}
-          className="px-4 py-2 rounded-xl bg-red-950/40 text-red-300 border border-red-500/40 hover:bg-red-900/40 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          Reset to Initial Seed
-        </button>
+        {/* Clear All Temples Card */}
+        <div className="p-5 rounded-2xl bg-[#141626] border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Purge & Remove All Temples</span>
+            </h4>
+            <p className="text-xs text-gray-400 mt-1">
+              Wipe out all demo/sample temples so you can start with a 100% clean catalog for your team's real data or Supabase sync.
+            </p>
+          </div>
+
+          <button
+            onClick={async () => {
+              const confirmPurge = window.confirm(
+                '⚠️ Are you sure you want to remove ALL temples from the database?\n\nThis will clear the entire temple catalog to 0 temples so you can start clean.'
+              );
+              if (confirmPurge) {
+                setClearLoading(true);
+                await clearAllTemples();
+                setClearLoading(false);
+                setRoleUpdatedMsg('All temples have been successfully removed! Catalog is now clean.');
+                setTimeout(() => setRoleUpdatedMsg(null), 4000);
+              }
+            }}
+            disabled={clearLoading}
+            className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg transition-colors cursor-pointer self-start sm:self-auto disabled:opacity-50"
+          >
+            {clearLoading ? 'Clearing Temples...' : 'Wipe All Temples (0 Temples)'}
+          </button>
+        </div>
+
+        {/* System Maintenance & Seed Reset */}
+        <div className="p-5 rounded-2xl bg-[#141626] border border-[#262a42] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Restore Demo / Sample Temples</span>
+            </h4>
+            <p className="text-xs text-gray-400 mt-1">
+              Want the original 8 sample temples back? Restore default seed data anytime.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              if (confirm('Restore default sample temples and contributors?')) {
+                resetToDefaultData();
+                setRoleUpdatedMsg('Default demo temples restored.');
+                setTimeout(() => setRoleUpdatedMsg(null), 3000);
+              }
+            }}
+            className="px-4 py-2 rounded-xl bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
+          >
+            Restore Demo Data
+          </button>
+        </div>
       </div>
     </div>
   );

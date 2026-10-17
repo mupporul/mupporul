@@ -96,6 +96,17 @@ class ApiService {
     return res.ok;
   }
 
+  async clearAllTemples(): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/temples`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
   // Submissions
   async getSubmissions(status?: string, userId?: string): Promise<TempleSubmission[]> {
     try {

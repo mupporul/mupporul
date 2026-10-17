@@ -3,6 +3,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Temple, TempleSubmission, UserProfile, BookmarkRecord, Role } from '../types.js';
 import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_BOOKMARKS } from './initialData.js';
+import {
+  isSupabaseConfigured,
+  fetchTemplesFromSupabase,
+  insertTempleToSupabase,
+  updateTempleInSupabase,
+  deleteTempleFromSupabase,
+  clearAllTemplesFromSupabase,
+  fetchUsersFromSupabase,
+  insertUserToSupabase,
+  updateUserPasswordInSupabase,
+  deleteUserFromSupabase,
+} from './supabaseClient.js';
 
 interface DatabaseSchema {
   version: string;
@@ -33,6 +45,25 @@ export class Database {
 
     this.dbPath = process.env.DB_FILE_PATH || path.join(dataDir, 'mupporul_db.json');
     this.data = this.loadData();
+
+    if (isSupabaseConfigured) {
+      this.syncFromSupabase();
+    }
+  }
+
+  private async syncFromSupabase(): Promise<void> {
+    try {
+      const supaTemples = await fetchTemplesFromSupabase();
+      this.data.temples = supaTemples;
+      const supaUsers = await fetchUsersFromSupabase();
+      if (supaUsers.length > 0) {
+        this.data.users = supaUsers;
+      }
+      this.saveData();
+      console.log(`[Database] Synced ${supaTemples.length} temples and ${supaUsers.length} users from Supabase.`);
+    } catch (err) {
+      console.warn('[Database] Initial Supabase sync:', err);
+    }
   }
 
   private loadData(): DatabaseSchema {
@@ -162,6 +193,11 @@ export class Database {
     };
     this.data.temples.unshift(newTemple);
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      insertTempleToSupabase(newTemple).catch(e => console.error('[Supabase] Insert error:', e));
+    }
+
     return newTemple;
   }
 
@@ -175,6 +211,11 @@ export class Database {
       updatedAt: new Date().toISOString()
     };
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      updateTempleInSupabase(id, updates).catch(e => console.error('[Supabase] Update error:', e));
+    }
+
     return this.data.temples[index];
   }
 
@@ -183,9 +224,25 @@ export class Database {
     this.data.temples = this.data.temples.filter(t => t.id !== id);
     if (this.data.temples.length !== prevLength) {
       this.saveData();
+      if (isSupabaseConfigured) {
+        deleteTempleFromSupabase(id).catch(e => console.error('[Supabase] Delete error:', e));
+      }
       return true;
     }
     return false;
+  }
+
+  public async clearAllTemples(): Promise<boolean> {
+    this.data.temples = [];
+    this.saveData();
+    if (isSupabaseConfigured) {
+      try {
+        await clearAllTemplesFromSupabase();
+      } catch (e) {
+        console.error('[Supabase] Clear all error:', e);
+      }
+    }
+    return true;
   }
 
   // ==========================================
@@ -404,8 +461,8 @@ export class Database {
       pendingSubmissions,
       approvedSubmissions,
       totalContributors,
-      planetCounts,
-      databaseType: process.env.DATABASE_URL ? 'PostgreSQL / Supabase' : 'Persistent File DB (100% Free Tier)'
+      databaseType: isSupabaseConfigured ? 'Supabase Cloud PostgreSQL' : 'Persistent File DB (100% Free Tier)',
+      isSupabase: isSupabaseConfigured
     };
   }
 
