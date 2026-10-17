@@ -1,0 +1,6 @@
+{
+  "name": "Mupporul - Sacred Temples & Navagraha Pariharam",
+  "description": "Discover Hindu and Navagraha temples with planetary filters, deities, contributor review workflow, role-based access control, and admin dashboard analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
