@@ -79,3 +79,18 @@ submissionsRouter.put('/:id/review', (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// DELETE /api/submissions/:id - delete submission
+submissionsRouter.delete('/:id', (req: Request, res: Response) => {
+  try {
+    const deleted = db.deleteSubmission(req.params.id);
+    if (!deleted) {
+      res.status(404).json({ success: false, error: 'Submission not found' });
+      return;
+    }
+    res.json({ success: true, message: 'Submission deleted' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+

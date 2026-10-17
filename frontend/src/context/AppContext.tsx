@@ -115,15 +115,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_TEMPLES;
   });
 
-  // Submissions state
+  // Submissions state (Real submissions only; sample initial submissions purged)
   const [submissions, setSubmissions] = useState<TempleSubmission[]>(() => {
     try {
       const saved = localStorage.getItem('mupporul_submissions_v2');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (s: TempleSubmission) =>
+              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+          );
+        }
+      }
     } catch (e) {
       console.error('Failed to load submissions from localStorage', e);
     }
-    return INITIAL_SUBMISSIONS;
+    return [];
   });
 
   // Users state
@@ -211,7 +219,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               } catch {}
             }
             if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
-              setSubmissions(remoteSubmissions.value);
+              const cleaned = remoteSubmissions.value.filter(
+                (s: TempleSubmission) =>
+                  !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+              );
+              setSubmissions(cleaned);
+              try {
+                localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+              } catch {}
             }
           }
         } else if (isMounted) {

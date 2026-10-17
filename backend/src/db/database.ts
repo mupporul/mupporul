@@ -72,6 +72,12 @@ export class Database {
         const content = fs.readFileSync(this.dbPath, 'utf-8');
         const parsed = JSON.parse(content) as DatabaseSchema;
         if (parsed && Array.isArray(parsed.temples)) {
+          // Clean out sample bootstrap submissions so review tab only has genuine user submissions
+          if (Array.isArray(parsed.submissions)) {
+            parsed.submissions = parsed.submissions.filter(s =>
+              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+            );
+          }
           return parsed;
         }
       }
@@ -322,6 +328,17 @@ export class Database {
     this.saveData();
     return { submission: sub, temple: updatedTemple };
   }
+
+  public deleteSubmission(id: string): boolean {
+    const prevLen = this.data.submissions.length;
+    this.data.submissions = this.data.submissions.filter(s => s.id !== id);
+    if (this.data.submissions.length !== prevLen) {
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
 
   // ==========================================
   // USERS & AUTH
