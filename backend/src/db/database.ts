@@ -166,6 +166,9 @@ export class Database {
       );
     }
 
+    // Always sort by created date (newest created first), NOT modified/updated date
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
     return list;
   }
 

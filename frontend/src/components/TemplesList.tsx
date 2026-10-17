@@ -72,7 +72,7 @@ export const TemplesList: React.FC = () => {
     }
 
     return true;
-  });
+  }).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
   const activeDeityObj = filters.deity ? DEITIES.find(d => d.id === filters.deity) : null;
   const hasActiveFilters =
