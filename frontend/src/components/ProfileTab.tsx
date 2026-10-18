@@ -144,14 +144,6 @@ export const ProfileTab: React.FC = () => {
               <LogOut className="w-3.5 h-3.5 text-red-400" />
               <span>Log Out</span>
             </button>
-
-            <button
-              onClick={() => setIsArchitectureModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#131627] border border-[#2b2f48] text-gray-300 hover:text-amber-300 hover:border-amber-500/40 text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>Free Tier Setup</span>
-            </button>
           </div>
         </div>
 

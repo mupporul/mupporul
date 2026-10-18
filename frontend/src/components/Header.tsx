@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SlidersHorizontal, ChevronDown, Layers } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Header: React.FC = () => {
@@ -8,11 +8,9 @@ export const Header: React.FC = () => {
     setFilters,
     setIsFilterOpen,
     setActiveTab,
-    setIsArchitectureModalOpen,
     currentUser,
     isLoggedIn,
     openLoginModal,
-    isMobileFrame,
   } = useApp();
 
   // Calculate active filter count
@@ -70,17 +68,6 @@ export const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Free Tier Setup Button */}
-          <button
-            onClick={() => setIsArchitectureModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[#181a27] border border-[#2e3146] hover:border-amber-500/50 text-[11px] font-medium text-amber-400 transition-colors shadow-sm"
-            title="Full-Stack Free Tier Setup (Frontend, Backend, Database)"
-          >
-            <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Free Tier Setup</span>
-            <span className="sm:hidden font-mono text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">FREE</span>
-          </button>
-
           {/* User Status / Login Pill */}
           {isLoggedIn ? (
             <button
@@ -131,12 +118,10 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Filter Button with Count Badge (Visible on mobile view, removed on fluid wide iPad & Desktop) */}
+        {/* Filter Button with Count Badge (Visible on mobile view, hidden on desktop where sidebar is present) */}
         <button
           onClick={() => setIsFilterOpen(true)}
-          className={`items-center gap-1.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
-            isMobileFrame ? 'flex' : 'flex md:hidden'
-          } ${
+          className={`flex md:hidden items-center gap-1.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
             activeFilterCount > 0
               ? 'bg-amber-500/15 border-[#f5a623] text-[#f5a623] shadow-sm'
               : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-gray-500'
