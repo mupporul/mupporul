@@ -78,6 +78,12 @@ export class Database {
               !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
             );
           }
+          // Clean out legacy sample users, keeping admin and real users
+          if (Array.isArray(parsed.users)) {
+            parsed.users = parsed.users.filter(u =>
+              !['user-vk', 'user-pilgrim', 'user-devotee'].includes(u.id)
+            );
+          }
           return parsed;
         }
       }

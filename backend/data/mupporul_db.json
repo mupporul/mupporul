@@ -1,7 +1,29 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-10-17T21:35:07.670Z",
-  "temples": [],
+  "updatedAt": "2026-10-18T20:48:57.159Z",
+  "temples": [
+    {
+      "name": "Arulmigu Kuzhandhai Velappar Thirukkovil",
+      "location": "Poombarai, Kodaikkanal",
+      "state": "Tamil Nadu",
+      "planets": [
+        "guru",
+        "sev"
+      ],
+      "deity": "murugan",
+      "significance": "குழந்தையின்மை, விதியை மாற்றும் வல்லமை உள்ள சில கோவில்களில் இதுவும் ஒன்று னு nkv அய்யா கூறியுள்ளார்",
+      "imageUrl": "https://fmlebfaahyxwwfbtnikn.supabase.co/storage/v1/object/public/temple-images/1%20Kulanthai%20velappar.png",
+      "videoUrl": "https://www.youtube.com/watch?v=pX5VBhaVPas",
+      "timings": "காலை 6:00 - இரவு 8:00",
+      "history": "",
+      "poojaDetails": "",
+      "contactNumber": "",
+      "id": "temple-1792356537159-0yz0s",
+      "viewsCount": 0,
+      "createdAt": "2026-10-18T20:48:57.159Z",
+      "updatedAt": "2026-10-18T20:48:57.159Z"
+    }
+  ],
   "submissions": [
     {
       "type": "new",
@@ -30,7 +52,14 @@
       },
       "id": "sub-1792272907670-rn8nx",
       "submittedAt": "2026-10-17T21:35:07.670Z",
-      "status": "pending"
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-18T20:48:57.159Z",
+      "reviewNotes": "Verified and approved for publication."
     }
   ],
   "users": [
@@ -44,31 +73,7 @@
       "avatarText": "AM",
       "avatarColor": "#e53e3e",
       "contributionsCount": 13,
-      "approvedCount": 12
-    },
-    {
-      "id": "user-vk",
-      "name": "Vasanth Kumar (VK)",
-      "username": "vkraman",
-      "email": "vk@mupporul.app",
-      "password": "vk123",
-      "role": "contributor",
-      "avatarText": "VK",
-      "avatarColor": "#f5a623",
-      "contributionsCount": 8,
-      "approvedCount": 7
-    },
-    {
-      "id": "user-pilgrim",
-      "name": "Arulmozhi Varman",
-      "username": "pilgrim",
-      "email": "arul@mupporul.app",
-      "password": "user123",
-      "role": "user",
-      "avatarText": "AV",
-      "avatarColor": "#38bdf8",
-      "contributionsCount": 0,
-      "approvedCount": 0
+      "approvedCount": 13
     }
   ],
   "bookmarks": [

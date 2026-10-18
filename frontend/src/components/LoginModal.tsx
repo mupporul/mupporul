@@ -3,12 +3,10 @@ import {
   X,
   Lock,
   User,
-  ShieldCheck,
   CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
-  Sparkles,
   ArrowRight,
   KeyRound,
 } from 'lucide-react';
@@ -19,16 +17,15 @@ export const LoginModal: React.FC = () => {
     isLoginModalOpen,
     closeLoginModal,
     loginWithCredentials,
-    users,
-    currentUser,
     setActiveTab,
   } = useApp();
 
-  const [identifier, setIdentifier] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isLoginModalOpen) return null;
 
@@ -37,34 +34,32 @@ export const LoginModal: React.FC = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const res = loginWithCredentials(identifier, password);
-    if (res.success) {
-      setSuccessMsg(res.message);
-      setTimeout(() => {
-        setSuccessMsg(null);
-        if (identifier.toLowerCase().includes('admin')) {
-          setActiveTab('analytics');
-        }
-      }, 1000);
-    } else {
-      setErrorMsg(res.message);
+    if (!identifier.trim()) {
+      setErrorMsg('Please enter your username or email.');
+      return;
     }
-  };
+    if (!password.trim()) {
+      setErrorMsg('Please enter your password.');
+      return;
+    }
 
-  const handleQuickLogin = (uname: string, pw: string) => {
-    setIdentifier(uname);
-    setPassword(pw);
-    setErrorMsg(null);
-    const res = loginWithCredentials(uname, pw);
-    if (res.success) {
-      setSuccessMsg(res.message);
-      setTimeout(() => {
-        setSuccessMsg(null);
-        if (uname === 'admin') {
-          setActiveTab('analytics');
-        }
-      }, 900);
-    }
+    setIsLoading(true);
+    setTimeout(() => {
+      const res = loginWithCredentials(identifier.trim(), password);
+      setIsLoading(false);
+      if (res.success) {
+        setSuccessMsg(res.message);
+        setTimeout(() => {
+          setSuccessMsg(null);
+          closeLoginModal();
+          if (identifier.toLowerCase().includes('admin')) {
+            setActiveTab('analytics');
+          }
+        }, 600);
+      } else {
+        setErrorMsg(res.message);
+      }
+    }, 300);
   };
 
   return (
@@ -77,14 +72,14 @@ export const LoginModal: React.FC = () => {
               <KeyRound className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-100">User & Admin Login</h2>
-              <p className="text-[11px] text-gray-400">Role-Based Access Control</p>
+              <h2 className="text-lg font-bold text-gray-100">User Login</h2>
+              <p className="text-[11px] text-gray-400">Sign in with your registered account</p>
             </div>
           </div>
 
           <button
             onClick={closeLoginModal}
-            className="w-8 h-8 rounded-full bg-[#1b1e2f] text-gray-400 hover:text-white flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-[#1b1e2f] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -92,188 +87,84 @@ export const LoginModal: React.FC = () => {
 
         {/* Body */}
         <div className="p-6 space-y-5">
-          {/* Default Credentials Cheat Sheet (Prominent Box) */}
-          <div className="p-4 rounded-2xl bg-[#0e101d] border border-amber-500/30 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Default Login Credentials</span>
-              </span>
-              <span className="text-[10px] text-gray-500">Click to fill</span>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              {/* Admin */}
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="w-full p-2 rounded-xl bg-[#17192a] hover:bg-[#20233b] border border-[#2b304d] hover:border-purple-500 flex items-center justify-between text-left transition-all group cursor-pointer"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-600/40 text-[10px] font-bold">
-                      ADMIN
-                    </span>
-                    <span className="font-semibold text-gray-200">Username: <code className="text-amber-300">admin</code></span>
-                  </div>
-                  <span className="text-[11px] text-gray-400">Password: <code className="text-gray-300">admin123</code></span>
-                </div>
-                <span className="text-[11px] text-purple-400 font-semibold group-hover:translate-x-1 transition-transform">
-                  Log in →
-                </span>
-              </button>
-
-              {/* Contributor */}
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('vk', 'contributor123')}
-                className="w-full p-2 rounded-xl bg-[#17192a] hover:bg-[#20233b] border border-[#2b304d] hover:border-amber-500 flex items-center justify-between text-left transition-all group cursor-pointer"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-600/40 text-[10px] font-bold">
-                      CONTRIBUTOR
-                    </span>
-                    <span className="font-semibold text-gray-200">Username: <code className="text-amber-300">vk</code></span>
-                  </div>
-                  <span className="text-[11px] text-gray-400">Password: <code className="text-gray-300">contributor123</code></span>
-                </div>
-                <span className="text-[11px] text-amber-400 font-semibold group-hover:translate-x-1 transition-transform">
-                  Log in →
-                </span>
-              </button>
-
-              {/* User / Viewer */}
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('devotee', 'user123')}
-                className="w-full p-2 rounded-xl bg-[#17192a] hover:bg-[#20233b] border border-[#2b304d] hover:border-emerald-500 flex items-center justify-between text-left transition-all group cursor-pointer"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-600/40 text-[10px] font-bold">
-                      USER
-                    </span>
-                    <span className="font-semibold text-gray-200">Username: <code className="text-amber-300">devotee</code></span>
-                  </div>
-                  <span className="text-[11px] text-gray-400">Password: <code className="text-gray-300">user123</code></span>
-                </div>
-                <span className="text-[11px] text-emerald-400 font-semibold group-hover:translate-x-1 transition-transform">
-                  Log in →
-                </span>
-              </button>
-            </div>
-
-            {/* Custom Admin-Created Users (if any exist) */}
-            {users.filter(u => !['user-admin', 'user-vk', 'user-devotee'].includes(u.id)).length > 0 && (
-              <div className="pt-2.5 mt-2 border-t border-[#23273e] space-y-1.5">
-                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
-                  Custom Created Users (by Admin)
-                </span>
-                <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
-                  {users
-                    .filter(u => !['user-admin', 'user-vk', 'user-devotee'].includes(u.id))
-                    .map(u => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => handleQuickLogin(u.username, u.password || '')}
-                        className="w-full p-2 rounded-xl bg-[#17192a] hover:bg-[#20233b] border border-[#2b304d] hover:border-amber-500/60 flex items-center justify-between text-left transition-all group cursor-pointer"
-                      >
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.2 rounded bg-purple-950/70 text-purple-300 border border-purple-600/40 text-[10px] font-bold uppercase">
-                              {u.role}
-                            </span>
-                            <span className="font-semibold text-gray-200">@{u.username}</span>
-                            <span className="text-gray-400 text-[11px]">({u.name})</span>
-                          </div>
-                          <span className="text-[11px] text-gray-400 font-mono">Password: {u.password || '••••••'}</span>
-                        </div>
-                        <span className="text-[11px] text-amber-400 font-semibold group-hover:translate-x-1 transition-transform">
-                          Log in →
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Feedback Alerts */}
+          {/* Feedback alerts */}
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2.5 shadow-md animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Username / Email */}
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">
-                Username or Email
+              <label className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Username or Email *</span>
+                </span>
               </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin or admin@mupporul.app"
-                  className="w-full bg-[#17192a] text-gray-100 pl-9 pr-3 py-2.5 rounded-xl border border-[#2b304c] focus:border-[#f5a623] focus:outline-none"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                autoComplete="username"
+                placeholder="Enter username or email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full bg-[#181a29] border border-[#282d45] rounded-xl px-3.5 py-2.5 text-sm font-mono text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
+              />
             </div>
 
+            {/* Password */}
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">
-                Password
+              <label className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Password *</span>
+                </span>
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="current-password"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin123"
-                  className="w-full bg-[#17192a] text-gray-100 pl-9 pr-10 py-2.5 rounded-xl border border-[#2b304c] focus:border-[#f5a623] focus:outline-none"
+                  className="w-full bg-[#181a29] border border-[#282d45] rounded-xl px-3.5 py-2.5 pr-10 text-sm font-mono text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-[#f5a623] hover:bg-[#e69818] text-black font-bold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-50 mt-2"
             >
-              <span>Sign In as {identifier.toLowerCase().includes('admin') ? 'Admin' : identifier.toLowerCase().includes('vk') ? 'Contributor' : 'User'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4 text-black" />
+              )}
+              <span>{isLoading ? 'Authenticating...' : 'Sign In'}</span>
             </button>
           </form>
-
-          {/* Current login status */}
-          <div className="pt-2 border-t border-[#1f2235] flex items-center justify-between text-[11px] text-gray-400">
-            <span>Currently active:</span>
-            <span className="font-semibold text-amber-300">
-              {currentUser.name} ({currentUser.role.toUpperCase()})
-            </span>
-          </div>
         </div>
       </div>
     </div>

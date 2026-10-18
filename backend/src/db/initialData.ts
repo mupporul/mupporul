@@ -33,31 +33,7 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'admin',
     avatarText: 'AM',
     avatarColor: '#e53e3e',
-    contributionsCount: 12,
-    approvedCount: 12
-  },
-  {
-    id: 'user-vk',
-    name: 'Vasanth Kumar (VK)',
-    username: 'vkraman',
-    email: 'vk@mupporul.app',
-    password: 'vk123',
-    role: 'contributor',
-    avatarText: 'VK',
-    avatarColor: '#f5a623',
-    contributionsCount: 8,
-    approvedCount: 7
-  },
-  {
-    id: 'user-pilgrim',
-    name: 'Arulmozhi Varman',
-    username: 'pilgrim',
-    email: 'arul@mupporul.app',
-    password: 'user123',
-    role: 'user',
-    avatarText: 'AV',
-    avatarColor: '#38bdf8',
-    contributionsCount: 0,
+    contributionsCount: 1,
     approvedCount: 0
   }
 ];

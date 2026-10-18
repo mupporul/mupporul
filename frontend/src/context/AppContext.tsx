@@ -135,19 +135,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   });
 
-  // Users state
+  // Users state (Only admin by default; additional users created by Admin)
   const [users, setUsers] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem('mupporul_users_v2');
       if (saved) {
         const parsed: UserProfile[] = JSON.parse(saved);
-        // Merge with INITIAL_USERS to guarantee username & password exist
-        return parsed.map(u => {
-          const init = INITIAL_USERS.find(i => i.id === u.id || i.email === u.email);
-          return init
-            ? { ...init, ...u, username: init.username, password: init.password }
-            : u;
-        });
+        if (Array.isArray(parsed)) {
+          // Filter out legacy sample users
+          const filtered = parsed.filter(
+            u => !['user-vk', 'user-devotee', 'user-pilgrim'].includes(u.id)
+          );
+          if (filtered.length > 0) {
+            return filtered;
+          }
+        }
       }
     } catch (e) {
       console.error('Failed to load users from localStorage', e);
@@ -155,12 +157,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_USERS;
   });
 
-  // Active Current User (Default VK contributor)
+  // Active Current User (Default: Admin Murugan)
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
-      return localStorage.getItem('mupporul_current_user_id') || 'user-vk';
+      const saved = localStorage.getItem('mupporul_current_user_id');
+      if (saved && !['user-vk', 'user-devotee', 'user-pilgrim'].includes(saved)) {
+        return saved;
+      }
+      return 'user-admin';
     } catch {
-      return 'user-vk';
+      return 'user-admin';
     }
   });
 
