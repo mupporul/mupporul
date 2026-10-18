@@ -5,22 +5,44 @@ import {
   ExternalLink, Layers, Sparkles, Terminal, ShieldCheck 
 } from 'lucide-react';
 
+import { api } from '../services/api';
+
 export const FreeTierArchitectureModal: React.FC = () => {
-  const { isArchitectureModalOpen, setIsArchitectureModalOpen, backendStatus } = useApp();
+  const { isArchitectureModalOpen, setIsArchitectureModalOpen, backendStatus, reconnectBackend } = useApp();
   const [activeTab, setActiveTab] = useState<'overview' | 'backend' | 'frontend' | 'database'>('overview');
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [serverStats, setServerStats] = useState<any>(null);
+  const [apiUrlInput, setApiUrlInput] = useState(() => api.getBaseUrl());
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectMessage, setConnectMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isArchitectureModalOpen) {
-      fetch('/api/stats')
-        .then(res => res.json())
-        .then(json => setServerStats(json.data))
-        .catch(() => {});
+      setApiUrlInput(api.getBaseUrl());
+      api.getStats().then(data => setServerStats(data)).catch(() => {});
     }
   }, [isArchitectureModalOpen]);
 
   if (!isArchitectureModalOpen) return null;
+
+  const handleTestAndConnect = async (urlToTest?: string) => {
+    const target = (urlToTest || apiUrlInput).trim();
+    setIsConnecting(true);
+    setConnectMessage(null);
+    try {
+      const ok = await reconnectBackend(target);
+      if (ok) {
+        setConnectMessage('Connected successfully! Temples and reviews synced with Render.');
+        api.getStats().then(data => setServerStats(data)).catch(() => {});
+      } else {
+        setConnectMessage('Could not connect. Please ensure your Render backend is running.');
+      }
+    } catch {
+      setConnectMessage('Connection error. Please check URL.');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -58,18 +80,58 @@ export const FreeTierArchitectureModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Live Backend Connection Indicator */}
-        <div className="px-6 py-2.5 bg-[#0b0d18] border-b border-[#1b1e2f] flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${backendStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            <span className="text-gray-300 font-medium">
-              API Status: {backendStatus === 'connected' ? 'Connected to REST Backend (/api)' : 'Local Storage Mode (Online Fallback)'}
-            </span>
+        {/* Live Backend Connection Indicator & Quick Reconnect */}
+        <div className="px-6 py-3 bg-[#0b0d18] border-b border-[#1b1e2f] space-y-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${backendStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span className="text-gray-200 font-medium">
+                {backendStatus === 'connected' ? (
+                  <>Connected to Live Backend: <code className="text-emerald-400 font-mono text-[11px]">{api.getBaseUrl()}</code></>
+                ) : (
+                  <>Offline Local Demo Mode (Not connected to Render)</>
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-gray-400 text-[11px]">
+              <span>DB: <strong className="text-amber-400">{serverStats?.databaseType || 'Persistent JSON / Supabase Ready'}</strong></span>
+              <span>Total Temples: <strong className="text-white">{serverStats?.totalTemples ?? 0}</strong></span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-gray-400 text-[11px]">
-            <span>DB: <strong className="text-amber-400">{serverStats?.databaseType || 'Persistent JSON / Supabase Ready'}</strong></span>
-            <span>Total Temples: <strong className="text-white">{serverStats?.totalTemples || 8}</strong></span>
+
+          {/* Quick Render Connect Bar */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <input
+              type="text"
+              value={apiUrlInput}
+              onChange={(e) => setApiUrlInput(e.target.value)}
+              placeholder="https://mupporul-backend.onrender.com/api"
+              className="flex-1 min-w-[240px] bg-[#16182a] text-gray-200 text-xs px-3 py-1.5 rounded-lg border border-[#2c304d] focus:border-amber-400 font-mono"
+            />
+            <button
+              onClick={() => handleTestAndConnect()}
+              disabled={isConnecting}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isConnecting ? 'Connecting...' : 'Test & Sync Backend'}
+            </button>
+            <button
+              onClick={() => {
+                setApiUrlInput('https://mupporul-backend.onrender.com/api');
+                handleTestAndConnect('https://mupporul-backend.onrender.com/api');
+              }}
+              disabled={isConnecting}
+              className="px-2.5 py-1.5 rounded-lg bg-[#20233b] hover:bg-[#2b3052] text-amber-300 text-xs border border-amber-500/30 transition-all cursor-pointer"
+            >
+              Use Render Default
+            </button>
           </div>
+
+          {connectMessage && (
+            <div className={`text-[11px] font-medium p-1.5 rounded-lg ${connectMessage.includes('successfully') ? 'text-emerald-400 bg-emerald-950/40' : 'text-amber-400 bg-amber-950/40'}`}>
+              {connectMessage}
+            </div>
+          )}
         </div>
 
         {/* Navigation Tabs */}

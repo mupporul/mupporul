@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { TempleCard } from './TempleCard';
 import { FilterSidebar } from './FilterSidebar';
 import { PLANETS, DEITIES } from '../data/constants';
+import { BASE_REMEDY_DEFINITIONS } from '../utils/remedyUtils';
 
 export const TemplesList: React.FC = () => {
   const {
@@ -53,9 +54,26 @@ export const TemplesList: React.FC = () => {
       return false;
     }
 
-    // 4. Significance filter
-    if (filters.significance && temple.significance !== filters.significance) {
-      return false;
+    // 4. Significance & Remedies filter (Smart keyword, category, and tag matching)
+    if (filters.significance) {
+      const target = filters.significance.toLowerCase().trim();
+      const combinedText = [
+        temple.significance || '',
+        temple.descriptionTamil || '',
+        temple.descriptionEnglish || '',
+        temple.pariharamInfo || '',
+        ...(temple.remedies || []),
+      ].join(' ').toLowerCase();
+
+      // Check if target is a known category ID
+      const knownCategory = BASE_REMEDY_DEFINITIONS.find(c => c.id === target);
+      if (knownCategory) {
+        const matchesKeywords = knownCategory.keywords.some(kw => combinedText.includes(kw.toLowerCase()));
+        if (!matchesKeywords) return false;
+      } else {
+        // Direct substring search across all temple texts
+        if (!combinedText.includes(target)) return false;
+      }
     }
 
     // 5. Search query

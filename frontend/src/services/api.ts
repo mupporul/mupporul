@@ -1,12 +1,57 @@
 import { Temple, TempleSubmission, UserProfile } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const DEFAULT_REMOTE_RENDER_API = 'https://mupporul-backend.onrender.com/api';
+
+function resolveInitialApiUrl(): string {
+  // 1. Check user custom backend in localStorage
+  try {
+    const saved = localStorage.getItem('mupporul_backend_api_url');
+    if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
+  } catch {}
+
+  // 2. Check Vite env var if provided
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim()) {
+    return import.meta.env.VITE_API_URL.trim().replace(/\/$/, '');
+  }
+
+  // 3. When hosted on GitHub Pages or external domain, auto-connect to live Render backend
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (
+      host.includes('github.io') ||
+      (!host.includes('localhost') && !host.includes('run.app') && !host.includes('127.0.0.1'))
+    ) {
+      return DEFAULT_REMOTE_RENDER_API;
+    }
+  }
+
+  return '/api';
+}
 
 class ApiService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = API_BASE_URL.replace(/\/$/, '');
+    this.baseUrl = resolveInitialApiUrl();
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  setBaseUrl(newUrl: string): void {
+    const clean = newUrl.trim().replace(/\/$/, '');
+    this.baseUrl = clean;
+    try {
+      localStorage.setItem('mupporul_backend_api_url', clean);
+    } catch {}
+  }
+
+  resetBaseUrl(): void {
+    try {
+      localStorage.removeItem('mupporul_backend_api_url');
+    } catch {}
+    this.baseUrl = resolveInitialApiUrl();
   }
 
   // Health check

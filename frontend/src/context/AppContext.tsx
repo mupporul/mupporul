@@ -28,6 +28,7 @@ interface AppContextType {
   templeToEdit: Temple | null;
   bookmarkedIds: string[];
   backendStatus: 'connected' | 'offline' | 'checking';
+  reconnectBackend: (customUrl?: string) => Promise<boolean>;
   isArchitectureModalOpen: boolean;
   setIsArchitectureModalOpen: (open: boolean) => void;
   isMobileFrame: boolean;
@@ -240,6 +241,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchFromBackend();
     return () => { isMounted = false; };
   }, []);
+
+  const reconnectBackend = async (customUrl?: string): Promise<boolean> => {
+    setBackendStatus('checking');
+    if (customUrl) {
+      api.setBaseUrl(customUrl);
+    }
+    try {
+      const health = await api.checkHealth();
+      if (health) {
+        setBackendStatus('connected');
+        const [remoteTemples, remoteSubmissions] = await Promise.allSettled([
+          api.getTemples(),
+          api.getSubmissions()
+        ]);
+        if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
+          setTemples(remoteTemples.value);
+          try {
+            localStorage.setItem('mupporul_temples_v2', JSON.stringify(remoteTemples.value));
+          } catch {}
+        }
+        if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
+          const cleaned = remoteSubmissions.value.filter(
+            (s: TempleSubmission) =>
+              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+          );
+          setSubmissions(cleaned);
+          try {
+            localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+          } catch {}
+        }
+        return true;
+      } else {
+        setBackendStatus('offline');
+        return false;
+      }
+    } catch {
+      setBackendStatus('offline');
+      return false;
+    }
+  };
 
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
@@ -817,6 +858,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clearAllTemples,
         resetToDefaultData,
         backendStatus,
+        reconnectBackend,
         isArchitectureModalOpen,
         setIsArchitectureModalOpen,
         isMobileFrame,

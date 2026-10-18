@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
-import { SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { PLANETS, DEITIES, STATES, SIGNIFICANCE_OPTIONS } from '../data/constants';
+import { PLANETS, DEITIES, STATES } from '../data/constants';
+import { getDynamicRemedies } from '../utils/remedyUtils';
 
 export const FilterSidebar: React.FC = () => {
   const {
+    temples,
     filters,
     setFilters,
     resetFilters,
     togglePlanetFilter,
     setPlanetMatchMode,
   } = useApp();
+
+  const [remedySearchQuery, setRemedySearchQuery] = useState('');
+  const dynamicRemedies = useMemo(() => getDynamicRemedies(temples), [temples]);
+
+  const filteredRemedies = useMemo(() => {
+    if (!remedySearchQuery.trim()) return dynamicRemedies;
+    const q = remedySearchQuery.toLowerCase().trim();
+    return dynamicRemedies.filter(r =>
+      r.tamilLabel.toLowerCase().includes(q) ||
+      r.label.toLowerCase().includes(q) ||
+      r.keywords.some(k => k.toLowerCase().includes(q))
+    );
+  }, [dynamicRemedies, remedySearchQuery]);
 
   // Accordion collapsed state for sections (open by default for quick desktop filtering)
   const [openSections, setOpenSections] = useState({
@@ -257,20 +272,104 @@ export const FilterSidebar: React.FC = () => {
             </button>
 
             {openSections.significance && (
-              <div className="relative animate-in fade-in duration-150">
-                <select
-                  value={filters.significance || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, significance: e.target.value || null }))}
-                  className="w-full appearance-none bg-[#161828] text-gray-200 text-xs rounded-xl px-3 py-2 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] cursor-pointer"
-                >
-                  <option value="">Select significance (All)</option>
-                  {SIGNIFICANCE_OPTIONS.map(opt => (
-                    <option key={opt.id} value={opt.id} className="bg-[#121422]">
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#f5a623] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="space-y-2 animate-in fade-in duration-150">
+                {/* Search Remedy Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={remedySearchQuery}
+                    onChange={(e) => setRemedySearchQuery(e.target.value)}
+                    placeholder="Search remedies (e.g. குழந்தை, கடன்)..."
+                    className="w-full bg-[#161828] text-gray-200 text-[11px] rounded-xl pl-7 pr-7 py-2 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] placeholder-gray-500"
+                  />
+                  <Search className="w-3 h-3 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  {remedySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setRemedySearchQuery('')}
+                      className="text-gray-400 hover:text-gray-200 absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Active Filter Indicator */}
+                {filters.significance && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300">
+                    <span className="truncate">
+                      Active:{' '}
+                      <strong>
+                        {dynamicRemedies.find(r => r.id === filters.significance)?.tamilLabel.split('/')[0] ||
+                          filters.significance}
+                      </strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFilters(prev => ({ ...prev, significance: null }))}
+                      className="text-red-400 hover:text-red-300 text-[10px] ml-1 flex-shrink-0 cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Quick Remedy Pills with Live Counts */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5 max-h-36 overflow-y-auto pr-1">
+                  {filteredRemedies.map(remedy => {
+                    const isSelected = filters.significance === remedy.id;
+                    const hasTemples = remedy.count > 0;
+                    return (
+                      <button
+                        key={remedy.id}
+                        type="button"
+                        onClick={() => {
+                          setFilters(prev => ({
+                            ...prev,
+                            significance: isSelected ? null : remedy.id,
+                          }));
+                        }}
+                        className={`text-[10px] px-2 py-1 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500 text-gray-950 font-bold border-amber-400 shadow-sm'
+                            : hasTemples
+                            ? 'bg-[#1e2238] text-gray-200 border-amber-500/30 hover:border-amber-400'
+                            : 'bg-[#141624] text-gray-400 border-[#25283f] hover:text-gray-300'
+                        }`}
+                      >
+                        <span className="truncate max-w-[130px]">{remedy.tamilLabel.split('/')[0]}</span>
+                        <span
+                          className={`text-[9px] px-1 rounded-full ${
+                            isSelected
+                              ? 'bg-black/20 text-gray-950 font-bold'
+                              : hasTemples
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : 'bg-white/5 text-gray-500'
+                          }`}
+                        >
+                          {remedy.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Dropdown for full list */}
+                <div className="relative pt-1">
+                  <select
+                    value={filters.significance || ''}
+                    onChange={(e) => setFilters(prev => ({ ...prev, significance: e.target.value || null }))}
+                    className="w-full appearance-none bg-[#161828] text-gray-200 text-xs rounded-xl px-3 py-2 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] cursor-pointer"
+                  >
+                    <option value="">All Remedies & Significance ({temples.length})</option>
+                    {filteredRemedies.map(opt => (
+                      <option key={opt.id} value={opt.id} className="bg-[#121422]">
+                        {opt.tamilLabel} {opt.count > 0 ? `(${opt.count})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#f5a623] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
             )}
           </div>

@@ -40,6 +40,7 @@ export interface Temple {
   planets: string[];
   deity: string;
   significance: string;
+  remedies?: string[];
   descriptionTamil?: string;
   descriptionEnglish?: string;
   imageUrl: string;

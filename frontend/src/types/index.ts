@@ -39,6 +39,7 @@ export interface Temple {
   planets: string[]; // Planet IDs e.g. ['sani', 'suri']
   deity: string; // Deity ID
   significance: string; // Multiline significance text
+  remedies?: string[]; // Dynamic remedy & pariharam tags e.g. ['குழந்தை பாக்கியம்', 'விதி மாற்றம்']
   descriptionTamil?: string;
   descriptionEnglish?: string;
   imageUrl: string;

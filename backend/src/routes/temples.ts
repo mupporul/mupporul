@@ -54,7 +54,7 @@ templesRouter.get('/:id', (req: Request, res: Response) => {
 // POST /api/temples - create direct temple (Admin only)
 templesRouter.post('/', (req: Request, res: Response) => {
   try {
-    const { name, location, state, planets, deity, significance, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber } = req.body;
+    const { name, location, state, planets, deity, significance, remedies, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber } = req.body;
 
     if (!name || !location || !deity || !significance) {
       res.status(400).json({
@@ -71,6 +71,7 @@ templesRouter.post('/', (req: Request, res: Response) => {
       planets: Array.isArray(planets) ? planets : [],
       deity,
       significance,
+      remedies: Array.isArray(remedies) ? remedies : [],
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
       videoUrl: videoUrl || '',
       timings: timings || 'காலை 6:00 - 12:30, மாலை 4:00 - இரவு 8:30',

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "build:ghpages": "vite build && cp dist/index.html dist/404.html && touch dist/.nojekyll",
+    "build:ghpages": "VITE_API_URL=https://mupporul-backend.onrender.com/api vite build && cp dist/index.html dist/404.html && touch dist/.nojekyll",
     "start": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

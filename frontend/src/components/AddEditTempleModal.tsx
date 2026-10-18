@@ -42,6 +42,7 @@ export const AddEditTempleModal: React.FC = () => {
     planets: [] as string[],
     deity: 'shivan',
     significance: '',
+    remedies: [] as string[],
     imageUrl: '',
     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     timings: 'காலை 6:00 - 12:30, மாலை 4:00 - இரவு 8:30',
@@ -70,6 +71,7 @@ export const AddEditTempleModal: React.FC = () => {
         planets: templeToEdit.planets || [],
         deity: templeToEdit.deity || 'shivan',
         significance: templeToEdit.significance || templeToEdit.descriptionTamil || '',
+        remedies: templeToEdit.remedies || [],
         imageUrl: templeToEdit.imageUrl || DEFAULT_TEMPLE_IMAGE,
         videoUrl: templeToEdit.videoUrl || '',
         timings: templeToEdit.timings || '',
@@ -87,6 +89,7 @@ export const AddEditTempleModal: React.FC = () => {
         planets: ['sani'],
         deity: 'amman',
         significance: '',
+        remedies: [],
         imageUrl: '',
         videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         timings: 'காலை 6:00 - 12:30, மாலை 4:00 - இரவு 8:30',
@@ -375,6 +378,55 @@ export const AddEditTempleModal: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, significance: e.target.value }))}
                 className="w-full bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none leading-relaxed text-xs sm:text-sm"
               />
+            </div>
+
+            {/* Quick Remedy & Pariharam Tags for instant filtering */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-300">
+                  Quick Remedy Tags (பரிகார பலன்கள்)
+                </label>
+                <span className="text-[10px] text-gray-400">Click to tag this temple</span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  'குழந்தைப் பேறு (Child Boon)',
+                  'விதி மாற்றம் (Destiny)',
+                  'திருமணத் தடை (Marriage)',
+                  'சனி தோஷம் (Saturn)',
+                  'நாக தோஷம் (Rahu-Ketu)',
+                  'செவ்வாய் தோஷம் (Mars)',
+                  'வேலை & தொழில் (Career)',
+                  'கடன் நிவாரணம் (Debt Relief)',
+                  'தீராத பிணிகள் (Health)',
+                  'கல்வி & ஞானம் (Education)',
+                ].map(tag => {
+                  const isSelected = formData.remedies.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          remedies: isSelected
+                            ? prev.remedies.filter(r => r !== tag)
+                            : [...prev.remedies, tag],
+                        }));
+                      }}
+                      className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-500 text-gray-950 font-bold border-amber-400'
+                          : 'bg-[#181a2c] text-gray-300 border-[#2b2e46] hover:border-amber-400/50'
+                      }`}
+                    >
+                      {isSelected ? '✓ ' : '+ '}
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Temple Photo: Supabase URL or Device Upload */}
