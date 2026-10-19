@@ -195,7 +195,9 @@ export const ReviewTab: React.FC = () => {
           currentList.map((sub) => {
             const isPending = sub.status === 'pending';
             const deityObj = DEITIES.find(d => d.id === sub.templeData.deity);
-            const liveTemple = sub.templeId ? temples.find(t => t.id === sub.templeId) : null;
+            const liveTemple = sub.templeId
+              ? temples.find(t => t.id === sub.templeId)
+              : temples.find(t => t.name.trim().toLowerCase() === sub.templeData?.name?.trim().toLowerCase());
 
             return (
               <div

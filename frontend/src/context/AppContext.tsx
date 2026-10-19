@@ -621,6 +621,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isEdit = !!existingTempleId;
     const existingTemple = isEdit ? temples.find(t => t.id === existingTempleId) : undefined;
 
+    // If Admin: Publish directly to live temples directory and database!
+    if (currentUser.role === 'admin') {
+      if (isEdit && existingTempleId) {
+        setTemples(prev =>
+          prev.map(t => (t.id === existingTempleId ? { ...t, ...data, updatedAt: now } : t))
+        );
+        api.updateTemple(existingTempleId, data).catch(e => console.warn('API update failed:', e));
+      } else {
+        const newTempleId = `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const newTemple: Temple = {
+          ...data,
+          id: newTempleId,
+          createdAt: now,
+          updatedAt: now,
+          viewsCount: 0,
+          submittedBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            role: currentUser.role,
+          },
+        };
+        setTemples(prev => [newTemple, ...prev.filter(t => t.name !== data.name)]);
+        api.createTemple(data).catch(e => console.warn('API create failed:', e));
+      }
+
+      // Also create an auto-approved audit entry so it shows in Approved history
+      const approvedSub: TempleSubmission = {
+        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        templeId: existingTempleId,
+        type: isEdit ? 'edit' : 'new',
+        status: 'approved',
+        submittedAt: now,
+        reviewedAt: now,
+        reviewedBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role,
+        },
+        reviewNotes: 'Directly published by Administrator.',
+        submittedBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          role: currentUser.role,
+        },
+        templeData: data,
+      };
+      setSubmissions(prev => [
+        approvedSub,
+        ...prev.filter(s => s.templeData?.name !== data.name),
+      ]);
+      return true;
+    }
+
+    // For Contributors: Submit to review queue
     const newSubmission: TempleSubmission = {
       id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       templeId: existingTempleId,
@@ -634,14 +689,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: currentUser.role,
       },
       templeData: data,
-      previousData: existingTemple ? {
-        name: existingTemple.name,
-        location: existingTemple.location,
-        planets: existingTemple.planets,
-        deity: existingTemple.deity,
-        timings: existingTemple.timings,
-        significance: existingTemple.significance,
-      } : undefined,
+      previousData: existingTemple
+        ? {
+            name: existingTemple.name,
+            location: existingTemple.location,
+            planets: existingTemple.planets,
+            deity: existingTemple.deity,
+            timings: existingTemple.timings,
+            significance: existingTemple.significance,
+          }
+        : undefined,
     };
 
     setSubmissions(prev => [newSubmission, ...prev]);
@@ -705,7 +762,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           role: submission.submittedBy.role,
         },
       };
-      setTemples(prev => [newTemple, ...prev]);
+      setTemples(prev => [
+        newTemple,
+        ...prev.filter(t => t.name.trim().toLowerCase() !== newTemple.name.trim().toLowerCase())
+      ]);
     } else if (submission.type === 'edit' && submission.templeId) {
       setTemples(prev =>
         prev.map(t =>

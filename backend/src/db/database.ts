@@ -199,6 +199,15 @@ export class Database {
   }
 
   public createTemple(templeData: Omit<Temple, 'id' | 'createdAt' | 'updatedAt' | 'viewsCount'>): Temple {
+    // Prevent duplicate temple insertion if temple with same name already exists
+    const existing = this.data.temples.find(
+      t => t.name.trim().toLowerCase() === templeData.name.trim().toLowerCase()
+    );
+    if (existing) {
+      const merged = this.updateTemple(existing.id, templeData);
+      return merged || existing;
+    }
+
     const newTemple: Temple = {
       ...templeData,
       id: `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -326,8 +335,18 @@ export class Database {
           }) || undefined;
         }
       } else {
-        // Create new temple
-        updatedTemple = this.createTemple(sub.templeData);
+        // Create new temple or update existing if temple with same name exists
+        const existingByName = this.data.temples.find(
+          t => t.name.trim().toLowerCase() === sub.templeData.name.trim().toLowerCase()
+        );
+        if (existingByName) {
+          updatedTemple = this.updateTemple(existingByName.id, {
+            ...sub.templeData,
+            updatedAt: new Date().toISOString()
+          }) || existingByName;
+        } else {
+          updatedTemple = this.createTemple(sub.templeData);
+        }
       }
     }
 

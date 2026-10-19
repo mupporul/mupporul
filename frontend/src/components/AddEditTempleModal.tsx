@@ -170,8 +170,14 @@ export const AddEditTempleModal: React.FC = () => {
         imageUrl: formData.imageUrl || DEFAULT_TEMPLE_IMAGE,
       };
       await submitTemple(submissionData, templeToEdit?.id);
+
+      const isAdmin = currentUser.role === 'admin';
       setSuccessMessage(
-        isEdit
+        isAdmin
+          ? isEdit
+            ? 'Temple updated successfully and published live!'
+            : 'New Temple published successfully to live directory and database!'
+          : isEdit
           ? 'Temple updates submitted for Review! Contributor reviewers will review and approve your edit.'
           : 'New Temple submitted for Review! It is now listed in the Review tab awaiting approval.'
       );
@@ -180,8 +186,12 @@ export const AddEditTempleModal: React.FC = () => {
         setIsSubmitting(false);
         setSuccessMessage(null);
         closeAddEditModal();
-        setActiveTab('review');
-      }, 1400);
+        if (isAdmin) {
+          setActiveTab('temples');
+        } else {
+          setActiveTab('review');
+        }
+      }, 1200);
     } catch {
       setIsSubmitting(false);
     }
@@ -621,14 +631,23 @@ export const AddEditTempleModal: React.FC = () => {
               />
             </div>
 
-            {/* Submission note */}
-            <div className="p-3 bg-[#111320] rounded-xl border border-[#24283d] text-xs text-gray-400 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span>
-                <strong>Community Review Policy:</strong> Submissions are queued in the <strong>Review</strong> tab.
-                Contributors and Admins will review details before making it live to all devotees.
-              </span>
-            </div>
+            {/* Submission / Publish Policy note */}
+            {currentUser.role === 'admin' ? (
+              <div className="p-3 bg-[#111320] rounded-xl border border-amber-500/30 text-xs text-amber-300 flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Admin Authority:</strong> This temple will be published directly to the live Temples directory and database.
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#111320] rounded-xl border border-[#24283d] text-xs text-gray-400 flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Community Review Policy:</strong> Submissions are queued in the <strong>Review</strong> tab.
+                  Contributors and Admins will review details before making it live to all devotees.
+                </span>
+              </div>
+            )}
 
             {/* Bottom Form Actions */}
             <div className="pt-2 flex items-center justify-end gap-3 border-t border-[#24273c]">
@@ -646,7 +665,17 @@ export const AddEditTempleModal: React.FC = () => {
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#f5a623] hover:bg-[#e69818] text-black font-bold shadow-lg shadow-amber-500/20 active:scale-[0.99] transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Submitting...' : isEdit ? 'Submit Updates for Review' : 'Submit Temple for Review'}</span>
+                <span>
+                  {isSubmitting
+                    ? 'Saving...'
+                    : currentUser.role === 'admin'
+                    ? isEdit
+                      ? 'Update & Publish (Admin)'
+                      : 'Publish Temple Directly (Admin)'
+                    : isEdit
+                    ? 'Submit Updates for Review'
+                    : 'Submit Temple for Review'}
+                </span>
               </button>
             </div>
           </form>
