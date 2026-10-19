@@ -134,11 +134,11 @@ export const TemplesList: React.FC = () => {
                   ) : null;
                 })}
 
-                {/* Match Mode Badge */}
+                {/* Match Mode Badge - Hidden on mobile to maximize viewport, visible on tablet/desktop */}
                 {selectedPlanets.length > 1 && (
                   <button
                     onClick={() => setPlanetMatchMode(matchMode === 'exact' ? 'all' : 'exact')}
-                    className="px-2 py-0.5 rounded-full bg-[#1e2236] text-amber-300 border border-amber-500/30 text-[10px] font-bold hover:bg-[#252a44] transition-colors"
+                    className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-[#1e2236] text-amber-300 border border-amber-500/30 text-[10px] font-bold hover:bg-[#252a44] transition-colors"
                     title="Click to toggle between Exact Match and Contains All"
                   >
                     {matchMode === 'exact' ? '🎯 Exact Match' : '🔍 Contains All'}
@@ -171,9 +171,9 @@ export const TemplesList: React.FC = () => {
             </div>
           )}
 
-          {/* Contributor Quick Prompt Banner (When Contributor is active) */}
-          {currentUser.role === 'contributor' && (
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 to-[#161826] border border-amber-500/30 text-xs">
+          {/* Contributor Quick Prompt Banner (When Contributor is active) - Hidden on mobile, visible on tablet & desktop */}
+          {currentUser.role === 'contributor' && !isMobileFrame && (
+            <div className="hidden sm:flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 to-[#161826] border border-amber-500/30 text-xs">
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-4 h-4 text-[#f5a623]" />
                 <span className="text-gray-300">
