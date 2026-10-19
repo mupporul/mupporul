@@ -19,8 +19,6 @@ import { PLANETS, DEITIES, STATES } from '../data/constants';
 import { Temple } from '../types';
 import { api } from '../services/api';
 
-const DEFAULT_TEMPLE_IMAGE = 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80';
-
 export const AddEditTempleModal: React.FC = () => {
   const {
     isAddEditModalOpen,
@@ -72,7 +70,7 @@ export const AddEditTempleModal: React.FC = () => {
         deity: templeToEdit.deity || 'shivan',
         significance: templeToEdit.significance || templeToEdit.descriptionTamil || '',
         remedies: templeToEdit.remedies || [],
-        imageUrl: templeToEdit.imageUrl || DEFAULT_TEMPLE_IMAGE,
+        imageUrl: templeToEdit.imageUrl || '',
         videoUrl: templeToEdit.videoUrl || '',
         timings: templeToEdit.timings || '',
         history: templeToEdit.history || '',
@@ -86,13 +84,13 @@ export const AddEditTempleModal: React.FC = () => {
         name: '',
         location: '',
         state: 'Tamil Nadu',
-        planets: ['sani'],
-        deity: 'amman',
+        planets: [],
+        deity: '',
         significance: '',
         remedies: [],
         imageUrl: '',
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        timings: 'காலை 6:00 - 12:30, மாலை 4:00 - இரவு 8:30',
+        videoUrl: '',
+        timings: '',
         history: '',
         poojaDetails: '',
         contactNumber: '',
@@ -167,7 +165,7 @@ export const AddEditTempleModal: React.FC = () => {
     try {
       const submissionData = {
         ...formData,
-        imageUrl: formData.imageUrl || DEFAULT_TEMPLE_IMAGE,
+        imageUrl: formData.imageUrl || '',
       };
       await submitTemple(submissionData, templeToEdit?.id);
 

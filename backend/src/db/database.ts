@@ -72,6 +72,10 @@ export class Database {
         const content = fs.readFileSync(this.dbPath, 'utf-8');
         const parsed = JSON.parse(content) as DatabaseSchema;
         if (parsed && Array.isArray(parsed.temples)) {
+          // Clean out legacy sample mock temples
+          parsed.temples = parsed.temples.filter(t =>
+            !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
+          );
           // Clean out sample bootstrap submissions so review tab only has genuine user submissions
           if (Array.isArray(parsed.submissions)) {
             parsed.submissions = parsed.submissions.filter(s =>
@@ -98,16 +102,7 @@ export class Database {
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
-      bookmarks: [
-        {
-          userId: 'user-vk',
-          templeIds: [...INITIAL_BOOKMARKS]
-        },
-        {
-          userId: 'user-admin',
-          templeIds: ['temple-thirunallar', 'temple-suryanar']
-        }
-      ]
+      bookmarks: []
     };
 
     this.saveData(defaultData);
@@ -519,12 +514,7 @@ export class Database {
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
-      bookmarks: [
-        {
-          userId: 'user-vk',
-          templeIds: [...INITIAL_BOOKMARKS]
-        }
-      ]
+      bookmarks: []
     };
     this.saveData();
   }

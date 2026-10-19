@@ -109,11 +109,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [temples, setTemples] = useState<Temple[]>(() => {
     try {
       const saved = localStorage.getItem('mupporul_temples_v2');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (t: Temple) =>
+              !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
+          );
+        }
+      }
     } catch (e) {
       console.error('Failed to load temples from localStorage', e);
     }
-    return INITIAL_TEMPLES;
+    return [];
   });
 
   // Submissions state (Real submissions only; sample initial submissions purged)
@@ -176,9 +184,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('mupporul_bookmarks_v2');
-      return saved ? JSON.parse(saved) : ['temple-melmalayanoor'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['temple-melmalayanoor'];
+      return [];
     }
   });
 
@@ -858,11 +866,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('mupporul_users_v2');
     localStorage.removeItem('mupporul_bookmarks_v2');
     localStorage.removeItem('mupporul_current_user_id');
-    setTemples(INITIAL_TEMPLES);
-    setSubmissions(INITIAL_SUBMISSIONS);
+    setTemples([]);
+    setSubmissions([]);
     setUsers(INITIAL_USERS);
-    setCurrentUserId('user-vk');
-    setBookmarkedIds(['temple-melmalayanoor']);
+    setCurrentUserId('user-admin');
+    setBookmarkedIds([]);
     setFilters(initialFilters);
   };
 
