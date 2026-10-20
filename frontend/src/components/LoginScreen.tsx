@@ -21,7 +21,7 @@ export const LoginScreen: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -36,8 +36,8 @@ export const LoginScreen: React.FC = () => {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = loginWithCredentials(identifier.trim(), password);
+    try {
+      const res = await loginWithCredentials(identifier.trim(), password);
       setIsLoading(false);
       if (res.success) {
         setSuccessMsg(res.message);
@@ -51,7 +51,10 @@ export const LoginScreen: React.FC = () => {
       } else {
         setErrorMsg(res.message);
       }
-    }, 300);
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMsg(err.message || 'Login failed. Please verify credentials.');
+    }
   };
 
   return (

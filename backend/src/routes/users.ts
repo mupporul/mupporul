@@ -31,9 +31,10 @@ usersRouter.get('/:id', (req: Request, res: Response) => {
 // POST /api/users/login - login user
 usersRouter.post('/login', (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username || req.body.identifier || req.body.email;
+    const password = req.body.password;
     if (!username) {
-      res.status(400).json({ success: false, error: 'Username is required' });
+      res.status(400).json({ success: false, error: 'Username or email is required' });
       return;
     }
 
@@ -41,7 +42,7 @@ usersRouter.post('/login', (req: Request, res: Response) => {
     if (!user) {
       res.status(401).json({
         success: false,
-        error: 'Invalid username or password. Check default credentials (admin / admin123, vkraman / vk123, pilgrim / user123)',
+        error: 'Invalid username/email or password. Please check your credentials and try again.',
       });
       return;
     }

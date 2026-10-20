@@ -40,7 +40,7 @@ interface AppContextType {
   setIsLoginModalOpen: (isOpen: boolean) => void;
   openLoginModal: () => void;
   closeLoginModal: () => void;
-  loginWithCredentials: (usernameOrEmail: string, password?: string) => { success: boolean; message: string };
+  loginWithCredentials: (usernameOrEmail: string, password?: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   
   // Password Management
@@ -220,10 +220,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const health = await api.checkHealth();
         if (health && isMounted) {
           setBackendStatus('connected');
-          // Fetch initial fresh data from backend
-          const [remoteTemples, remoteSubmissions] = await Promise.allSettled([
+          // Fetch initial fresh data from backend (temples, submissions, and users)
+          const [remoteTemples, remoteSubmissions, remoteUsers] = await Promise.allSettled([
             api.getTemples(),
-            api.getSubmissions()
+            api.getSubmissions(),
+            api.getUsers()
           ]);
 
           if (isMounted) {
@@ -241,6 +242,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setSubmissions(cleaned);
               try {
                 localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+              } catch {}
+            }
+            if (remoteUsers.status === 'fulfilled' && Array.isArray(remoteUsers.value) && remoteUsers.value.length > 0) {
+              setUsers(remoteUsers.value);
+              try {
+                localStorage.setItem('mupporul_users_v2', JSON.stringify(remoteUsers.value));
               } catch {}
             }
           }
@@ -265,9 +272,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const health = await api.checkHealth();
       if (health) {
         setBackendStatus('connected');
-        const [remoteTemples, remoteSubmissions] = await Promise.allSettled([
+        const [remoteTemples, remoteSubmissions, remoteUsers] = await Promise.allSettled([
           api.getTemples(),
-          api.getSubmissions()
+          api.getSubmissions(),
+          api.getUsers()
         ]);
         if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
           setTemples(remoteTemples.value);
@@ -283,6 +291,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setSubmissions(cleaned);
           try {
             localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+          } catch {}
+        }
+        if (remoteUsers.status === 'fulfilled' && Array.isArray(remoteUsers.value) && remoteUsers.value.length > 0) {
+          setUsers(remoteUsers.value);
+          try {
+            localStorage.setItem('mupporul_users_v2', JSON.stringify(remoteUsers.value));
           } catch {}
         }
         return true;
@@ -407,31 +421,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openChangePasswordModal = () => setIsChangePasswordModalOpen(true);
   const closeChangePasswordModal = () => setIsChangePasswordModalOpen(false);
 
-  const loginWithCredentials = (usernameOrEmail: string, password?: string) => {
-    const cleanId = usernameOrEmail.trim().toLowerCase();
+  const loginWithCredentials = async (
+    usernameOrEmail: string,
+    password?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const cleanId = usernameOrEmail.trim();
     const cleanPw = (password || '').trim();
 
-    const user = users.find(
-      u => u.username?.toLowerCase() === cleanId || u.email?.toLowerCase() === cleanId
-    );
-
-    if (!user) {
-      return { success: false, message: 'User not found. Check credentials or ask admin to create an account.' };
-    }
-
-    if (user.password && cleanPw !== user.password) {
-      return { success: false, message: 'Invalid password. Please verify and try again.' };
-    }
-
-    setCurrentUserId(user.id);
-    setIsLoggedIn(true);
+    // 1. Attempt REAL network call to backend API first
     try {
-      localStorage.setItem('mupporul_is_logged_in', 'true');
-    } catch {
-      // safe fallback
+      const remoteUser = await api.login(cleanId, cleanPw);
+      if (remoteUser && remoteUser.id) {
+        // Sync local users state
+        setUsers(prev => {
+          const idx = prev.findIndex(u => u.id === remoteUser.id);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = { ...updated[idx], ...remoteUser };
+            return updated;
+          }
+          return [...prev, remoteUser];
+        });
+
+        setCurrentUserId(remoteUser.id);
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem('mupporul_is_logged_in', 'true');
+          localStorage.setItem('mupporul_current_user_id', remoteUser.id);
+        } catch {}
+        setIsLoginModalOpen(false);
+        return { success: true, message: `Welcome back, ${remoteUser.name} (${remoteUser.role.toUpperCase()})!` };
+      }
+    } catch (apiErr: any) {
+      console.warn('[AppContext] API Login call returned error:', apiErr.message);
+
+      // 2. Check local fallback users (e.g. if offline or cached)
+      const localUser = users.find(
+        u =>
+          u.username?.toLowerCase() === cleanId.toLowerCase() ||
+          u.email?.toLowerCase() === cleanId.toLowerCase()
+      );
+
+      if (localUser) {
+        if (localUser.password && cleanPw !== localUser.password) {
+          return { success: false, message: 'Invalid password. Please verify and try again.' };
+        }
+        setCurrentUserId(localUser.id);
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem('mupporul_is_logged_in', 'true');
+          localStorage.setItem('mupporul_current_user_id', localUser.id);
+        } catch {}
+        setIsLoginModalOpen(false);
+        return { success: true, message: `Welcome back, ${localUser.name} (${localUser.role.toUpperCase()})!` };
+      }
+
+      return {
+        success: false,
+        message: apiErr.message || 'User not found. Check credentials or ask admin to create an account.',
+      };
     }
-    setIsLoginModalOpen(false);
-    return { success: true, message: `Welcome back, ${user.name} (${user.role.toUpperCase()})!` };
+
+    return { success: false, message: 'Login failed. Please verify credentials.' };
   };
 
   const logout = () => {

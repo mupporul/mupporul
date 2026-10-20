@@ -371,9 +371,10 @@ export class Database {
     return this.data.users.find(u => u.id === id);
   }
 
-  public authenticate(username: string, password?: string): UserProfile | null {
+  public authenticate(identifier: string, password?: string): UserProfile | null {
+    const clean = identifier.toLowerCase().trim();
     const user = this.data.users.find(
-      u => u.username.toLowerCase() === username.toLowerCase().trim()
+      u => u.username.toLowerCase() === clean || (u.email && u.email.toLowerCase() === clean)
     );
     if (!user) return null;
 
@@ -428,6 +429,11 @@ export class Database {
 
     this.data.users.push(newUser);
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      insertUserToSupabase(newUser).catch(e => console.error('[Supabase] Insert user error:', e));
+    }
+
     return newUser;
   }
 
@@ -436,6 +442,11 @@ export class Database {
     if (index === -1) return false;
     this.data.users.splice(index, 1);
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      deleteUserFromSupabase(id).catch(e => console.error('[Supabase] Delete user error:', e));
+    }
+
     return true;
   }
 
@@ -447,6 +458,11 @@ export class Database {
     }
     user.password = newPassword;
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      updateUserPasswordInSupabase(id, newPassword).catch(e => console.error('[Supabase] Update password error:', e));
+    }
+
     return true;
   }
 
