@@ -190,12 +190,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  // Auth & UI state
+  // Auth & UI state - require active login on both desktop and mobile
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('mupporul_is_logged_in') !== 'false';
+      return localStorage.getItem('mupporul_is_logged_in') === 'true';
     } catch {
-      return true;
+      return false;
     }
   });
   const [activeTab, setActiveTab] = useState<'temples' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
