@@ -1,35 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES, STATES } from '../data/constants';
 import { FilterState } from '../types';
-import { getDynamicRemedies } from '../utils/remedyUtils';
 
 export const FilterModal: React.FC = () => {
-  const { temples, filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame } = useApp();
+  const { filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame } = useApp();
 
   // Local draft filter state before applying
   const [draftFilters, setDraftFilters] = useState<FilterState>(filters);
-  const [remedySearchQuery, setRemedySearchQuery] = useState('');
-
-  const dynamicRemedies = useMemo(() => getDynamicRemedies(temples), [temples]);
-
-  const filteredRemedies = useMemo(() => {
-    if (!remedySearchQuery.trim()) return dynamicRemedies;
-    const q = remedySearchQuery.toLowerCase().trim();
-    return dynamicRemedies.filter(r =>
-      r.tamilLabel.toLowerCase().includes(q) ||
-      r.label.toLowerCase().includes(q) ||
-      r.keywords.some(k => k.toLowerCase().includes(q))
-    );
-  }, [dynamicRemedies, remedySearchQuery]);
 
   // Accordion collapsed state for sections
   const [openSections, setOpenSections] = useState({
     planet: true,
     deity: true,
     location: true,
-    significance: true,
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -258,119 +243,6 @@ export const FilterModal: React.FC = () => {
                     ))}
                   </select>
                   <ChevronDown className="w-4 h-4 text-[#f5a623] absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Section 4: Significance */}
-          <div className="pb-2">
-            <button
-              onClick={() => toggleSection('significance')}
-              className="w-full flex items-center justify-between text-base font-semibold text-gray-100 mb-3"
-            >
-              <span>Significance & Remedies</span>
-              {openSections.significance ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              )}
-            </button>
-
-            {openSections.significance && (
-              <div className="space-y-3">
-                {/* Search Remedy Input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={remedySearchQuery}
-                    onChange={(e) => setRemedySearchQuery(e.target.value)}
-                    placeholder="Search remedies (e.g. குழந்தை, கடன், நோய்)..."
-                    className="w-full bg-[#151726] text-gray-200 text-xs rounded-xl pl-8 pr-4 py-2.5 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] placeholder-gray-500"
-                  />
-                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-
-                {/* Active Selection Badge */}
-                {draftFilters.significance && (
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
-                    <span className="truncate">
-                      Selected:{' '}
-                      <strong>
-                        {dynamicRemedies.find(r => r.id === draftFilters.significance)?.tamilLabel.split('/')[0] ||
-                          draftFilters.significance}
-                      </strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setDraftFilters(prev => ({ ...prev, significance: null }))}
-                      className="text-red-400 text-xs font-semibold px-1 cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                )}
-
-                {/* Quick Remedy Pills with Live Counts */}
-                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
-                  {filteredRemedies.map(remedy => {
-                    const isSelected = draftFilters.significance === remedy.id;
-                    const hasTemples = remedy.count > 0;
-                    return (
-                      <button
-                        key={remedy.id}
-                        type="button"
-                        onClick={() => {
-                          setDraftFilters(prev => ({
-                            ...prev,
-                            significance: isSelected ? null : remedy.id,
-                          }));
-                        }}
-                        className={`text-xs px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500 text-gray-950 font-bold border-amber-400 shadow-md'
-                            : hasTemples
-                            ? 'bg-[#1a1c2e] text-gray-200 border-amber-500/30 hover:border-amber-400'
-                            : 'bg-[#151726] text-gray-400 border-[#24273c]'
-                        }`}
-                      >
-                        <span className="truncate max-w-[150px]">{remedy.tamilLabel.split('/')[0]}</span>
-                        <span
-                          className={`text-[10px] px-1 rounded-full ${
-                            isSelected
-                              ? 'bg-black/20 text-gray-950 font-bold'
-                              : hasTemples
-                              ? 'bg-amber-500/20 text-amber-300'
-                              : 'bg-white/5 text-gray-500'
-                          }`}
-                        >
-                          {remedy.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Dropdown for remaining remedies */}
-                <div className="relative">
-                  <select
-                    value={draftFilters.significance || ''}
-                    onChange={(e) =>
-                      setDraftFilters(prev => ({
-                        ...prev,
-                        significance: e.target.value || null,
-                      }))
-                    }
-                    className="w-full appearance-none bg-[#151726] text-gray-200 text-xs rounded-xl px-3.5 py-2.5 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] cursor-pointer"
-                  >
-                    <option value="">All Remedies & Significance ({temples.length})</option>
-                    {filteredRemedies.map(opt => (
-                      <option key={opt.id} value={opt.id} className="bg-[#121422]">
-                        {opt.tamilLabel} {opt.count > 0 ? `(${opt.count})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#f5a623] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             )}

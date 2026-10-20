@@ -19,7 +19,6 @@ export const Header: React.FC = () => {
     [
       filters.deity,
       filters.state,
-      filters.significance,
     ].filter(Boolean).length;
 
   return (
