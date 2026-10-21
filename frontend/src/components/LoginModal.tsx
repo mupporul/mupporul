@@ -18,10 +18,34 @@ export const LoginModal: React.FC = () => {
     closeLoginModal,
     loginWithCredentials,
     setActiveTab,
+    openChangePasswordModal,
   } = useApp();
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [rememberPassword, setRememberPassword] = useState(() => {
+    try {
+      return localStorage.getItem('mupporul_remember_me') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [identifier, setIdentifier] = useState(() => {
+    try {
+      return localStorage.getItem('mupporul_saved_identifier') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [password, setPassword] = useState(() => {
+    try {
+      if (localStorage.getItem('mupporul_remember_me') === 'true') {
+        return localStorage.getItem('mupporul_saved_password') || '';
+      }
+    } catch {}
+    return '';
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -48,6 +72,19 @@ export const LoginModal: React.FC = () => {
       const res = await loginWithCredentials(identifier.trim(), password);
       setIsLoading(false);
       if (res.success) {
+        if (rememberPassword) {
+          try {
+            localStorage.setItem('mupporul_remember_me', 'true');
+            localStorage.setItem('mupporul_saved_identifier', identifier.trim());
+            localStorage.setItem('mupporul_saved_password', password.trim());
+          } catch {}
+        } else {
+          try {
+            localStorage.removeItem('mupporul_remember_me');
+            localStorage.removeItem('mupporul_saved_password');
+          } catch {}
+        }
+
         setSuccessMsg(res.message);
         setTimeout(() => {
           setSuccessMsg(null);
@@ -106,16 +143,18 @@ export const LoginModal: React.FC = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <form id="modal-login-form" name="modalLogin" onSubmit={handleSubmit} className="space-y-4 text-xs">
             {/* Username / Email */}
             <div>
-              <label className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
+              <label htmlFor="modal-login-username" className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-amber-400" />
                   <span>Username or Email *</span>
                 </span>
               </label>
               <input
+                id="modal-login-username"
+                name="username"
                 type="text"
                 required
                 autoComplete="username"
@@ -128,7 +167,7 @@ export const LoginModal: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
+              <label htmlFor="modal-login-password" className="block text-gray-300 font-bold mb-1.5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
                   <span>Password *</span>
@@ -136,6 +175,8 @@ export const LoginModal: React.FC = () => {
               </label>
               <div className="relative">
                 <input
+                  id="modal-login-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
@@ -152,6 +193,43 @@ export const LoginModal: React.FC = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+
+            {/* Options: Remember/Save Password & Change Password */}
+            <div className="flex items-center justify-between text-xs pt-1 pb-1">
+              <label className="flex items-center gap-2 text-gray-300 hover:text-gray-100 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  id="modal-remember-password"
+                  name="modalRememberMe"
+                  checked={rememberPassword}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRememberPassword(checked);
+                    if (!checked) {
+                      try {
+                        localStorage.removeItem('mupporul_remember_me');
+                        localStorage.removeItem('mupporul_saved_password');
+                      } catch {}
+                    }
+                  }}
+                  className="w-4 h-4 rounded bg-[#181a29] border border-[#282d45] text-amber-500 focus:ring-amber-500/30 accent-amber-500 cursor-pointer"
+                />
+                <span className="group-hover:text-amber-300 transition-colors font-medium">
+                  Remember password
+                </span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => {
+                  closeLoginModal();
+                  openChangePasswordModal();
+                }}
+                className="text-amber-400 hover:text-amber-300 transition-colors font-medium cursor-pointer hover:underline"
+              >
+                Change password?
+              </button>
             </div>
 
             {/* Submit */}

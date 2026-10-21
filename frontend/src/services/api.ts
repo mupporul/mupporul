@@ -252,14 +252,25 @@ class ApiService {
     return true;
   }
 
-  async updatePassword(userId: string, newPassword: string, currentPassword?: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/users/${encodeURIComponent(userId)}/password`, {
+  async updatePassword(userIdOrIdentifier: string, newPassword: string, currentPassword?: string): Promise<boolean> {
+    const res = await fetch(`${this.baseUrl}/users/${encodeURIComponent(userIdOrIdentifier)}/password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPassword, currentPassword }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Failed to update password');
+    return true;
+  }
+
+  async changePasswordByCredentials(identifier: string, currentPassword: string, newPassword: string): Promise<boolean> {
+    const res = await fetch(`${this.baseUrl}/users/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, currentPassword, newPassword }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to change password');
     return true;
   }
 

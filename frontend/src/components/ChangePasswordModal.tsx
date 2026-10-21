@@ -3,6 +3,7 @@ import {
   X,
   KeyRound,
   Lock,
+  User,
   Eye,
   EyeOff,
   Check,
@@ -18,9 +19,17 @@ export const ChangePasswordModal: React.FC = () => {
     closeChangePasswordModal,
     changePassword,
     currentUser,
+    isLoggedIn,
     isMobileFrame,
   } = useApp();
 
+  const [identifier, setIdentifier] = useState(() => {
+    try {
+      return localStorage.getItem('mupporul_saved_identifier') || '';
+    } catch {
+      return '';
+    }
+  });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,6 +55,12 @@ export const ChangePasswordModal: React.FC = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    const targetUser = !isLoggedIn ? identifier.trim() : (currentUser?.username || currentUser?.id);
+    if (!targetUser) {
+      setErrorMsg('Please enter your username or email.');
+      return;
+    }
+
     if (!currentPassword.trim()) {
       setErrorMsg('Please enter your current password.');
       return;
@@ -68,7 +83,7 @@ export const ChangePasswordModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await changePassword(currentPassword, newPassword);
+      const res = await changePassword(currentPassword, newPassword, !isLoggedIn ? identifier.trim() : undefined);
       if (!res.success) {
         setErrorMsg(res.message);
         setIsSubmitting(false);
@@ -98,7 +113,11 @@ export const ChangePasswordModal: React.FC = () => {
             <div>
               <h2 className="text-lg font-bold text-gray-100">Change Password</h2>
               <p className="text-[11px] text-gray-400">
-                Update login credentials for <span className="text-amber-400 font-mono">@{currentUser.username || currentUser.name}</span>
+                {isLoggedIn && currentUser ? (
+                  <>Update password for <span className="text-amber-400 font-mono">@{currentUser.username || currentUser.name}</span></>
+                ) : (
+                  <>Reset or update password for your account</>
+                )}
               </p>
             </div>
           </div>
@@ -132,6 +151,25 @@ export const ChangePasswordModal: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Username / Email field (only if not logged in) */}
+            {!isLoggedIn && (
+              <div>
+                <label className="block text-gray-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Username or Email *</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoComplete="username"
+                  placeholder="Enter your username or email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full bg-[#181a29] border border-[#282d45] rounded-xl px-3.5 py-2.5 text-sm font-mono text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+            )}
+
             {/* Current Password */}
             <div>
               <label className="block text-gray-300 font-bold mb-1.5 flex items-center gap-1.5">

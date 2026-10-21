@@ -47,7 +47,7 @@ interface AppContextType {
   isChangePasswordModalOpen: boolean;
   openChangePasswordModal: () => void;
   closeChangePasswordModal: () => void;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  changePassword: (currentPassword: string, newPassword: string, usernameOrEmail?: string) => Promise<{ success: boolean; message: string }>;
 
   // Admin User Management
   isAddUserModalOpen: boolean;
@@ -496,41 +496,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const changePassword = async (
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
+    usernameOrEmail?: string
   ): Promise<{ success: boolean; message: string }> => {
-    if (!currentUser) {
-      return { success: false, message: 'No user is currently active.' };
-    }
-
     const cleanCurrent = (currentPassword || '').trim();
     const cleanNew = (newPassword || '').trim();
-
-    if (currentUser.password && cleanCurrent !== currentUser.password) {
-      return { success: false, message: 'Current password does not match. Please verify.' };
-    }
+    const cleanIdentifier = (usernameOrEmail || '').trim();
 
     if (cleanNew.length < 4) {
       return { success: false, message: 'New password must be at least 4 characters long.' };
     }
 
-    if (cleanNew === currentUser.password) {
+    if (cleanCurrent && cleanCurrent === cleanNew) {
       return { success: false, message: 'New password must be different from current password.' };
     }
 
-    // Update in users state
-    setUsers(prev =>
-      prev.map(u => (u.id === currentUser.id ? { ...u, password: cleanNew } : u))
-    );
+    // Determine target user identifier
+    const targetIdentifier = cleanIdentifier || currentUser?.username || currentUser?.id;
+    if (!targetIdentifier) {
+      return { success: false, message: 'Please specify your username or email.' };
+    }
 
-    // Sync to backend API
-    api.updatePassword(currentUser.id, cleanNew, cleanCurrent).catch(e =>
-      console.warn('[AppContext] Background password update API sync failed:', e)
-    );
+    // Call real backend API
+    try {
+      await api.changePasswordByCredentials(targetIdentifier, cleanCurrent, cleanNew);
 
-    return {
-      success: true,
-      message: 'Your password has been changed successfully! Please remember your new password.',
-    };
+      // Sync local React state
+      setUsers(prev =>
+        prev.map(u => {
+          if (
+            u.id === targetIdentifier ||
+            u.username.toLowerCase() === targetIdentifier.toLowerCase() ||
+            (u.email && u.email.toLowerCase() === targetIdentifier.toLowerCase())
+          ) {
+            return { ...u, password: cleanNew };
+          }
+          return u;
+        })
+      );
+
+      // Also update remembered password in localStorage if user checked Remember Me
+      try {
+        if (localStorage.getItem('mupporul_remember_me') === 'true') {
+          const savedId = localStorage.getItem('mupporul_saved_identifier') || '';
+          if (
+            !savedId ||
+            savedId.toLowerCase() === targetIdentifier.toLowerCase() ||
+            (currentUser && savedId.toLowerCase() === currentUser.username.toLowerCase())
+          ) {
+            localStorage.setItem('mupporul_saved_password', cleanNew);
+          }
+        }
+      } catch {}
+
+      return {
+        success: true,
+        message: 'Your password has been changed successfully! You can now sign in with your new password.',
+      };
+    } catch (apiErr: any) {
+      console.warn('[AppContext] changePassword API call returned error:', apiErr.message);
+      return {
+        success: false,
+        message: apiErr.message || 'Failed to update password. Please verify your current password.',
+      };
+    }
   };
 
   // Sync with LocalStorage

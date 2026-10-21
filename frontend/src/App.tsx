@@ -24,6 +24,7 @@ const MainAppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#07090f] flex flex-col items-center justify-center">
         <LoginScreen />
+        <ChangePasswordModal />
       </div>
     );
   }

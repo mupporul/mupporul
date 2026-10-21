@@ -117,3 +117,26 @@ usersRouter.put('/:id/password', (req: Request, res: Response) => {
     res.status(400).json({ success: false, error: err.message });
   }
 });
+
+// POST /api/users/change-password - change password using username, email, or id
+usersRouter.post('/change-password', (req: Request, res: Response) => {
+  try {
+    const identifier = req.body.identifier || req.body.username || req.body.email;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!identifier) {
+      res.status(400).json({ success: false, error: 'Username or email is required' });
+      return;
+    }
+    if (!newPassword || newPassword.trim().length < 4) {
+      res.status(400).json({ success: false, error: 'New password must be at least 4 characters long' });
+      return;
+    }
+
+    db.updatePassword(identifier, newPassword.trim(), currentPassword ? currentPassword.trim() : undefined);
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+

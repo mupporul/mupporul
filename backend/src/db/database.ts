@@ -450,17 +450,22 @@ export class Database {
     return true;
   }
 
-  public updatePassword(id: string, newPassword: string, currentPassword?: string): boolean {
-    const user = this.data.users.find(u => u.id === id);
-    if (!user) throw new Error('User not found');
-    if (currentPassword && user.password && user.password !== currentPassword) {
-      throw new Error('Current password does not match');
+  public updatePassword(identifierOrId: string, newPassword: string, currentPassword?: string): boolean {
+    const clean = identifierOrId.toLowerCase().trim();
+    const user = this.data.users.find(
+      u => u.id === identifierOrId ||
+           u.username.toLowerCase() === clean ||
+           (u.email && u.email.toLowerCase() === clean)
+    );
+    if (!user) throw new Error('User not found. Please verify your username or email.');
+    if (currentPassword && user.password && user.password !== currentPassword.trim()) {
+      throw new Error('Current password does not match. Please verify and try again.');
     }
-    user.password = newPassword;
+    user.password = newPassword.trim();
     this.saveData();
 
     if (isSupabaseConfigured) {
-      updateUserPasswordInSupabase(id, newPassword).catch(e => console.error('[Supabase] Update password error:', e));
+      updateUserPasswordInSupabase(user.id, user.password).catch(e => console.error('[Supabase] Update password error:', e));
     }
 
     return true;
