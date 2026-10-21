@@ -4,7 +4,6 @@ import {
   MapPin,
   Clock,
   Play,
-  Bookmark,
   Share2,
   Sparkles,
   Phone,
@@ -22,8 +21,6 @@ export const TempleDetailModal: React.FC = () => {
     openVideoModal,
     openEditModal,
     currentUser,
-    toggleBookmark,
-    bookmarkedIds,
     isMobileFrame,
   } = useApp();
 
@@ -43,7 +40,6 @@ export const TempleDetailModal: React.FC = () => {
   if (!selectedTempleForDetail) return null;
 
   const temple = selectedTempleForDetail;
-  const isBookmarked = bookmarkedIds.includes(temple.id);
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const deityObj = DEITIES.find(d => d.id === temple.deity);
 
@@ -101,17 +97,8 @@ export const TempleDetailModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Header Actions: Bookmark, Share & X Close Button */}
+          {/* Right Header Actions: Share & X Close Button */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => toggleBookmark(temple.id)}
-              aria-label="Bookmark temple"
-              title={isBookmarked ? 'Saved to bookmarks' : 'Save temple'}
-              className="w-8 h-8 rounded-full bg-[#1e2133] hover:bg-[#282d46] text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
-            </button>
-
             <button
               onClick={handleShare}
               aria-label="Share temple"
@@ -274,15 +261,6 @@ export const TempleDetailModal: React.FC = () => {
               <Compass className="w-3.5 h-3.5 text-blue-400" />
               <span>{temple.location} ({temple.state})</span>
             </div>
-          </div>
-
-          {/* Contributor / Verification info */}
-          <div className="pt-2 text-[11px] text-gray-500 border-t border-[#1f2235]">
-            {temple.submittedBy?.name ? (
-              <span>Contributed by <strong className="text-gray-400">{temple.submittedBy.name}</strong> ({temple.submittedBy.role})</span>
-            ) : (
-              <span>Mupporul Verified Temple Sanctuary</span>
-            )}
           </div>
         </div>
 

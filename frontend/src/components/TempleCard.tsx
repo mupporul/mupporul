@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Play, MoreVertical, Bookmark, Share2, Edit3, Trash2, Info } from 'lucide-react';
+import { MapPin, Play, MoreVertical, Share2, Edit3, Trash2, Info } from 'lucide-react';
 import { Temple } from '../types';
 import { PLANETS, DEITIES } from '../data/constants';
 import { useApp } from '../context/AppContext';
@@ -14,8 +14,6 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
     openEditModal,
     openDetailModal,
     openVideoModal,
-    toggleBookmark,
-    bookmarkedIds,
     deleteTemple,
   } = useApp();
 
@@ -23,7 +21,6 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
   const [copiedShare, setCopiedShare] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const isBookmarked = bookmarkedIds.includes(temple.id);
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const canDelete = currentUser.role === 'admin';
 
@@ -101,17 +98,6 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                   <span>Edit Temple ({currentUser.role})</span>
                 </button>
               )}
-
-              <button
-                onClick={() => {
-                  toggleBookmark(temple.id);
-                  setIsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-200 hover:bg-[#252a3f] text-left cursor-pointer"
-              >
-                <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : 'text-gray-400'}`} />
-                <span>{isBookmarked ? 'Remove Bookmark' : 'Save Temple'}</span>
-              </button>
 
               <button
                 onClick={handleShare}
