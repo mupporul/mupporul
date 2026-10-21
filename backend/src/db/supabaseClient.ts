@@ -45,7 +45,7 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
     planets: row.planets || [],
     deity: row.deity,
     significance: row.significance,
-    remedies: row.remedies || [],
+    remedies: [],
     imageUrl: row.image_url,
     videoUrl: row.video_url || '',
     timings: row.timings || '',
@@ -69,7 +69,7 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
     planets: temple.planets,
     deity: temple.deity,
     significance: temple.significance,
-    remedies: temple.remedies || [],
+    remedies: [],
     image_url: temple.imageUrl,
     video_url: temple.videoUrl,
     timings: temple.timings,
@@ -102,6 +102,7 @@ export async function updateTempleInSupabase(id: string, updates: Partial<Temple
   if (updates.planets !== undefined) row.planets = updates.planets;
   if (updates.deity !== undefined) row.deity = updates.deity;
   if (updates.significance !== undefined) row.significance = updates.significance;
+  row.remedies = [];
   if (updates.imageUrl !== undefined) row.image_url = updates.imageUrl;
   if (updates.videoUrl !== undefined) row.video_url = updates.videoUrl;
   if (updates.timings !== undefined) row.timings = updates.timings;

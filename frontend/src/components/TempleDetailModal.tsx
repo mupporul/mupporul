@@ -181,12 +181,12 @@ export const TempleDetailModal: React.FC = () => {
             )}
           </div>
 
-          {/* Significance & Remedies (Hidden on cards, showcased here in full glory) */}
+          {/* Temple Significance */}
           {(temple.significance || temple.descriptionTamil) && (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 via-[#1c1b27] to-[#151726] border border-amber-500/40 space-y-2 shadow-inner">
               <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
                 <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>சிறப்பு & பரிகார பலன்கள் (Significance & Remedies)</span>
+                <span>சிறப்பு (Temple Significance)</span>
               </div>
               <p className="text-xs sm:text-sm text-gray-100 leading-relaxed font-tamil whitespace-pre-line font-medium">
                 {temple.significance || temple.descriptionTamil}

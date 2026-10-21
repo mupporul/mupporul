@@ -54,7 +54,13 @@ export class Database {
   private async syncFromSupabase(): Promise<void> {
     try {
       const supaTemples = await fetchTemplesFromSupabase();
-      this.data.temples = supaTemples;
+      this.data.temples = supaTemples.map(t => ({ ...t, remedies: [] }));
+      // Also update remote Supabase rows if any had remedies tags
+      for (const t of supaTemples) {
+        if (t.remedies && t.remedies.length > 0) {
+          updateTempleInSupabase(t.id, { remedies: [] }).catch(() => {});
+        }
+      }
       const supaUsers = await fetchUsersFromSupabase();
       if (supaUsers.length > 0) {
         this.data.users = supaUsers;
@@ -72,15 +78,26 @@ export class Database {
         const content = fs.readFileSync(this.dbPath, 'utf-8');
         const parsed = JSON.parse(content) as DatabaseSchema;
         if (parsed && Array.isArray(parsed.temples)) {
-          // Clean out legacy sample mock temples
-          parsed.temples = parsed.temples.filter(t =>
-            !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
-          );
+          // Clean out legacy sample mock temples and ensure no remedy tags
+          parsed.temples = parsed.temples
+            .filter(t =>
+              !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
+            )
+            .map(t => ({
+              ...t,
+              remedies: [],
+            }));
           // Clean out sample bootstrap submissions so review tab only has genuine user submissions
           if (Array.isArray(parsed.submissions)) {
-            parsed.submissions = parsed.submissions.filter(s =>
-              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
-            );
+            parsed.submissions = parsed.submissions
+              .filter(s =>
+                !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+              )
+              .map(s => {
+                if (s.templeData) s.templeData.remedies = [];
+                if (s.previousData) s.previousData.remedies = [];
+                return s;
+              });
           }
           // Clean out legacy sample users, keeping admin and real users
           if (Array.isArray(parsed.users)) {
@@ -205,6 +222,7 @@ export class Database {
 
     const newTemple: Temple = {
       ...templeData,
+      remedies: [],
       id: `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       viewsCount: 0,
       createdAt: new Date().toISOString(),
@@ -224,15 +242,20 @@ export class Database {
     const index = this.data.temples.findIndex(t => t.id === id);
     if (index === -1) return null;
 
+    const sanitizedUpdates = {
+      ...updates,
+      remedies: [],
+    };
+
     this.data.temples[index] = {
       ...this.data.temples[index],
-      ...updates,
+      ...sanitizedUpdates,
       updatedAt: new Date().toISOString()
     };
     this.saveData();
 
     if (isSupabaseConfigured) {
-      updateTempleInSupabase(id, updates).catch(e => console.error('[Supabase] Update error:', e));
+      updateTempleInSupabase(id, sanitizedUpdates).catch(e => console.error('[Supabase] Update error:', e));
     }
 
     return this.data.temples[index];

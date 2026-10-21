@@ -112,10 +112,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (t: Temple) =>
-              !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
-          );
+          return parsed
+            .filter(
+              (t: Temple) =>
+                !['temple-melmalayanoor', 'temple-thirubuvanam', 'temple-thirubavanoor', 'temple-suriyanar', 'temple-thingalur', 'temple-vaitheeswaran', 'temple-thirunageswaram', 'temple-alangudi'].includes(t.id)
+            )
+            .map((t: Temple) => ({ ...t, remedies: [] }));
         }
       }
     } catch (e) {
@@ -131,10 +133,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (s: TempleSubmission) =>
-              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
-          );
+          return parsed
+            .filter(
+              (s: TempleSubmission) =>
+                !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+            )
+            .map((s: TempleSubmission) => {
+              if (s.templeData) s.templeData.remedies = [];
+              if (s.previousData) s.previousData.remedies = [];
+              return s;
+            });
         }
       }
     } catch (e) {
@@ -229,16 +237,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           if (isMounted) {
             if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
-              setTemples(remoteTemples.value);
+              const cleanedTemples = remoteTemples.value.map((t: Temple) => {
+                if (t.remedies && t.remedies.length > 0) {
+                  api.updateTemple(t.id, { remedies: [] }).catch(() => {});
+                }
+                return { ...t, remedies: [] };
+              });
+              setTemples(cleanedTemples);
               try {
-                localStorage.setItem('mupporul_temples_v2', JSON.stringify(remoteTemples.value));
+                localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
               } catch {}
             }
             if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
-              const cleaned = remoteSubmissions.value.filter(
-                (s: TempleSubmission) =>
-                  !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
-              );
+              const cleaned = remoteSubmissions.value
+                .filter(
+                  (s: TempleSubmission) =>
+                    !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+                )
+                .map((s: TempleSubmission) => {
+                  if (s.templeData) s.templeData.remedies = [];
+                  if (s.previousData) s.previousData.remedies = [];
+                  return s;
+                });
               setSubmissions(cleaned);
               try {
                 localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
@@ -278,16 +298,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           api.getUsers()
         ]);
         if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
-          setTemples(remoteTemples.value);
+          const cleanedTemples = remoteTemples.value.map((t: Temple) => {
+            if (t.remedies && t.remedies.length > 0) {
+              api.updateTemple(t.id, { remedies: [] }).catch(() => {});
+            }
+            return { ...t, remedies: [] };
+          });
+          setTemples(cleanedTemples);
           try {
-            localStorage.setItem('mupporul_temples_v2', JSON.stringify(remoteTemples.value));
+            localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
           } catch {}
         }
         if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
-          const cleaned = remoteSubmissions.value.filter(
-            (s: TempleSubmission) =>
-              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
-          );
+          const cleaned = remoteSubmissions.value
+            .filter(
+              (s: TempleSubmission) =>
+                !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+            )
+            .map((s: TempleSubmission) => {
+              if (s.templeData) s.templeData.remedies = [];
+              if (s.previousData) s.previousData.remedies = [];
+              return s;
+            });
           setSubmissions(cleaned);
           try {
             localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
@@ -707,19 +739,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): Promise<boolean> => {
     const now = new Date().toISOString();
     const isEdit = !!existingTempleId;
+    const cleanData = {
+      ...data,
+      remedies: [],
+    };
     const existingTemple = isEdit ? temples.find(t => t.id === existingTempleId) : undefined;
 
     // If Admin: Publish directly to live temples directory and database!
     if (currentUser.role === 'admin') {
       if (isEdit && existingTempleId) {
         setTemples(prev =>
-          prev.map(t => (t.id === existingTempleId ? { ...t, ...data, updatedAt: now } : t))
+          prev.map(t => (t.id === existingTempleId ? { ...t, ...cleanData, updatedAt: now } : t))
         );
-        api.updateTemple(existingTempleId, data).catch(e => console.warn('API update failed:', e));
+        api.updateTemple(existingTempleId, cleanData).catch(e => console.warn('API update failed:', e));
       } else {
         const newTempleId = `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
         const newTemple: Temple = {
-          ...data,
+          ...cleanData,
           id: newTempleId,
           createdAt: now,
           updatedAt: now,
@@ -730,8 +766,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             role: currentUser.role,
           },
         };
-        setTemples(prev => [newTemple, ...prev.filter(t => t.name !== data.name)]);
-        api.createTemple(data).catch(e => console.warn('API create failed:', e));
+        setTemples(prev => [newTemple, ...prev.filter(t => t.name !== cleanData.name)]);
+        api.createTemple(cleanData).catch(e => console.warn('API create failed:', e));
       }
 
       // Also create an auto-approved audit entry so it shows in Approved history
@@ -754,7 +790,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           email: currentUser.email,
           role: currentUser.role,
         },
-        templeData: data,
+        templeData: cleanData,
       };
       setSubmissions(prev => [
         approvedSub,
@@ -776,7 +812,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: currentUser.email,
         role: currentUser.role,
       },
-      templeData: data,
+      templeData: cleanData,
       previousData: existingTemple
         ? {
             name: existingTemple.name,

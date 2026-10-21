@@ -71,7 +71,7 @@ templesRouter.post('/', (req: Request, res: Response) => {
       planets: Array.isArray(planets) ? planets : [],
       deity,
       significance,
-      remedies: Array.isArray(remedies) ? remedies : [],
+      remedies: [],
       imageUrl: imageUrl || '',
       videoUrl: videoUrl || '',
       timings: timings || '',
