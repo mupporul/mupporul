@@ -3,7 +3,9 @@ services:
     name: mupporul-backend
     runtime: node
     plan: free
+    branch: main
     rootDir: backend
+    autoDeploy: true
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
@@ -11,3 +13,4 @@ services:
         value: production
       - key: PORT
         value: 10000
+
