@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { TempleLogoSvg } from './LoadingSpinner';
 
 export const Header: React.FC = () => {
   const {
@@ -32,29 +33,7 @@ export const Header: React.FC = () => {
         >
           {/* Stylized Gopuram SVG matching Screenshot */}
           <div className="w-9 h-9 text-[#f5a623] flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
-            <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8">
-              {/* Kalasam top */}
-              <path d="M24 2L21 6H27L24 2Z" fill="#f5a623" />
-              <circle cx="24" cy="7.5" r="1.5" fill="#f5a623" />
-              {/* Tier 1 */}
-              <path d="M20 9H28L29 14H19L20 9Z" fill="#f5a623" />
-              <rect x="23" y="10.5" width="2" height="3" fill="#0d0f18" />
-              {/* Tier 2 */}
-              <path d="M17 15H31L32 21H16L17 15Z" fill="#f5a623" />
-              <rect x="20" y="16.5" width="2" height="3.5" fill="#0d0f18" />
-              <rect x="26" y="16.5" width="2" height="3.5" fill="#0d0f18" />
-              {/* Tier 3 */}
-              <path d="M14 22H34L35 29H13L14 22Z" fill="#f5a623" />
-              <rect x="18" y="24" width="2.5" height="4" fill="#0d0f18" />
-              <rect x="23" y="24" width="2" height="4" fill="#0d0f18" />
-              <rect x="27.5" y="24" width="2.5" height="4" fill="#0d0f18" />
-              {/* Tier 4 Base */}
-              <path d="M11 30H37L39 42H9L11 30Z" fill="#f5a623" />
-              {/* Temple Doorway (Sanctum sanctorum) */}
-              <path d="M20 42V34C20 31.8 21.8 30 24 30C26.2 30 28 31.8 28 34V42H20Z" fill="#0d0f18" />
-              {/* Base plinth */}
-              <rect x="7" y="42" width="34" height="4" rx="1" fill="#e09217" />
-            </svg>
+            <TempleLogoSvg className="w-8 h-8" />
           </div>
           <div>
             <h1 className="font-cinzel text-xl sm:text-2xl font-bold tracking-[0.2em] text-[#f5a623] leading-none">

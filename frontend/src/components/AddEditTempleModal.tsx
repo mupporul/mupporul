@@ -18,6 +18,7 @@ import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES, STATES } from '../data/constants';
 import { Temple } from '../types';
 import { api } from '../services/api';
+import { LoadingSpinner } from './LoadingSpinner';
 
 export const AddEditTempleModal: React.FC = () => {
   const {
@@ -483,9 +484,12 @@ export const AddEditTempleModal: React.FC = () => {
                     isMobileFrame ? 'h-28' : 'h-32'
                   }`}>
                     {isUploadingPhoto ? (
-                      <div className="flex flex-col items-center gap-2 text-amber-400">
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                        <span className="text-xs font-semibold">Uploading to Supabase Storage...</span>
+                      <div className="py-2">
+                        <LoadingSpinner
+                          size="sm"
+                          text="Uploading..."
+                          subtext="Uploading to Supabase Storage"
+                        />
                       </div>
                     ) : (
                       <>

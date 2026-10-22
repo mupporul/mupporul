@@ -16,9 +16,22 @@ import { AddUserModal } from './components/AddUserModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { LoginScreen } from './components/LoginScreen';
 import { BottomNav } from './components/BottomNav';
+import { LoadingSpinner } from './components/LoadingSpinner';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, isLoggedIn } = useApp();
+  const { activeTab, isLoggedIn, isLoading } = useApp();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#07090f] flex flex-col items-center justify-center p-4">
+        <LoadingSpinner
+          size="lg"
+          text="Loading..."
+          subtext="முப்பொருள் திருத்தலங்கள் • Sacred Temples"
+        />
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (

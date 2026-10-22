@@ -26,6 +26,8 @@ interface AppContextType {
   isFilterOpen: boolean;
   isAddEditModalOpen: boolean;
   templeToEdit: Temple | null;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
   backendStatus: 'connected' | 'offline' | 'checking';
   reconnectBackend: (customUrl?: string) => Promise<boolean>;
   isArchitectureModalOpen: boolean;
@@ -204,6 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [videoModalUrl, setVideoModalUrl] = useState<{ url: string; title: string } | null>(null);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [templeToEdit, setTempleToEdit] = useState<Temple | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [backendStatus, setBackendStatus] = useState<'connected' | 'offline' | 'checking'>('checking');
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
   const [isMobileFrame, setIsMobileFrame] = useState(false);
@@ -213,6 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let isMounted = true;
     const fetchFromBackend = async () => {
       try {
+        setBackendStatus('checking');
         const health = await api.checkHealth();
         if (health && isMounted) {
           setBackendStatus('connected');
@@ -264,6 +268,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } catch {
         if (isMounted) setBackendStatus('offline');
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -992,6 +1000,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addUser,
         deleteUser,
         templeToEdit,
+        isLoading,
+        setIsLoading,
         setActiveTab,
         setFilters,
         resetFilters,
