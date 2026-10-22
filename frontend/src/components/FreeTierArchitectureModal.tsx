@@ -261,7 +261,7 @@ export const FreeTierArchitectureModal: React.FC = () => {
                   <div>└── src/</div>
                   <div>    ├── server.ts          # Standalone server entry point</div>
                   <div>    ├── app.ts             # Express app & route mounting</div>
-                  <div>    ├── routes/            # temples.ts, submissions.ts, users.ts, bookmarks.ts, meta.ts</div>
+                  <div>    ├── routes/            # temples.ts, submissions.ts, users.ts, upload.ts, meta.ts</div>
                   <div>    └── db/                # database.ts (CRUD engine), schema.sql (Supabase DDL)</div>
                 </div>
               </div>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   User,
   ShieldCheck,
-  Bookmark,
   CheckCircle,
   FileCheck2,
   Sparkles,
@@ -26,7 +25,6 @@ export const ProfileTab: React.FC = () => {
     switchRole,
     temples,
     submissions,
-    bookmarkedIds,
     openDetailModal,
     openAddModal,
     openAddUserModal,
@@ -38,9 +36,8 @@ export const ProfileTab: React.FC = () => {
     setIsArchitectureModalOpen,
   } = useApp();
 
-  const [activeSubTab, setActiveSubTab] = useState<'bookmarks' | 'my_submissions' | 'roles_info'>('bookmarks');
+  const [activeSubTab, setActiveSubTab] = useState<'my_submissions' | 'roles_info'>('my_submissions');
 
-  const myBookmarkedTemples = temples.filter(t => bookmarkedIds.includes(t.id));
   const mySubmissions = submissions.filter(s => s.submittedBy.id === currentUser.id);
 
   const getRoleBadge = (role: Role) => {
@@ -77,14 +74,8 @@ export const ProfileTab: React.FC = () => {
               </div>
               <p className="text-xs text-gray-400 mt-0.5">{currentUser.email}</p>
 
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-300">
-                <span>
-                  <strong className="text-amber-400">{myBookmarkedTemples.length}</strong> Saved Temples
-                </span>
-                <span>•</span>
-                <span>
-                  <strong className="text-emerald-400">{currentUser.contributionsCount || 0}</strong> Contributions
-                </span>
+              <div className="flex items-center gap-2 mt-2 text-xs text-gray-300">
+                <strong className="text-emerald-400">{currentUser.contributionsCount || 0}</strong> Contributions
               </div>
             </div>
           </div>
@@ -163,7 +154,7 @@ export const ProfileTab: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
-              Change your password anytime to protect your temple contributions and bookmarks.
+              Change your password anytime to protect your account and temple contributions.
             </p>
           </div>
         </div>
@@ -177,20 +168,8 @@ export const ProfileTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Tabs: My Saved | My Submissions | Roles Guide */}
+      {/* Tabs: My Submissions | Roles Guide */}
       <div className="flex items-center gap-2 p-1 bg-[#121422] rounded-2xl border border-[#22253a]">
-        <button
-          onClick={() => setActiveSubTab('bookmarks')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeSubTab === 'bookmarks'
-              ? 'bg-[#1e2238] text-amber-400 shadow-sm border border-amber-500/30'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          <Bookmark className="w-3.5 h-3.5" />
-          <span>Saved Temples ({myBookmarkedTemples.length})</span>
-        </button>
-
         <button
           onClick={() => setActiveSubTab('my_submissions')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
@@ -217,45 +196,6 @@ export const ProfileTab: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      {activeSubTab === 'bookmarks' && (
-        <div className="space-y-3">
-          {myBookmarkedTemples.length === 0 ? (
-            <div className="text-center py-10 rounded-3xl bg-[#141624] border border-[#22253a] space-y-2">
-              <Bookmark className="w-10 h-10 text-gray-500 mx-auto" />
-              <h4 className="text-sm font-semibold text-gray-200">No saved temples yet</h4>
-              <p className="text-xs text-gray-400">
-                Click the bookmark icon or 3-dots menu on any temple card to save it for quick pilgrimage access.
-              </p>
-            </div>
-          ) : (
-            myBookmarkedTemples.map(temple => (
-              <div
-                key={temple.id}
-                className="p-3.5 rounded-2xl bg-[#141624] border border-[#25283f] flex items-center justify-between gap-3 hover:border-amber-500/40 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={temple.imageUrl}
-                    alt={temple.name}
-                    className="w-14 h-14 rounded-xl object-cover"
-                  />
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-100">{temple.name}</h4>
-                    <span className="text-[11px] text-gray-400">{temple.location}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => openDetailModal(temple)}
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 hover:bg-amber-500/25 text-xs font-semibold cursor-pointer"
-                >
-                  View Details →
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
 
       {activeSubTab === 'my_submissions' && (
         <div className="space-y-3">

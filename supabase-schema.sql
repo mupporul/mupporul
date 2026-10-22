@@ -54,18 +54,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   review_notes TEXT
 );
 
--- 4. Bookmarks Table
-CREATE TABLE IF NOT EXISTS bookmarks (
-  user_id TEXT PRIMARY KEY,
-  temple_ids JSONB DEFAULT '[]'::jsonb,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 5. Row Level Security (RLS) & Policies for Web App
+-- 4. Row Level Security (RLS) & Policies for Web App
 ALTER TABLE temples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public/Anon or Backend Service read & write access
 CREATE POLICY "Allow public read on temples" ON temples FOR SELECT USING (true);
@@ -76,9 +68,6 @@ CREATE POLICY "Allow write on users" ON users FOR ALL USING (true);
 
 CREATE POLICY "Allow public read on submissions" ON submissions FOR SELECT USING (true);
 CREATE POLICY "Allow write on submissions" ON submissions FOR ALL USING (true);
-
-CREATE POLICY "Allow public read on bookmarks" ON bookmarks FOR SELECT USING (true);
-CREATE POLICY "Allow write on bookmarks" ON bookmarks FOR ALL USING (true);
 
 -- Insert Initial Essential Admin User
 INSERT INTO users (id, name, username, password, email, role, avatar_text, avatar_color, contributions_count, approved_count)

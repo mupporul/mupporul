@@ -42,5 +42,3 @@ export const INITIAL_USERS: UserProfile[] = [
 export const INITIAL_TEMPLES: Temple[] = [];
 
 export const INITIAL_SUBMISSIONS: TempleSubmission[] = [];
-
-export const INITIAL_BOOKMARKS: string[] = [];

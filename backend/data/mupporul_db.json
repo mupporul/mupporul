@@ -75,20 +75,5 @@
       "contributionsCount": 13,
       "approvedCount": 13
     }
-  ],
-  "bookmarks": [
-    {
-      "userId": "user-vk",
-      "templeIds": [
-        "temple-melmalayanoor"
-      ]
-    },
-    {
-      "userId": "user-admin",
-      "templeIds": [
-        "temple-thirunallar",
-        "temple-suryanar"
-      ]
-    }
   ]
 }

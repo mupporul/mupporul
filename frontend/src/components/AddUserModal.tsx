@@ -371,7 +371,7 @@ export const AddUserModal: React.FC = () => {
                       {role === 'user' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1 leading-snug">
-                      Viewer only. Explores temples & bookmarks.
+                      Viewer only. Explores temple sanctuary directory.
                     </p>
                   </label>
 

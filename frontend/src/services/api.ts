@@ -274,30 +274,6 @@ class ApiService {
     return true;
   }
 
-  // Bookmarks
-  async getBookmarks(userId: string): Promise<string[]> {
-    try {
-      const res = await fetch(`${this.baseUrl}/bookmarks?userId=${encodeURIComponent(userId)}`);
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      const json = await res.json();
-      return json.data || [];
-    } catch (e) {
-      console.warn('[ApiService] Failed to fetch bookmarks:', e);
-      throw e;
-    }
-  }
-
-  async toggleBookmark(userId: string, templeId: string): Promise<{ bookmarked: boolean; bookmarks: string[] }> {
-    const res = await fetch(`${this.baseUrl}/bookmarks/toggle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, templeId }),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Failed to toggle bookmark');
-    return { bookmarked: json.bookmarked, bookmarks: json.data };
-  }
-
   // Upload Image to Supabase Storage
   async uploadImage(base64Data: string, fileName: string): Promise<{ url: string; source: string } | null> {
     try {

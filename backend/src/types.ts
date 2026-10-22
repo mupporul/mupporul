@@ -86,10 +86,3 @@ export interface TempleSubmission {
   reviewedAt?: string;
   reviewNotes?: string;
 }
-
-export interface BookmarkRecord {
-  id: string;
-  userId: string;
-  templeId: string;
-  createdAt: string;
-}

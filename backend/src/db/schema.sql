@@ -70,15 +70,6 @@ CREATE TABLE IF NOT EXISTS submissions (
 
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
 
--- 5. BOOKMARKS TABLE
-CREATE TABLE IF NOT EXISTS bookmarks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    temple_id VARCHAR(128) NOT NULL REFERENCES temples(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, temple_id)
-);
-
 -- ====================================================================
 -- SEED INITIAL USERS
 -- ====================================================================

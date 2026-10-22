@@ -87,6 +87,4 @@ If you wish to use Supabase PostgreSQL instead of the built-in storage:
 - `PUT /api/submissions/:id/review` - Approve or reject submission (`action=approved|rejected`)
 - `GET /api/users` - User directory
 - `POST /api/users/login` - Authenticate (`username`, `password`)
-- `GET /api/bookmarks?userId=...` - Get user bookmarks
-- `POST /api/bookmarks/toggle` - Toggle bookmark (`userId`, `templeId`)
 - `GET /api/stats` - Admin overview analytics

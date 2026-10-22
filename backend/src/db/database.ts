@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Temple, TempleSubmission, UserProfile, BookmarkRecord, Role } from '../types.js';
-import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_BOOKMARKS } from './initialData.js';
+import { Temple, TempleSubmission, UserProfile, Role } from '../types.js';
+import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS } from './initialData.js';
 import {
   isSupabaseConfigured,
   fetchTemplesFromSupabase,
@@ -22,7 +22,6 @@ interface DatabaseSchema {
   temples: Temple[];
   submissions: TempleSubmission[];
   users: UserProfile[];
-  bookmarks: { userId: string; templeIds: string[] }[];
 }
 
 export class Database {
@@ -118,8 +117,7 @@ export class Database {
       updatedAt: new Date().toISOString(),
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
-      users: [...INITIAL_USERS],
-      bookmarks: []
+      users: [...INITIAL_USERS]
     };
 
     this.saveData(defaultData);
@@ -495,35 +493,6 @@ export class Database {
   }
 
   // ==========================================
-  // BOOKMARKS
-  // ==========================================
-  public getBookmarks(userId: string): string[] {
-    const userBm = this.data.bookmarks.find(b => b.userId === userId);
-    return userBm ? userBm.templeIds : [];
-  }
-
-  public toggleBookmark(userId: string, templeId: string): { bookmarked: boolean; bookmarks: string[] } {
-    let userBm = this.data.bookmarks.find(b => b.userId === userId);
-    if (!userBm) {
-      userBm = { userId, templeIds: [] };
-      this.data.bookmarks.push(userBm);
-    }
-
-    const exists = userBm.templeIds.includes(templeId);
-    if (exists) {
-      userBm.templeIds = userBm.templeIds.filter(id => id !== templeId);
-    } else {
-      userBm.templeIds.push(templeId);
-    }
-
-    this.saveData();
-    return {
-      bookmarked: !exists,
-      bookmarks: userBm.templeIds
-    };
-  }
-
-  // ==========================================
   // ANALYTICS & STATS
   // ==========================================
   public getStats() {
@@ -557,8 +526,7 @@ export class Database {
       updatedAt: new Date().toISOString(),
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
-      users: [...INITIAL_USERS],
-      bookmarks: []
+      users: [...INITIAL_USERS]
     };
     this.saveData();
   }

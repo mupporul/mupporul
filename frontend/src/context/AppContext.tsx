@@ -26,7 +26,6 @@ interface AppContextType {
   isFilterOpen: boolean;
   isAddEditModalOpen: boolean;
   templeToEdit: Temple | null;
-  bookmarkedIds: string[];
   backendStatus: 'connected' | 'offline' | 'checking';
   reconnectBackend: (customUrl?: string) => Promise<boolean>;
   isArchitectureModalOpen: boolean;
@@ -80,7 +79,6 @@ interface AppContextType {
   openVideoModal: (url: string, title: string) => void;
   closeVideoModal: () => void;
   setIsFilterOpen: (isOpen: boolean) => void;
-  toggleBookmark: (templeId: string) => void;
   incrementViews: (templeId: string) => void;
 
   // Review Workflow
@@ -187,16 +185,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
-
-  // Bookmarks
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('mupporul_bookmarks_v2');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
 
   // Auth & UI state - require active login on both desktop and mobile
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -627,14 +615,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUserId]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('mupporul_bookmarks_v2', JSON.stringify(bookmarkedIds));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [bookmarkedIds]);
-
   // Actions
   const resetFilters = () => setFilters(initialFilters);
 
@@ -718,13 +698,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const closeVideoModal = () => setVideoModalUrl(null);
-
-  const toggleBookmark = (templeId: string) => {
-    setBookmarkedIds(prev =>
-      prev.includes(templeId) ? prev.filter(id => id !== templeId) : [...prev, templeId]
-    );
-    api.toggleBookmark(currentUser.id, templeId).catch(e => console.warn('[AppContext] Bookmark API sync:', e));
-  };
 
   const incrementViews = (templeId: string) => {
     setTemples(prev =>
@@ -980,13 +953,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('mupporul_temples_v2');
     localStorage.removeItem('mupporul_submissions_v2');
     localStorage.removeItem('mupporul_users_v2');
-    localStorage.removeItem('mupporul_bookmarks_v2');
     localStorage.removeItem('mupporul_current_user_id');
     setTemples([]);
     setSubmissions([]);
     setUsers(INITIAL_USERS);
     setCurrentUserId('user-admin');
-    setBookmarkedIds([]);
     setFilters(initialFilters);
   };
 
@@ -1021,7 +992,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addUser,
         deleteUser,
         templeToEdit,
-        bookmarkedIds,
         setActiveTab,
         setFilters,
         resetFilters,
@@ -1039,7 +1009,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openVideoModal,
         closeVideoModal,
         setIsFilterOpen,
-        toggleBookmark,
         incrementViews,
         submitTemple,
         approveSubmission,
