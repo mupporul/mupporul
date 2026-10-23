@@ -13,9 +13,11 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { PLANETS, DEITIES, STATES } from '../data/constants';
+import { PLANETS, STATES } from '../data/constants';
 import { Temple } from '../types';
 import { api } from '../services/api';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -30,6 +32,10 @@ export const AddEditTempleModal: React.FC = () => {
     switchRole,
     setActiveTab,
     isMobileFrame,
+    deities,
+    createDeity,
+    updateDeity,
+    deleteDeity,
   } = useApp();
 
   const isEdit = !!templeToEdit;
@@ -57,6 +63,13 @@ export const AddEditTempleModal: React.FC = () => {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
 
+  // Admin Deity Management Inline State
+  const [deityModalMode, setDeityModalMode] = useState<'none' | 'add' | 'edit'>('none');
+  const [deityFormTamil, setDeityFormTamil] = useState('');
+  const [deityFormEnglish, setDeityFormEnglish] = useState('');
+  const [deityFormError, setDeityFormError] = useState<string | null>(null);
+  const [deityActionLoading, setDeityActionLoading] = useState(false);
+
   useEffect(() => {
     setImageError(false);
   }, [formData.imageUrl]);
@@ -68,7 +81,7 @@ export const AddEditTempleModal: React.FC = () => {
         location: templeToEdit.location,
         state: templeToEdit.state || 'Tamil Nadu',
         planets: templeToEdit.planets || [],
-        deity: templeToEdit.deity || 'shivan',
+        deity: templeToEdit.deity || (deities[0]?.id || 'shivan'),
         significance: templeToEdit.significance || templeToEdit.descriptionTamil || '',
         remedies: templeToEdit.remedies || [],
         imageUrl: templeToEdit.imageUrl || '',
@@ -86,7 +99,7 @@ export const AddEditTempleModal: React.FC = () => {
         location: '',
         state: 'Tamil Nadu',
         planets: [],
-        deity: '',
+        deity: deities[0]?.id || 'shivan',
         significance: '',
         remedies: [],
         imageUrl: '',
@@ -99,7 +112,9 @@ export const AddEditTempleModal: React.FC = () => {
       setPhotoMode('url');
     }
     setUploadStatus(null);
-  }, [templeToEdit, isAddEditModalOpen]);
+    setDeityModalMode('none');
+    setDeityFormError(null);
+  }, [templeToEdit, isAddEditModalOpen, deities]);
 
   if (!isAddEditModalOpen) return null;
 
@@ -156,6 +171,83 @@ export const AddEditTempleModal: React.FC = () => {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  // Deity handlers (Admin only)
+  const handleSaveNewDeity = async () => {
+    if (!deityFormTamil.trim()) {
+      setDeityFormError('மூலவர் தமிழ் பெயர் அவசியம் (Tamil deity name is required)');
+      return;
+    }
+    setDeityActionLoading(true);
+    setDeityFormError(null);
+    try {
+      const res = await createDeity({
+        nameTamil: deityFormTamil.trim(),
+        nameEnglish: deityFormEnglish.trim() || undefined,
+      });
+      if (res.success && res.deity) {
+        setFormData(prev => ({ ...prev, deity: res.deity!.id }));
+        setDeityModalMode('none');
+        setDeityFormTamil('');
+        setDeityFormEnglish('');
+      } else {
+        setDeityFormError(res.message || 'Failed to add deity');
+      }
+    } catch (err: any) {
+      setDeityFormError(err.message || 'Failed to add deity');
+    } finally {
+      setDeityActionLoading(false);
+    }
+  };
+
+  const handleSaveEditDeity = async () => {
+    if (!formData.deity) return;
+    if (!deityFormTamil.trim()) {
+      setDeityFormError('மூலவர் தமிழ் பெயர் அவசியம் (Tamil deity name is required)');
+      return;
+    }
+    setDeityActionLoading(true);
+    setDeityFormError(null);
+    try {
+      const res = await updateDeity(formData.deity, {
+        nameTamil: deityFormTamil.trim(),
+        nameEnglish: deityFormEnglish.trim() || undefined,
+      });
+      if (res.success) {
+        setDeityModalMode('none');
+      } else {
+        setDeityFormError(res.message || 'Failed to update deity');
+      }
+    } catch (err: any) {
+      setDeityFormError(err.message || 'Failed to update deity');
+    } finally {
+      setDeityActionLoading(false);
+    }
+  };
+
+  const handleDeleteDeity = async () => {
+    if (!formData.deity) return;
+    const cur = deities.find(d => d.id === formData.deity);
+    if (!cur) return;
+    if (!window.confirm(`மூலவர் "${cur.nameTamil}" நீக்க விரும்புகிறீர்களா? (Delete deity "${cur.nameTamil}"?)`)) {
+      return;
+    }
+    setDeityActionLoading(true);
+    try {
+      const res = await deleteDeity(formData.deity);
+      if (res.success) {
+        const remaining = deities.filter(d => d.id !== formData.deity);
+        setFormData(prev => ({ ...prev, deity: remaining[0]?.id || '' }));
+        setDeityModalMode('none');
+      } else {
+        alert(res.message || 'Failed to delete deity');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete deity');
+    } finally {
+      setDeityActionLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -316,20 +408,148 @@ export const AddEditTempleModal: React.FC = () => {
             {/* Deity and Timings (Side-by-side in fluid wide, stacked in mobile) */}
             <div className={`grid gap-3.5 ${isMobileFrame ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Primary Deity (இறைவன் / இறைவி)
-                </label>
-                <select
-                  value={formData.deity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, deity: e.target.value }))}
-                  className="w-full bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none cursor-pointer"
-                >
-                  {DEITIES.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.nameTamil} ({d.nameEnglish})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-300">
+                    Primary Deity (மூலவர் / இறைவன் / இறைவி)
+                  </label>
+                  {currentUser.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeityModalMode('add');
+                        setDeityFormTamil('');
+                        setDeityFormEnglish('');
+                        setDeityFormError(null);
+                      }}
+                      className="text-[11px] font-semibold text-[#f5a623] hover:text-amber-300 flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+                      title="Add new deity in Tamil (Admin only)"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ மூலவர் சேர்</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={formData.deity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deity: e.target.value }))}
+                    className="flex-1 bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none cursor-pointer text-xs sm:text-sm font-tamil"
+                  >
+                    {deities.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.nameTamil} {d.nameEnglish && d.nameEnglish !== d.nameTamil ? `(${d.nameEnglish})` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Admin Edit & Delete buttons */}
+                  {currentUser.role === 'admin' && formData.deity && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = deities.find(d => d.id === formData.deity);
+                          if (cur) {
+                            setDeityModalMode('edit');
+                            setDeityFormTamil(cur.nameTamil);
+                            setDeityFormEnglish(cur.nameEnglish || '');
+                            setDeityFormError(null);
+                          }
+                        }}
+                        className="p-2.5 rounded-xl bg-[#1e2133] hover:bg-amber-500/20 text-gray-300 hover:text-amber-300 border border-[#2d314b] cursor-pointer transition-all"
+                        title="Edit selected deity name in Tamil"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteDeity}
+                        className="p-2.5 rounded-xl bg-[#1e2133] hover:bg-rose-500/20 text-gray-300 hover:text-rose-400 border border-[#2d314b] cursor-pointer transition-all"
+                        title="Delete selected deity"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Inline Deity Add/Edit Panel for Admin */}
+                {currentUser.role === 'admin' && deityModalMode !== 'none' && (
+                  <div className="mt-2.5 p-3 rounded-xl bg-[#141624] border border-amber-500/40 shadow-xl space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between border-b border-[#24273d] pb-1.5">
+                      <span className="text-xs font-bold text-amber-400">
+                        {deityModalMode === 'add' ? '➕ புதிய மூலவர் சேர்த்தல் (Add Deity)' : '✏️ மூலவர் திருத்துதல் (Edit Deity)'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeityModalMode('none');
+                          setDeityFormError(null);
+                        }}
+                        className="text-gray-400 hover:text-white cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {deityFormError && (
+                      <div className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg">
+                        {deityFormError}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                          மூலவர் பெயர் (தமிழ் / Tamil) *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="எ.கா. மாரியம்மன், ஐயனார்"
+                          value={deityFormTamil}
+                          onChange={(e) => setDeityFormTamil(e.target.value)}
+                          className="w-full bg-[#1e2136] text-amber-200 font-tamil text-xs px-2.5 py-2 rounded-lg border border-[#343856] focus:border-[#f5a623] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                          பெயர் ஆங்கிலத்தில் (English)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Mariamman, Ayyanar"
+                          value={deityFormEnglish}
+                          onChange={(e) => setDeityFormEnglish(e.target.value)}
+                          className="w-full bg-[#1e2136] text-gray-200 text-xs px-2.5 py-2 rounded-lg border border-[#343856] focus:border-[#f5a623] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeityModalMode('none');
+                          setDeityFormError(null);
+                        }}
+                        className="px-3 py-1 rounded-lg bg-[#222538] text-gray-300 text-xs hover:bg-[#2b2f48] cursor-pointer"
+                      >
+                        ரத்து (Cancel)
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deityActionLoading}
+                        onClick={deityModalMode === 'add' ? handleSaveNewDeity : handleSaveEditDeity}
+                        className="px-3 py-1 rounded-lg bg-[#f5a623] hover:bg-[#e69818] text-black font-semibold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        {deityActionLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                        <span>{deityModalMode === 'add' ? 'சேமி (Save Deity)' : 'புதுப்பி (Update Deity)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

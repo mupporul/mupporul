@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { PLANETS, DEITIES, STATES } from '../data/constants';
+import { PLANETS, STATES } from '../data/constants';
 import { FilterState } from '../types';
 
 export const FilterModal: React.FC = () => {
-  const { filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame } = useApp();
+  const { filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame, deities } = useApp();
 
   // Local draft filter state before applying
   const [draftFilters, setDraftFilters] = useState<FilterState>(filters);
@@ -187,7 +187,7 @@ export const FilterModal: React.FC = () => {
 
             {openSections.deity && (
               <div className="grid grid-cols-3 gap-2.5">
-                {DEITIES.map(deity => {
+                {deities.map(deity => {
                   const isSelected = draftFilters.deity === deity.id;
                   return (
                     <button

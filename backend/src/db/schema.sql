@@ -70,6 +70,27 @@ CREATE TABLE IF NOT EXISTS submissions (
 
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
 
+-- 4. DEITIES (மூலவர்) TABLE
+CREATE TABLE IF NOT EXISTS deities (
+    id VARCHAR(64) PRIMARY KEY,
+    name_tamil VARCHAR(128) NOT NULL,
+    name_english VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed Initial Deities
+INSERT INTO deities (id, name_tamil, name_english)
+VALUES
+  ('amman', 'அம்மன்', 'Amman / Devi'),
+  ('shivan', 'சிவன்', 'Shiva'),
+  ('vishnu', 'விஷ்ணு', 'Vishnu / Perumal'),
+  ('murugan', 'முருகன்', 'Murugan / Karthikeya'),
+  ('ayyappan', 'ஐயப்பன்', 'Ayyappan'),
+  ('pillaiyar', 'பிள்ளையார்', 'Pillaiyar / Ganesha'),
+  ('bhairavar', 'பைரவர்', 'Bhairavar'),
+  ('anjaneyar', 'ஆஞ்சநேயர்', 'Anjaneyar / Hanuman')
+ON CONFLICT (id) DO NOTHING;
+
 -- ====================================================================
 -- SEED INITIAL USERS
 -- ====================================================================

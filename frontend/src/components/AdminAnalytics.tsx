@@ -37,6 +37,7 @@ export const AdminAnalytics: React.FC = () => {
     clearAllTemples,
     resetToDefaultData,
     setActiveTab,
+    deities,
   } = useApp();
 
   const [filterUserRole, setFilterUserRole] = useState<'all' | Role>('all');
@@ -71,7 +72,7 @@ export const AdminAnalytics: React.FC = () => {
   }).sort((a, b) => b.count - a.count);
 
   // Deity distribution
-  const deityDistribution = DEITIES.map(d => {
+  const deityDistribution = (deities || DEITIES).map(d => {
     const count = temples.filter(t => t.deity === d.id).length;
     return {
       ...d,

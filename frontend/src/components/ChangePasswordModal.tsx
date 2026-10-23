@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { LoadingSpinner } from './LoadingSpinner';
 
 export const ChangePasswordModal: React.FC = () => {
   const {
@@ -270,11 +271,16 @@ export const ChangePasswordModal: React.FC = () => {
                 className="flex-[2] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                  <div className="flex items-center gap-1.5">
+                    <LoadingSpinner size="xs" text="" color="#000000" />
+                    <span>Updating...</span>
+                  </div>
                 ) : (
-                  <KeyRound className="w-4 h-4 text-black" />
+                  <>
+                    <KeyRound className="w-4 h-4 text-black" />
+                    <span>Update Password</span>
+                  </>
                 )}
-                <span>{isSubmitting ? 'Updating...' : 'Update Password'}</span>
               </button>
             </div>
           </form>

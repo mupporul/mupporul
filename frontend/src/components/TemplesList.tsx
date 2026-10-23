@@ -15,6 +15,7 @@ export const TemplesList: React.FC = () => {
     setPlanetMatchMode,
     togglePlanetFilter,
     isMobileFrame,
+    deities,
   } = useApp();
 
   const selectedPlanets = filters.planets && filters.planets.length > 0
@@ -82,7 +83,7 @@ export const TemplesList: React.FC = () => {
     return true;
   }).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-  const activeDeityObj = filters.deity ? DEITIES.find(d => d.id === filters.deity) : null;
+  const activeDeityObj = filters.deity ? (deities.find(d => d.id === filters.deity) || DEITIES.find(d => d.id === filters.deity)) : null;
   const hasActiveFilters =
     selectedPlanets.length > 0 ||
     filters.deity ||

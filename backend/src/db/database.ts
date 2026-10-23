@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Temple, TempleSubmission, UserProfile, Role } from '../types.js';
-import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS } from './initialData.js';
+import { Temple, TempleSubmission, UserProfile, Role, Deity } from '../types.js';
+import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_DEITIES } from './initialData.js';
 import {
   isSupabaseConfigured,
   fetchTemplesFromSupabase,
@@ -14,6 +14,10 @@ import {
   insertUserToSupabase,
   updateUserPasswordInSupabase,
   deleteUserFromSupabase,
+  fetchDeitiesFromSupabase,
+  insertDeityToSupabase,
+  updateDeityInSupabase,
+  deleteDeityFromSupabase,
 } from './supabaseClient.js';
 
 interface DatabaseSchema {
@@ -22,6 +26,7 @@ interface DatabaseSchema {
   temples: Temple[];
   submissions: TempleSubmission[];
   users: UserProfile[];
+  deities: Deity[];
 }
 
 export class Database {
@@ -64,8 +69,12 @@ export class Database {
       if (supaUsers.length > 0) {
         this.data.users = supaUsers;
       }
+      const supaDeities = await fetchDeitiesFromSupabase();
+      if (supaDeities.length > 0) {
+        this.data.deities = supaDeities;
+      }
       this.saveData();
-      console.log(`[Database] Synced ${supaTemples.length} temples and ${supaUsers.length} users from Supabase.`);
+      console.log(`[Database] Synced ${supaTemples.length} temples, ${supaUsers.length} users, and ${supaDeities.length} deities from Supabase.`);
     } catch (err) {
       console.warn('[Database] Initial Supabase sync:', err);
     }
@@ -104,6 +113,10 @@ export class Database {
               !['user-vk', 'user-pilgrim', 'user-devotee'].includes(u.id)
             );
           }
+          // Ensure deities array is present and populated
+          if (!Array.isArray(parsed.deities) || parsed.deities.length === 0) {
+            parsed.deities = [...INITIAL_DEITIES];
+          }
           return parsed;
         }
       }
@@ -117,7 +130,8 @@ export class Database {
       updatedAt: new Date().toISOString(),
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
-      users: [...INITIAL_USERS]
+      users: [...INITIAL_USERS],
+      deities: [...INITIAL_DEITIES]
     };
 
     this.saveData(defaultData);
@@ -493,6 +507,77 @@ export class Database {
   }
 
   // ==========================================
+  // DEITIES
+  // ==========================================
+  public getDeities(): Deity[] {
+    if (!this.data.deities || this.data.deities.length === 0) {
+      this.data.deities = [...INITIAL_DEITIES];
+      this.saveData();
+    }
+    return this.data.deities;
+  }
+
+  public getDeityById(id: string): Deity | undefined {
+    return this.getDeities().find(d => d.id === id);
+  }
+
+  public createDeity(deityData: { nameTamil: string; nameEnglish?: string; id?: string }): Deity {
+    const existing = this.getDeities();
+    // Generate slug from id, english name, or timestamp
+    const baseSlug = deityData.id?.trim() || deityData.nameEnglish?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || `deity-${Date.now()}`;
+    const id = baseSlug.replace(/^-+|-+$/g, '') || `deity-${Date.now()}`;
+    
+    const newDeity: Deity = {
+      id,
+      nameTamil: deityData.nameTamil.trim(),
+      nameEnglish: deityData.nameEnglish?.trim() || deityData.nameTamil.trim(),
+    };
+
+    const idx = existing.findIndex(d => d.id === id || d.nameTamil.trim() === newDeity.nameTamil);
+    if (idx >= 0) {
+      existing[idx] = newDeity;
+    } else {
+      existing.push(newDeity);
+    }
+    this.data.deities = existing;
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      insertDeityToSupabase(newDeity).catch(e => console.error('[Supabase] Insert deity error:', e));
+    }
+    return newDeity;
+  }
+
+  public updateDeity(id: string, updates: Partial<Deity>): Deity | null {
+    const existing = this.getDeities();
+    const deity = existing.find(d => d.id === id);
+    if (!deity) return null;
+
+    if (updates.nameTamil) deity.nameTamil = updates.nameTamil.trim();
+    if (updates.nameEnglish) deity.nameEnglish = updates.nameEnglish.trim();
+
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      updateDeityInSupabase(id, updates).catch(e => console.error('[Supabase] Update deity error:', e));
+    }
+    return deity;
+  }
+
+  public deleteDeity(id: string): boolean {
+    const initialLen = this.getDeities().length;
+    this.data.deities = this.data.deities.filter(d => d.id !== id);
+    const deleted = this.data.deities.length < initialLen;
+    if (deleted) {
+      this.saveData();
+      if (isSupabaseConfigured) {
+        deleteDeityFromSupabase(id).catch(e => console.error('[Supabase] Delete deity error:', e));
+      }
+    }
+    return deleted;
+  }
+
+  // ==========================================
   // ANALYTICS & STATS
   // ==========================================
   public getStats() {
@@ -526,7 +611,8 @@ export class Database {
       updatedAt: new Date().toISOString(),
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
-      users: [...INITIAL_USERS]
+      users: [...INITIAL_USERS],
+      deities: [...INITIAL_DEITIES]
     };
     this.saveData();
   }

@@ -27,6 +27,7 @@ export const ReviewTab: React.FC = () => {
     setActiveTab,
     openDetailModal,
     temples,
+    deities,
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
@@ -194,7 +195,7 @@ export const ReviewTab: React.FC = () => {
         ) : (
           currentList.map((sub) => {
             const isPending = sub.status === 'pending';
-            const deityObj = DEITIES.find(d => d.id === sub.templeData.deity);
+            const deityObj = deities?.find(d => d.id === sub.templeData.deity) || DEITIES.find(d => d.id === sub.templeData.deity);
             const liveTemple = sub.templeId
               ? temples.find(t => t.id === sub.templeId)
               : temples.find(t => t.name.trim().toLowerCase() === sub.templeData?.name?.trim().toLowerCase());

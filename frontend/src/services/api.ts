@@ -1,4 +1,4 @@
-import { Temple, TempleSubmission, UserProfile } from '../types';
+import { Temple, TempleSubmission, UserProfile, Deity } from '../types';
 
 const DEFAULT_REMOTE_RENDER_API = 'https://mupporul-backend.onrender.com/api';
 
@@ -54,10 +54,39 @@ class ApiService {
     this.baseUrl = resolveInitialApiUrl();
   }
 
+  /**
+   * Internal anti-cache fetch wrapper:
+   * - Appends dynamic timestamp query param `_t` on GET requests
+   * - Sets Cache-Control, Pragma, and Expires headers
+   * - Sets fetch mode `cache: 'no-store'` so browser never serves stale cached data
+   */
+  private async fetchWithAntiCache(inputUrl: string, init?: RequestInit): Promise<Response> {
+    const isAbsolute = inputUrl.startsWith('http://') || inputUrl.startsWith('https://');
+    const urlObj = isAbsolute
+      ? new URL(inputUrl)
+      : new URL(inputUrl, window.location.origin);
+
+    // Append cache-buster on GET requests
+    if (!init?.method || init.method.toUpperCase() === 'GET') {
+      urlObj.searchParams.set('_t', Date.now().toString());
+    }
+
+    const headers = new Headers(init?.headers || {});
+    headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
+
+    return fetch(urlObj.toString(), {
+      ...init,
+      cache: 'no-store',
+      headers,
+    });
+  }
+
   // Health check
   async checkHealth(): Promise<{ status: string; service: string; tier: string } | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/health`);
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/health`);
       if (!res.ok) return null;
       return await res.json();
     } catch {
@@ -91,19 +120,19 @@ class ApiService {
         url.searchParams.set('search', params.search);
       }
 
-      const res = await fetch(url.toString());
+      const res = await this.fetchWithAntiCache(url.toString());
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (e) {
-      console.warn('[ApiService] Failed to fetch temples from API, using fallback:', e);
+      console.warn('[ApiService] Failed to fetch temples from API:', e);
       throw e;
     }
   }
 
   async getTempleById(id: string): Promise<Temple | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/temples/${id}`);
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/temples/${id}`);
       if (!res.ok) return null;
       const json = await res.json();
       return json.data || null;
@@ -113,7 +142,7 @@ class ApiService {
   }
 
   async createTemple(templeData: Omit<Temple, 'id' | 'createdAt' | 'updatedAt' | 'viewsCount'>): Promise<Temple> {
-    const res = await fetch(`${this.baseUrl}/temples`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/temples`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(templeData),
@@ -124,7 +153,7 @@ class ApiService {
   }
 
   async updateTemple(id: string, updates: Partial<Temple>): Promise<Temple> {
-    const res = await fetch(`${this.baseUrl}/temples/${id}`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/temples/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -135,77 +164,81 @@ class ApiService {
   }
 
   async deleteTemple(id: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/temples/${id}`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/temples/${id}`, {
       method: 'DELETE',
     });
-    return res.ok;
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to delete temple');
+    return true;
   }
 
   async clearAllTemples(): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/temples`, {
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/temples`, {
         method: 'DELETE',
       });
-      return res.ok;
-    } catch {
+      const json = await res.json();
+      return !!json.success;
+    } catch (e) {
+      console.warn('[ApiService] Failed to clear all temples:', e);
       return false;
     }
   }
 
   // Submissions
-  async getSubmissions(status?: string, userId?: string): Promise<TempleSubmission[]> {
+  async getSubmissions(status?: 'pending' | 'approved' | 'rejected'): Promise<TempleSubmission[]> {
     try {
       const url = new URL(`${this.baseUrl}/submissions`, window.location.origin);
-      if (status) url.searchParams.set('status', status);
-      if (userId) url.searchParams.set('userId', userId);
-
-      const res = await fetch(url.toString());
+      if (status) {
+        url.searchParams.set('status', status);
+      }
+      const res = await this.fetchWithAntiCache(url.toString());
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (e) {
-      console.warn('[ApiService] Failed to fetch submissions from API:', e);
+      console.warn('[ApiService] Failed to fetch submissions:', e);
       throw e;
     }
   }
 
-  async createSubmission(data: {
-    type: 'new' | 'edit';
+  async createSubmission(submissionData: {
     templeId?: string;
-    templeData: any;
-    previousData?: any;
-    submittedBy: any;
+    type: 'new' | 'edit';
+    templeData: Partial<Temple>;
+    previousData?: Partial<Temple>;
+    submittedBy: { id: string; name: string; email?: string; role: any };
   }): Promise<TempleSubmission> {
-    const res = await fetch(`${this.baseUrl}/submissions`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(submissionData),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Failed to submit temple');
+    if (!res.ok) throw new Error(json.error || 'Failed to create submission');
     return json.data;
   }
 
   async reviewSubmission(
     id: string,
     action: 'approved' | 'rejected',
-    reviewer: any,
+    reviewer: { id: string; name: string; role: any },
     reviewNotes?: string
   ): Promise<{ submission: TempleSubmission; temple?: Temple }> {
-    const res = await fetch(`${this.baseUrl}/submissions/${id}/review`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/submissions/${id}/review`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, reviewer, reviewNotes }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Failed to review submission');
-    return json;
+    return json.data;
   }
 
-  // Users & Auth
+  // Users
   async getUsers(): Promise<UserProfile[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/users`);
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/users`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
       return json.data || [];
@@ -215,15 +248,14 @@ class ApiService {
     }
   }
 
-  async login(username: string, password?: string): Promise<UserProfile> {
-    const res = await fetch(`${this.baseUrl}/users/login`, {
+  async login(usernameOrEmail: string, password?: string): Promise<{ success: boolean; user?: UserProfile; message?: string }> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: usernameOrEmail, password }),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Login failed');
-    return json.data;
+    return json;
   }
 
   async createUser(userData: {
@@ -231,9 +263,11 @@ class ApiService {
     username: string;
     password: string;
     email?: string;
-    role: 'user' | 'contributor' | 'admin';
+    role: any;
+    avatarText?: string;
+    avatarColor?: string;
   }): Promise<UserProfile> {
-    const res = await fetch(`${this.baseUrl}/users`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
@@ -244,7 +278,7 @@ class ApiService {
   }
 
   async deleteUser(userId: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/users/${encodeURIComponent(userId)}`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
     });
     const json = await res.json();
@@ -253,7 +287,7 @@ class ApiService {
   }
 
   async updatePassword(userIdOrIdentifier: string, newPassword: string, currentPassword?: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/users/${encodeURIComponent(userIdOrIdentifier)}/password`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/${encodeURIComponent(userIdOrIdentifier)}/password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPassword, currentPassword }),
@@ -264,7 +298,7 @@ class ApiService {
   }
 
   async changePasswordByCredentials(identifier: string, currentPassword: string, newPassword: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/users/change-password`, {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, currentPassword, newPassword }),
@@ -274,10 +308,54 @@ class ApiService {
     return true;
   }
 
+  // Deities (மூலவர்)
+  async getDeities(): Promise<Deity[]> {
+    try {
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/deities`);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const json = await res.json();
+      return json.data || [];
+    } catch (e) {
+      console.warn('[ApiService] Failed to fetch deities:', e);
+      throw e;
+    }
+  }
+
+  async createDeity(data: { nameTamil: string; nameEnglish?: string; id?: string }): Promise<Deity> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/deities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to create deity');
+    return json.data;
+  }
+
+  async updateDeity(id: string, updates: { nameTamil?: string; nameEnglish?: string }): Promise<Deity> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/deities/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update deity');
+    return json.data;
+  }
+
+  async deleteDeity(id: string): Promise<boolean> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/deities/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to delete deity');
+    return true;
+  }
+
   // Upload Image to Supabase Storage
   async uploadImage(base64Data: string, fileName: string): Promise<{ url: string; source: string } | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/upload`, {
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64Data, fileName }),
@@ -297,7 +375,7 @@ class ApiService {
   // Stats
   async getStats() {
     try {
-      const res = await fetch(`${this.baseUrl}/stats`);
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/stats`);
       if (!res.ok) return null;
       const json = await res.json();
       return json.data;

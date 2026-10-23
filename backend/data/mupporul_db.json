@@ -75,5 +75,15 @@
       "contributionsCount": 13,
       "approvedCount": 13
     }
+  ],
+  "deities": [
+    { "id": "amman", "nameTamil": "அம்மன்", "nameEnglish": "Amman / Devi" },
+    { "id": "shivan", "nameTamil": "சிவன்", "nameEnglish": "Shiva" },
+    { "id": "vishnu", "nameTamil": "விஷ்ணு", "nameEnglish": "Vishnu / Perumal" },
+    { "id": "murugan", "nameTamil": "முருகன்", "nameEnglish": "Murugan / Karthikeya" },
+    { "id": "ayyappan", "nameTamil": "ஐயப்பன்", "nameEnglish": "Ayyappan" },
+    { "id": "pillaiyar", "nameTamil": "பிள்ளையார்", "nameEnglish": "Pillaiyar / Ganesha" },
+    { "id": "bhairavar", "nameTamil": "பைரவர்", "nameEnglish": "Bhairavar" },
+    { "id": "anjaneyar", "nameTamil": "ஆஞ்சநேயர்", "nameEnglish": "Anjaneyar / Hanuman" }
   ]
 }

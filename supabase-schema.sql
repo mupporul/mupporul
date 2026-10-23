@@ -54,10 +54,19 @@ CREATE TABLE IF NOT EXISTS submissions (
   review_notes TEXT
 );
 
--- 4. Row Level Security (RLS) & Policies for Web App
+-- 4. Deities (மூலவர்) Table
+CREATE TABLE IF NOT EXISTS deities (
+  id TEXT PRIMARY KEY,
+  name_tamil TEXT NOT NULL,
+  name_english TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Row Level Security (RLS) & Policies for Web App
 ALTER TABLE temples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE deities ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public/Anon or Backend Service read & write access
 CREATE POLICY "Allow public read on temples" ON temples FOR SELECT USING (true);
@@ -69,10 +78,26 @@ CREATE POLICY "Allow write on users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow public read on submissions" ON submissions FOR SELECT USING (true);
 CREATE POLICY "Allow write on submissions" ON submissions FOR ALL USING (true);
 
+CREATE POLICY "Allow public read on deities" ON deities FOR SELECT USING (true);
+CREATE POLICY "Allow write on deities" ON deities FOR ALL USING (true);
+
 -- Insert Initial Essential Admin User
 INSERT INTO users (id, name, username, password, email, role, avatar_text, avatar_color, contributions_count, approved_count)
 VALUES ('user-admin', 'Admin Murugan', 'admin', 'admin123', 'admin@mupporul.app', 'admin', 'AM', '#e53e3e', 0, 0)
 ON CONFLICT (username) DO NOTHING;
+
+-- Insert Initial Deities
+INSERT INTO deities (id, name_tamil, name_english)
+VALUES
+  ('amman', 'அம்மன்', 'Amman / Devi'),
+  ('shivan', 'சிவன்', 'Shiva'),
+  ('vishnu', 'விஷ்ணு', 'Vishnu / Perumal'),
+  ('murugan', 'முருகன்', 'Murugan / Karthikeya'),
+  ('ayyappan', 'ஐயப்பன்', 'Ayyappan'),
+  ('pillaiyar', 'பிள்ளையார்', 'Pillaiyar / Ganesha'),
+  ('bhairavar', 'பைரவர்', 'Bhairavar'),
+  ('anjaneyar', 'ஆஞ்சநேயர்', 'Anjaneyar / Hanuman')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- 6. Storage Bucket for Temple Photos ('temple-images')

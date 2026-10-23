@@ -19,7 +19,7 @@ import { BottomNav } from './components/BottomNav';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, isLoggedIn, isLoading } = useApp();
+  const { activeTab, isLoggedIn, isLoading, isTabLoading, actionLoadingText } = useApp();
 
   if (isLoading) {
     return (
@@ -53,27 +53,39 @@ const MainAppContent: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          {activeTab === 'temples' && <TemplesList />}
-          {activeTab === 'review' && (
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-              <ReviewTab />
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+          {isTabLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#0d0f18]/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <LoadingSpinner
+                size="lg"
+                text="Loading..."
+                subtext="முப்பொருள் திருத்தலங்கள் • Fetching Fresh Data"
+              />
             </div>
-          )}
-          {activeTab === 'quiz' && (
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-              <QuizTab />
-            </div>
-          )}
-          {activeTab === 'profile' && (
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-              <ProfileTab />
-            </div>
-          )}
-          {activeTab === 'analytics' && (
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-              <AdminAnalytics />
-            </div>
+          ) : (
+            <>
+              {activeTab === 'temples' && <TemplesList />}
+              {activeTab === 'review' && (
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                  <ReviewTab />
+                </div>
+              )}
+              {activeTab === 'quiz' && (
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                  <QuizTab />
+                </div>
+              )}
+              {activeTab === 'profile' && (
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                  <ProfileTab />
+                </div>
+              )}
+              {activeTab === 'analytics' && (
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                  <AdminAnalytics />
+                </div>
+              )}
+            </>
           )}
         </main>
 
@@ -89,6 +101,16 @@ const MainAppContent: React.FC = () => {
       <LoginModal />
       <AddUserModal />
       <ChangePasswordModal />
+
+      {/* Global Button Action Loading Modal with Tamil Nadu Temple Tower */}
+      {actionLoadingText && (
+        <LoadingSpinner
+          fullScreen
+          size="lg"
+          text={actionLoadingText}
+          subtext="முப்பொருள் • Syncing with Cloud Database"
+        />
+      )}
     </div>
   );
 };

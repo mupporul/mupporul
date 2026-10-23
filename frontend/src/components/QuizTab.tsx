@@ -34,7 +34,7 @@ interface QuestionHistoryItem {
 }
 
 export const QuizTab: React.FC = () => {
-  const { temples, setActiveTab, openDetailModal, isMobileFrame } = useApp();
+  const { temples, setActiveTab, openDetailModal, isMobileFrame, deities } = useApp();
 
   // Pick up to 10 randomized temples on the fly from the live temples database
   const [quizTemples, setQuizTemples] = useState<Temple[]>([]);
@@ -361,7 +361,7 @@ export const QuizTab: React.FC = () => {
   // 3. ACTIVE QUIZ QUESTION VIEW
   if (!currentTemple) return null;
 
-  const deityObj = DEITIES.find(d => d.id === currentTemple.deity);
+  const deityObj = deities?.find(d => d.id === currentTemple.deity) || DEITIES.find(d => d.id === currentTemple.deity);
   const correctSet = new Set(targetPlanets);
   const userSet = new Set(selectedPlanets);
   const isPerfect = isLocked && selectedPlanets.every(p => correctSet.has(p)) && targetPlanets.every(p => userSet.has(p));

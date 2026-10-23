@@ -10,6 +10,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { LoadingSpinner } from './LoadingSpinner';
 
 export const LoginScreen: React.FC = () => {
   const { loginWithCredentials, setActiveTab, openChangePasswordModal } = useApp();
@@ -231,11 +232,16 @@ export const LoginScreen: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-50 mt-2"
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner size="xs" text="" color="#000000" />
+                  <span>Authenticating...</span>
+                </div>
               ) : (
-                <ArrowRight className="w-4 h-4 text-black" />
+                <>
+                  <ArrowRight className="w-4 h-4 text-black" />
+                  <span>Sign In</span>
+                </>
               )}
-              <span>{isLoading ? 'Authenticating...' : 'Sign In'}</span>
             </button>
           </form>
         </div>

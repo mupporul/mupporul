@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { PLANETS, DEITIES, STATES } from '../data/constants';
+import { PLANETS, STATES } from '../data/constants';
 
 export const FilterSidebar: React.FC = () => {
   const {
@@ -10,6 +10,7 @@ export const FilterSidebar: React.FC = () => {
     resetFilters,
     togglePlanetFilter,
     setPlanetMatchMode,
+    deities,
   } = useApp();
 
   // Accordion collapsed state for sections (open by default for quick desktop filtering)
@@ -174,7 +175,7 @@ export const FilterSidebar: React.FC = () => {
 
             {openSections.deity && (
               <div className="grid grid-cols-2 gap-1.5 animate-in fade-in duration-150">
-                {DEITIES.map(deity => {
+                {deities.map(deity => {
                   const isSelected = filters.deity === deity.id;
                   return (
                     <button

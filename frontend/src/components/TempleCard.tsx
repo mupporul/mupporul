@@ -15,6 +15,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
     openDetailModal,
     openVideoModal,
     deleteTemple,
+    deities,
   } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,7 +46,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
     }
   };
 
-  const deityObj = DEITIES.find(d => d.id === temple.deity);
+  const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
 
   return (
     <article className="rounded-2xl bg-[#161825] border border-[#272a3d] overflow-hidden shadow-lg hover:border-[#383d58] transition-all flex flex-col">

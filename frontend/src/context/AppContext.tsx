@@ -7,10 +7,11 @@ import {
   Role,
   FilterState,
   SubmissionStatus,
+  Deity,
 } from '../types';
 import { INITIAL_TEMPLES } from '../data/initialTemples';
 import { INITIAL_SUBMISSIONS } from '../data/initialSubmissions';
-import { INITIAL_USERS } from '../data/constants';
+import { INITIAL_USERS, DEITIES } from '../data/constants';
 
 import { api } from '../services/api';
 
@@ -63,8 +64,19 @@ interface AppContextType {
   }) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
   deleteUser: (userId: string) => Promise<{ success: boolean; message: string }>;
 
+  // Deities (மூலவர்) State & Admin Actions
+  deities: Deity[];
+  createDeity: (data: { nameTamil: string; nameEnglish?: string; id?: string }) => Promise<{ success: boolean; deity?: Deity; message?: string }>;
+  updateDeity: (id: string, updates: { nameTamil?: string; nameEnglish?: string }) => Promise<{ success: boolean; deity?: Deity; message?: string }>;
+  deleteDeity: (id: string) => Promise<{ success: boolean; message?: string }>;
+
   // Actions
   setActiveTab: (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => void;
+  switchTab: (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => Promise<void>;
+  refreshFreshData: () => Promise<void>;
+  isTabLoading: boolean;
+  actionLoadingText: string | null;
+  setActionLoadingText: (val: string | null) => void;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
   togglePlanetFilter: (planetId: string) => void;
@@ -85,9 +97,9 @@ interface AppContextType {
 
   // Review Workflow
   submitTemple: (data: Omit<Temple, 'id' | 'createdAt' | 'updatedAt' | 'viewsCount'>, existingTempleId?: string) => Promise<boolean>;
-  approveSubmission: (submissionId: string, notes?: string) => void;
-  rejectSubmission: (submissionId: string, notes: string) => void;
-  deleteTemple: (templeId: string) => void;
+  approveSubmission: (submissionId: string, notes?: string) => Promise<void>;
+  rejectSubmission: (submissionId: string, notes: string) => Promise<void>;
+  deleteTemple: (templeId: string) => Promise<void>;
   clearAllTemples: () => Promise<boolean>;
   resetToDefaultData: () => void;
 }
@@ -173,6 +185,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_USERS;
   });
 
+  // Deities (மூலவர்) state with fallback to standard DEITIES
+  const [deities, setDeities] = useState<Deity[]>(() => {
+    try {
+      const saved = localStorage.getItem('mupporul_deities_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load deities from localStorage', e);
+    }
+    return DEITIES;
+  });
+
   // Active Current User (Default: Admin Murugan)
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
@@ -196,7 +224,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   });
-  const [activeTab, setActiveTab] = useState<'temples' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
+  const [activeTab, setActiveTabState] = useState<'temples' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
+  const [isTabLoading, setIsTabLoading] = useState<boolean>(false);
+  const [actionLoadingText, setActionLoadingText] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -211,6 +241,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
   const [isMobileFrame, setIsMobileFrame] = useState(false);
 
+  // Always fetch fresh data directly from Backend / Supabase API
+  const refreshFreshData = async () => {
+    try {
+      const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities] = await Promise.allSettled([
+        api.getTemples(),
+        api.getSubmissions(),
+        api.getUsers(),
+        api.getDeities()
+      ]);
+
+      if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
+        const cleanedTemples = remoteTemples.value.map((t: Temple) => ({ ...t, remedies: [] }));
+        setTemples(cleanedTemples);
+        try {
+          localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
+        } catch {}
+      }
+
+      if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
+        const cleaned = remoteSubmissions.value
+          .filter(
+            (s: TempleSubmission) =>
+              !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
+          )
+          .map((s: TempleSubmission) => {
+            if (s.templeData) s.templeData.remedies = [];
+            if (s.previousData) s.previousData.remedies = [];
+            return s;
+          });
+        setSubmissions(cleaned);
+        try {
+          localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+        } catch {}
+      }
+
+      if (remoteUsers.status === 'fulfilled' && Array.isArray(remoteUsers.value) && remoteUsers.value.length > 0) {
+        setUsers(remoteUsers.value);
+        try {
+          localStorage.setItem('mupporul_users_v2', JSON.stringify(remoteUsers.value));
+        } catch {}
+      }
+
+      if (remoteDeities.status === 'fulfilled' && Array.isArray(remoteDeities.value) && remoteDeities.value.length > 0) {
+        setDeities(remoteDeities.value);
+        try {
+          localStorage.setItem('mupporul_deities_v2', JSON.stringify(remoteDeities.value));
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('[AppContext] Failed to refresh fresh data:', e);
+    }
+  };
+
+  // Switch tabs with Tamil Nadu Temple Tower loading spinner & fresh API data
+  const switchTab = async (newTab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+    setIsTabLoading(true);
+    setActiveTabState(newTab);
+    try {
+      await Promise.all([
+        refreshFreshData(),
+        new Promise(resolve => setTimeout(resolve, 400)),
+      ]);
+    } finally {
+      setIsTabLoading(false);
+    }
+  };
+
+  const setActiveTab = (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+    switchTab(tab);
+  };
+
   // Sync with Backend REST API on mount
   useEffect(() => {
     let isMounted = true;
@@ -220,49 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const health = await api.checkHealth();
         if (health && isMounted) {
           setBackendStatus('connected');
-          // Fetch initial fresh data from backend (temples, submissions, and users)
-          const [remoteTemples, remoteSubmissions, remoteUsers] = await Promise.allSettled([
-            api.getTemples(),
-            api.getSubmissions(),
-            api.getUsers()
-          ]);
-
-          if (isMounted) {
-            if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
-              const cleanedTemples = remoteTemples.value.map((t: Temple) => {
-                if (t.remedies && t.remedies.length > 0) {
-                  api.updateTemple(t.id, { remedies: [] }).catch(() => {});
-                }
-                return { ...t, remedies: [] };
-              });
-              setTemples(cleanedTemples);
-              try {
-                localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
-              } catch {}
-            }
-            if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
-              const cleaned = remoteSubmissions.value
-                .filter(
-                  (s: TempleSubmission) =>
-                    !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
-                )
-                .map((s: TempleSubmission) => {
-                  if (s.templeData) s.templeData.remedies = [];
-                  if (s.previousData) s.previousData.remedies = [];
-                  return s;
-                });
-              setSubmissions(cleaned);
-              try {
-                localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
-              } catch {}
-            }
-            if (remoteUsers.status === 'fulfilled' && Array.isArray(remoteUsers.value) && remoteUsers.value.length > 0) {
-              setUsers(remoteUsers.value);
-              try {
-                localStorage.setItem('mupporul_users_v2', JSON.stringify(remoteUsers.value));
-              } catch {}
-            }
-          }
+          await refreshFreshData();
         } else if (isMounted) {
           setBackendStatus('offline');
         }
@@ -288,10 +347,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const health = await api.checkHealth();
       if (health) {
         setBackendStatus('connected');
-        const [remoteTemples, remoteSubmissions, remoteUsers] = await Promise.allSettled([
+        const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities] = await Promise.allSettled([
           api.getTemples(),
           api.getSubmissions(),
-          api.getUsers()
+          api.getUsers(),
+          api.getDeities()
         ]);
         if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
           const cleanedTemples = remoteTemples.value.map((t: Temple) => {
@@ -325,6 +385,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUsers(remoteUsers.value);
           try {
             localStorage.setItem('mupporul_users_v2', JSON.stringify(remoteUsers.value));
+          } catch {}
+        }
+        if (remoteDeities.status === 'fulfilled' && Array.isArray(remoteDeities.value) && remoteDeities.value.length > 0) {
+          setDeities(remoteDeities.value);
+          try {
+            localStorage.setItem('mupporul_deities_v2', JSON.stringify(remoteDeities.value));
           } catch {}
         }
         return true;
@@ -406,22 +472,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       approvedCount: 0,
     };
 
-    setUsers(prev => [...prev, newUser]);
+    setActionLoadingText('Creating User Account...');
+    try {
+      setUsers(prev => [...prev, newUser]);
 
-    // Sync to backend API
-    api.createUser({
-      name: newUser.name,
-      username: newUser.username,
-      password: newUser.password!,
-      email: newUser.email,
-      role: newUser.role,
-    }).catch(e => console.warn('[AppContext] Background user creation API sync failed (saved locally):', e));
+      // Sync to backend API
+      await api.createUser({
+        name: newUser.name,
+        username: newUser.username,
+        password: newUser.password!,
+        email: newUser.email,
+        role: newUser.role,
+      });
 
-    return {
-      success: true,
-      message: `User @${newUser.username} created with role ${newUser.role.toUpperCase()}!`,
-      user: newUser,
-    };
+      await refreshFreshData();
+
+      return {
+        success: true,
+        message: `User @${newUser.username} created with role ${newUser.role.toUpperCase()}!`,
+        user: newUser,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to create user on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
   const deleteUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
@@ -438,12 +513,145 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'User not found.' };
     }
 
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    setActionLoadingText('Deleting User...');
+    try {
+      setUsers(prev => prev.filter(u => u.id !== userId));
 
-    // Sync to backend API
-    api.deleteUser(userId).catch(e => console.warn('[AppContext] Background user deletion API sync failed:', e));
+      // Sync to backend API
+      await api.deleteUser(userId);
+      await refreshFreshData();
 
-    return { success: true, message: `User "${targetUser.username || targetUser.name}" deleted successfully.` };
+      return { success: true, message: `User "${targetUser.username || targetUser.name}" deleted successfully.` };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to delete user on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  // Deity (மூலவர்) Admin Handlers - Restricted strictly to Admin role
+  const createDeity = async (data: {
+    nameTamil: string;
+    nameEnglish?: string;
+    id?: string;
+  }): Promise<{ success: boolean; deity?: Deity; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can add deities.' };
+    }
+
+    const nameTamil = data.nameTamil?.trim();
+    if (!nameTamil) {
+      return { success: false, message: 'மூலவர் தமிழ் பெயர் அவசியம் (Deity Tamil name is required).' };
+    }
+
+    // Check duplicate
+    const exists = deities.some(
+      d => d.nameTamil.toLowerCase() === nameTamil.toLowerCase() ||
+           (data.nameEnglish && d.nameEnglish?.toLowerCase() === data.nameEnglish.trim().toLowerCase())
+    );
+    if (exists) {
+      return { success: false, message: `மூலவர் "${nameTamil}" ஏற்கனவே பட்டியலில் உள்ளது (Deity already exists).` };
+    }
+
+    const id = data.id?.trim() ||
+      (data.nameEnglish ? data.nameEnglish.trim().toLowerCase().replace(/[^a-z0-9]/g, '-') : `deity-${Date.now()}`);
+
+    const newDeity: Deity = {
+      id,
+      nameTamil,
+      nameEnglish: data.nameEnglish?.trim() || nameTamil,
+    };
+
+    setActionLoadingText('மூலவர் சேர்க்கப்படுகிறது (Saving Deity)...');
+    try {
+      setDeities(prev => [...prev, newDeity]);
+      try {
+        localStorage.setItem('mupporul_deities_v2', JSON.stringify([...deities, newDeity]));
+      } catch {}
+
+      const created = await api.createDeity(newDeity);
+      await refreshFreshData();
+      return {
+        success: true,
+        deity: created || newDeity,
+        message: `மூலவர் "${nameTamil}" வெற்றிகரமாக சேர்க்கப்பட்டது!`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to create deity on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const updateDeity = async (
+    id: string,
+    updates: { nameTamil?: string; nameEnglish?: string }
+  ): Promise<{ success: boolean; deity?: Deity; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can edit deities.' };
+    }
+
+    const existing = deities.find(d => d.id === id);
+    if (!existing) {
+      return { success: false, message: 'மூலவர் கிடைக்கவில்லை (Deity not found).' };
+    }
+
+    setActionLoadingText('மூலவர் புதுப்பிக்கப்படுகிறது (Updating Deity)...');
+    try {
+      const updatedDeity: Deity = {
+        ...existing,
+        nameTamil: updates.nameTamil?.trim() || existing.nameTamil,
+        nameEnglish: updates.nameEnglish?.trim() !== undefined ? updates.nameEnglish.trim() : existing.nameEnglish,
+      };
+
+      setDeities(prev => prev.map(d => (d.id === id ? updatedDeity : d)));
+      try {
+        const next = deities.map(d => (d.id === id ? updatedDeity : d));
+        localStorage.setItem('mupporul_deities_v2', JSON.stringify(next));
+      } catch {}
+
+      const res = await api.updateDeity(id, updates);
+      await refreshFreshData();
+      return {
+        success: true,
+        deity: res || updatedDeity,
+        message: `மூலவர் "${updatedDeity.nameTamil}" புதுப்பிக்கப்பட்டது!`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to update deity on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const deleteDeity = async (id: string): Promise<{ success: boolean; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can delete deities.' };
+    }
+
+    const target = deities.find(d => d.id === id);
+    if (!target) {
+      return { success: false, message: 'மூலவர் கிடைக்கவில்லை (Deity not found).' };
+    }
+
+    setActionLoadingText('மூலவர் நீக்கப்படுகிறது (Deleting Deity)...');
+    try {
+      setDeities(prev => prev.filter(d => d.id !== id));
+      try {
+        localStorage.setItem('mupporul_deities_v2', JSON.stringify(deities.filter(d => d.id !== id)));
+      } catch {}
+
+      await api.deleteDeity(id);
+      await refreshFreshData();
+      return {
+        success: true,
+        message: `மூலவர் "${target.nameTamil}" நீக்கப்பட்டது.`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to delete deity on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
   const openChangePasswordModal = () => setIsChangePasswordModalOpen(true);
@@ -546,8 +754,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Call real backend API
+    setActionLoadingText('Updating Password...');
     try {
       await api.changePasswordByCredentials(targetIdentifier, cleanCurrent, cleanNew);
+      await refreshFreshData();
 
       // Sync local React state
       setUsers(prev =>
@@ -587,6 +797,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         success: false,
         message: apiErr.message || 'Failed to update password. Please verify your current password.',
       };
+    } finally {
+      setActionLoadingText(null);
     }
   };
 
@@ -718,53 +930,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     data: Omit<Temple, 'id' | 'createdAt' | 'updatedAt' | 'viewsCount'>,
     existingTempleId?: string
   ): Promise<boolean> => {
-    const now = new Date().toISOString();
     const isEdit = !!existingTempleId;
-    const cleanData = {
-      ...data,
-      remedies: [],
-    };
-    const existingTemple = isEdit ? temples.find(t => t.id === existingTempleId) : undefined;
+    setActionLoadingText(isEdit ? 'Updating Temple...' : 'Submitting Temple...');
+    try {
+      const now = new Date().toISOString();
+      const cleanData = {
+        ...data,
+        remedies: [],
+      };
+      const existingTemple = isEdit ? temples.find(t => t.id === existingTempleId) : undefined;
 
-    // If Admin: Publish directly to live temples directory and database!
-    if (currentUser.role === 'admin') {
-      if (isEdit && existingTempleId) {
-        setTemples(prev =>
-          prev.map(t => (t.id === existingTempleId ? { ...t, ...cleanData, updatedAt: now } : t))
-        );
-        api.updateTemple(existingTempleId, cleanData).catch(e => console.warn('API update failed:', e));
-      } else {
-        const newTempleId = `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-        const newTemple: Temple = {
-          ...cleanData,
-          id: newTempleId,
-          createdAt: now,
-          updatedAt: now,
-          viewsCount: 0,
-          submittedBy: {
+      // If Admin: Publish directly to live temples directory and database!
+      if (currentUser.role === 'admin') {
+        if (isEdit && existingTempleId) {
+          await api.updateTemple(existingTempleId, cleanData);
+        } else {
+          await api.createTemple(cleanData);
+        }
+
+        // Also create an auto-approved audit entry so it shows in Approved history
+        const approvedSub: TempleSubmission = {
+          id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          templeId: existingTempleId,
+          type: isEdit ? 'edit' : 'new',
+          status: 'approved',
+          submittedAt: now,
+          reviewedAt: now,
+          reviewedBy: {
             id: currentUser.id,
             name: currentUser.name,
             role: currentUser.role,
           },
+          reviewNotes: 'Directly published by Administrator.',
+          submittedBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            role: currentUser.role,
+          },
+          templeData: cleanData,
         };
-        setTemples(prev => [newTemple, ...prev.filter(t => t.name !== cleanData.name)]);
-        api.createTemple(cleanData).catch(e => console.warn('API create failed:', e));
+        setSubmissions(prev => [
+          approvedSub,
+          ...prev.filter(s => s.templeData?.name !== data.name),
+        ]);
+        await refreshFreshData();
+        return true;
       }
 
-      // Also create an auto-approved audit entry so it shows in Approved history
-      const approvedSub: TempleSubmission = {
+      // For Contributors: Submit to review queue
+      const newSubmission: TempleSubmission = {
         id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         templeId: existingTempleId,
         type: isEdit ? 'edit' : 'new',
-        status: 'approved',
+        status: 'pending',
         submittedAt: now,
-        reviewedAt: now,
-        reviewedBy: {
-          id: currentUser.id,
-          name: currentUser.name,
-          role: currentUser.role,
-        },
-        reviewNotes: 'Directly published by Administrator.',
         submittedBy: {
           id: currentUser.id,
           name: currentUser.name,
@@ -772,189 +992,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           role: currentUser.role,
         },
         templeData: cleanData,
+        previousData: existingTemple
+          ? {
+              name: existingTemple.name,
+              location: existingTemple.location,
+              planets: existingTemple.planets,
+              deity: existingTemple.deity,
+              timings: existingTemple.timings,
+              significance: existingTemple.significance,
+            }
+          : undefined,
       };
-      setSubmissions(prev => [
-        approvedSub,
-        ...prev.filter(s => s.templeData?.name !== data.name),
-      ]);
+
+      setSubmissions(prev => [newSubmission, ...prev]);
+
+      // Sync with backend API
+      await api.createSubmission({
+        type: newSubmission.type,
+        templeId: newSubmission.templeId,
+        templeData: newSubmission.templeData,
+        previousData: newSubmission.previousData,
+        submittedBy: newSubmission.submittedBy,
+      });
+
+      await refreshFreshData();
       return true;
+    } catch (e) {
+      console.error('[AppContext] submitTemple failed:', e);
+      return false;
+    } finally {
+      setActionLoadingText(null);
     }
-
-    // For Contributors: Submit to review queue
-    const newSubmission: TempleSubmission = {
-      id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      templeId: existingTempleId,
-      type: isEdit ? 'edit' : 'new',
-      status: 'pending',
-      submittedAt: now,
-      submittedBy: {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        role: currentUser.role,
-      },
-      templeData: cleanData,
-      previousData: existingTemple
-        ? {
-            name: existingTemple.name,
-            location: existingTemple.location,
-            planets: existingTemple.planets,
-            deity: existingTemple.deity,
-            timings: existingTemple.timings,
-            significance: existingTemple.significance,
-          }
-        : undefined,
-    };
-
-    setSubmissions(prev => [newSubmission, ...prev]);
-
-    // Update contributor count
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === currentUser.id ? { ...u, contributionsCount: u.contributionsCount + 1 } : u
-      )
-    );
-
-    // Sync with backend API
-    api.createSubmission({
-      type: newSubmission.type,
-      templeId: newSubmission.templeId,
-      templeData: newSubmission.templeData,
-      previousData: newSubmission.previousData,
-      submittedBy: newSubmission.submittedBy,
-    }).catch(e => console.warn('[AppContext] Background API submission sync failed (saved locally):', e));
-
-    return true;
   };
 
   // Approve submission
-  const approveSubmission = (submissionId: string, notes?: string) => {
-    const submission = submissions.find(s => s.id === submissionId);
-    if (!submission) return;
-
-    const now = new Date().toISOString();
-
-    // 1. Update submission status
-    setSubmissions(prev =>
-      prev.map(s =>
-        s.id === submissionId
-          ? {
-              ...s,
-              status: 'approved' as SubmissionStatus,
-              reviewedAt: now,
-              reviewedBy: {
-                id: currentUser.id,
-                name: currentUser.name,
-                role: currentUser.role,
-              },
-              reviewNotes: notes || 'Approved by contributor reviewer.',
-            }
-          : s
-      )
-    );
-
-    // 2. Apply to temples
-    if (submission.type === 'new') {
-      const newTemple: Temple = {
-        ...submission.templeData,
-        id: `temple-${Date.now()}`,
-        createdAt: now,
-        updatedAt: now,
-        viewsCount: 1,
-        submittedBy: {
-          id: submission.submittedBy.id,
-          name: submission.submittedBy.name,
-          role: submission.submittedBy.role,
-        },
-      };
-      setTemples(prev => [
-        newTemple,
-        ...prev.filter(t => t.name.trim().toLowerCase() !== newTemple.name.trim().toLowerCase())
-      ]);
-    } else if (submission.type === 'edit' && submission.templeId) {
-      setTemples(prev =>
-        prev.map(t =>
-          t.id === submission.templeId
-            ? {
-                ...t,
-                ...submission.templeData,
-                updatedAt: now,
-              }
-            : t
-        )
-      );
-    }
-
-    // Update submitter's approvedCount
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === submission.submittedBy.id
-          ? { ...u, approvedCount: (u.approvedCount || 0) + 1 }
-          : u
-      )
-    );
-
-    // Sync review to backend API
-    api.reviewSubmission(submissionId, 'approved', {
-      id: currentUser.id,
-      name: currentUser.name,
-      role: currentUser.role,
-    }, notes).catch(e => console.warn('[AppContext] Background API review sync failed:', e));
-
-    // Confetti celebration
+  const approveSubmission = async (submissionId: string, notes?: string): Promise<void> => {
+    setActionLoadingText('Approving Submission...');
     try {
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#f59e0b', '#fbbf24', '#f43f5e', '#10b981', '#3b82f6'],
-      });
-    } catch {
-      // safe fallback
+      await api.reviewSubmission(submissionId, 'approved', {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role,
+      }, notes);
+
+      await refreshFreshData();
+
+      // Confetti celebration
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#fbbf24', '#f43f5e', '#10b981', '#3b82f6'],
+        });
+      } catch {}
+    } catch (e) {
+      console.error('[AppContext] approveSubmission failed:', e);
+    } finally {
+      setActionLoadingText(null);
     }
   };
 
   // Reject submission
-  const rejectSubmission = (submissionId: string, notes: string) => {
-    const now = new Date().toISOString();
-    setSubmissions(prev =>
-      prev.map(s =>
-        s.id === submissionId
-          ? {
-              ...s,
-              status: 'rejected' as SubmissionStatus,
-              reviewedAt: now,
-              reviewedBy: {
-                id: currentUser.id,
-                name: currentUser.name,
-                role: currentUser.role,
-              },
-              reviewNotes: notes || 'Rejected during community review.',
-            }
-          : s
-      )
-    );
+  const rejectSubmission = async (submissionId: string, notes: string): Promise<void> => {
+    setActionLoadingText('Rejecting Submission...');
+    try {
+      await api.reviewSubmission(submissionId, 'rejected', {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role,
+      }, notes);
 
-    // Sync reject to backend API
-    api.reviewSubmission(submissionId, 'rejected', {
-      id: currentUser.id,
-      name: currentUser.name,
-      role: currentUser.role,
-    }, notes).catch(e => console.warn('[AppContext] Background API rejection sync failed:', e));
+      await refreshFreshData();
+    } catch (e) {
+      console.error('[AppContext] rejectSubmission failed:', e);
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
-  const deleteTemple = (templeId: string) => {
-    setTemples(prev => prev.filter(t => t.id !== templeId));
-    api.deleteTemple(templeId).catch(e => console.warn('[AppContext] Background API delete failed:', e));
+  const deleteTemple = async (templeId: string): Promise<void> => {
+    setActionLoadingText('Deleting Temple...');
+    try {
+      setTemples(prev => prev.filter(t => t.id !== templeId));
+      await api.deleteTemple(templeId);
+      await refreshFreshData();
+    } catch (e) {
+      console.error('[AppContext] deleteTemple failed:', e);
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
   const clearAllTemples = async (): Promise<boolean> => {
-    setTemples([]);
+    setActionLoadingText('Wiping Temples Catalog...');
     try {
-      localStorage.setItem('mupporul_temples_v2', JSON.stringify([]));
-    } catch {}
-    const ok = await api.clearAllTemples();
-    return ok;
+      setTemples([]);
+      try {
+        localStorage.setItem('mupporul_temples_v2', JSON.stringify([]));
+      } catch {}
+      const ok = await api.clearAllTemples();
+      await refreshFreshData();
+      return ok;
+    } catch (e) {
+      console.error('[AppContext] clearAllTemples failed:', e);
+      return false;
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
   const resetToDefaultData = () => {
@@ -999,9 +1144,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         closeAddUserModal,
         addUser,
         deleteUser,
+        deities,
+        createDeity,
+        updateDeity,
+        deleteDeity,
         templeToEdit,
         isLoading,
         setIsLoading,
+        isTabLoading,
+        actionLoadingText,
+        setActionLoadingText,
+        switchTab,
+        refreshFreshData,
         setActiveTab,
         setFilters,
         resetFilters,

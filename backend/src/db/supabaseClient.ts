@@ -1,8 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { Temple, TempleSubmission, UserProfile } from '../types.js';
-
-dotenv.config();
+import { Temple, TempleSubmission, UserProfile, Deity } from '../types.js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -192,6 +190,71 @@ export async function deleteUserFromSupabase(userId: string): Promise<boolean> {
   if (!supabase) return false;
   const { error } = await supabase.from('users').delete().eq('id', userId);
   return !error;
+}
+
+// ==========================================
+// DEITIES METHODS
+// ==========================================
+
+export async function fetchDeitiesFromSupabase(): Promise<Deity[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('deities')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.warn('[Supabase] Could not fetch deities:', error.message);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      nameTamil: row.name_tamil,
+      nameEnglish: row.name_english,
+    }));
+  } catch (err) {
+    console.warn('[Supabase] Exception fetching deities:', err);
+    return [];
+  }
+}
+
+export async function insertDeityToSupabase(deity: Deity): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('deities').upsert({
+      id: deity.id,
+      name_tamil: deity.nameTamil,
+      name_english: deity.nameEnglish,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateDeityInSupabase(id: string, updates: Partial<Deity>): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: any = {};
+    if (updates.nameTamil) payload.name_tamil = updates.nameTamil;
+    if (updates.nameEnglish) payload.name_english = updates.nameEnglish;
+    const { error } = await supabase.from('deities').update(payload).eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteDeityFromSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('deities').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
 }
 
 // ==========================================
