@@ -341,7 +341,7 @@ export class Database {
       list = list.filter(s => s.status === status);
     }
     if (userId) {
-      list = list.filter(s => s.submittedBy.id === userId);
+      list = list.filter(s => s.submittedBy?.id === userId);
     }
     return list;
   }
@@ -386,7 +386,7 @@ export class Database {
 
     if (action === 'approved') {
       // If contributor, increment approved count
-      const author = this.data.users.find(u => u.id === sub.submittedBy.id);
+      const author = sub.submittedBy?.id ? this.data.users.find(u => u.id === sub.submittedBy.id) : undefined;
       if (author) {
         author.approvedCount = (author.approvedCount || 0) + 1;
       }
@@ -402,8 +402,9 @@ export class Database {
         }
       } else {
         // Create new temple or update existing if temple with same name exists
+        const templeNameClean = (sub.templeData?.name || '').trim().toLowerCase();
         const existingByName = this.data.temples.find(
-          t => t.name.trim().toLowerCase() === sub.templeData.name.trim().toLowerCase()
+          t => t.name.trim().toLowerCase() === templeNameClean
         );
         if (existingByName) {
           updatedTemple = this.updateTemple(existingByName.id, {

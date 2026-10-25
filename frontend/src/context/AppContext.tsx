@@ -700,6 +700,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('mupporul_current_user_id', remoteUser.id);
         } catch {}
         setIsLoginModalOpen(false);
+        // Immediately fetch fresh submissions, temples, deities, and users for the authenticated user
+        await refreshFreshData();
         return { success: true, message: `Welcome back, ${remoteUser.name} (${remoteUser.role.toUpperCase()})!` };
       }
     } catch (apiErr: any) {
@@ -731,6 +733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('mupporul_current_user_id', localUser.id);
         } catch {}
         setIsLoginModalOpen(false);
+        await refreshFreshData();
         return { success: true, message: `Welcome back, ${localUser.name} (${localUser.role.toUpperCase()})!` };
       }
 

@@ -274,19 +274,56 @@ export async function fetchSubmissionsFromSupabase(): Promise<TempleSubmission[]
       return [];
     }
 
-    return (data || []).map((row: any) => ({
-      id: row.id,
-      type: row.type,
-      templeId: row.temple_id,
-      templeData: row.temple_data,
-      previousData: row.previous_data,
-      submittedBy: row.submitted_by,
-      submittedAt: row.submitted_at,
-      status: row.status,
-      reviewedBy: row.reviewed_by,
-      reviewedAt: row.reviewed_at,
-      reviewNotes: row.review_notes,
-    }));
+    const safeParse = (val: any) => {
+      if (!val) return {};
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    };
+
+    return (data || []).map((row: any) => {
+      const templeData = safeParse(row.temple_data);
+      const submittedBy = safeParse(row.submitted_by);
+      const reviewedBy = row.reviewed_by ? safeParse(row.reviewed_by) : undefined;
+
+      return {
+        id: row.id,
+        type: row.type || 'new',
+        templeId: row.temple_id || undefined,
+        templeData: {
+          name: templeData.name || 'Sacred Temple',
+          location: templeData.location || '',
+          state: templeData.state || 'Tamil Nadu',
+          planets: Array.isArray(templeData.planets) ? templeData.planets : [],
+          deity: templeData.deity || 'shivan',
+          significance: templeData.significance || templeData.descriptionTamil || '',
+          imageUrl: templeData.imageUrl || '',
+          videoUrl: templeData.videoUrl || '',
+          timings: templeData.timings || '',
+          history: templeData.history || '',
+          poojaDetails: templeData.poojaDetails || '',
+          contactNumber: templeData.contactNumber || '',
+          remedies: [],
+        },
+        previousData: row.previous_data ? safeParse(row.previous_data) : undefined,
+        submittedBy: {
+          id: submittedBy.id || 'contributor',
+          name: submittedBy.name || 'Contributor',
+          email: submittedBy.email || '',
+          role: submittedBy.role || 'contributor',
+        },
+        submittedAt: row.submitted_at || new Date().toISOString(),
+        status: (row.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected',
+        reviewedBy: reviewedBy ? {
+          id: reviewedBy.id || '',
+          name: reviewedBy.name || '',
+          role: reviewedBy.role || '',
+        } : undefined,
+        reviewedAt: row.reviewed_at || undefined,
+        reviewNotes: row.review_notes || '',
+      };
+    });
   } catch (err: any) {
     console.warn('[Supabase] Exception fetching submissions:', err);
     return [];

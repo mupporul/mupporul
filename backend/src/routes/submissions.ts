@@ -46,8 +46,9 @@ submissionsRouter.post('/', (req: Request, res: Response) => {
 });
 
 // PUT /api/submissions/:id/review - approve or reject submission
-submissionsRouter.put('/:id/review', (req: Request, res: Response) => {
+submissionsRouter.put('/:id/review', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase(true);
     const { action, reviewer, reviewNotes } = req.body;
 
     if (!action || !['approved', 'rejected'].includes(action)) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -11,7 +11,8 @@ import {
   Sparkles,
   History,
   FileCheck2,
-  ExternalLink
+  ExternalLink,
+  RotateCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleSubmission } from '../types';
@@ -28,6 +29,7 @@ export const ReviewTab: React.FC = () => {
     openDetailModal,
     temples,
     deities,
+    refreshFreshData,
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
@@ -35,6 +37,21 @@ export const ReviewTab: React.FC = () => {
   const [rejectNotes, setRejectNotes] = useState('');
   const [approvingNotes, setApprovingNotes] = useState<Record<string, string>>({});
   const [showApprovalFeedback, setShowApprovalFeedback] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Always fetch fresh submissions from backend when opening or switching to Review tab
+  useEffect(() => {
+    refreshFreshData();
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshFreshData();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
 
   const isUserRole = currentUser.role === 'user';
   const canReview = currentUser.role === 'contributor' || currentUser.role === 'admin';
@@ -50,16 +67,18 @@ export const ReviewTab: React.FC = () => {
       ? approvedSubmissions
       : rejectedSubmissions;
 
-  const handleApprove = (submission: TempleSubmission) => {
+  const handleApprove = async (submission: TempleSubmission) => {
     const notes = approvingNotes[submission.id] || 'Verified and approved for publication.';
-    approveSubmission(submission.id, notes);
-    setShowApprovalFeedback(`"${submission.templeData.name}" has been approved and moved to the Temples section!`);
+    await approveSubmission(submission.id, notes);
+    await refreshFreshData();
+    setShowApprovalFeedback(`"${submission.templeData?.name || 'Temple'}" has been approved and moved to the Temples section!`);
     setTimeout(() => setShowApprovalFeedback(null), 3500);
   };
 
-  const handleRejectSubmit = (submissionId: string) => {
+  const handleRejectSubmit = async (submissionId: string) => {
     if (!rejectNotes.trim()) return;
-    rejectSubmission(submissionId, rejectNotes);
+    await rejectSubmission(submissionId, rejectNotes);
+    await refreshFreshData();
     setRejectingId(null);
     setRejectNotes('');
   };
@@ -82,9 +101,18 @@ export const ReviewTab: React.FC = () => {
           </p>
         </div>
 
-        {/* Current Reviewer Status Pill */}
+        {/* Current Reviewer Status Pill & Refresh Queue Button */}
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <span className="text-xs text-gray-400">Reviewer:</span>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1c1f30] hover:bg-[#25293d] border border-[#2f334d] text-gray-300 text-xs transition-colors cursor-pointer disabled:opacity-50"
+            title="Refresh submissions queue directly from database"
+          >
+            <RotateCw className={`w-3.5 h-3.5 text-amber-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <span className="text-xs text-gray-400 hidden xs:inline">Reviewer:</span>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#1c1f30] border border-[#2f334d] text-amber-300">
             {currentUser.name} ({currentUser.role})
           </span>
@@ -195,10 +223,17 @@ export const ReviewTab: React.FC = () => {
         ) : (
           currentList.map((sub) => {
             const isPending = sub.status === 'pending';
-            const deityObj = deities?.find(d => d.id === sub.templeData.deity) || DEITIES.find(d => d.id === sub.templeData.deity);
+            const templeName = sub.templeData?.name || 'Unnamed Temple';
+            const templeLocation = sub.templeData?.location || 'Tamil Nadu';
+            const submitterName = sub.submittedBy?.name || 'Contributor';
+            const submitterRole = sub.submittedBy?.role || 'contributor';
+            const initials = (submitterName.slice(0, 2) || 'CT').toUpperCase();
+            const planetsList = Array.isArray(sub.templeData?.planets) ? sub.templeData.planets : [];
+            const deityId = sub.templeData?.deity;
+            const deityObj = deities?.find(d => d.id === deityId) || DEITIES.find(d => d.id === deityId);
             const liveTemple = sub.templeId
               ? temples.find(t => t.id === sub.templeId)
-              : temples.find(t => t.name.trim().toLowerCase() === sub.templeData?.name?.trim().toLowerCase());
+              : temples.find(t => t.name.trim().toLowerCase() === templeName.trim().toLowerCase());
 
             return (
               <div
@@ -209,17 +244,17 @@ export const ReviewTab: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#212437] text-xs">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-amber-700 text-white font-bold text-xs flex items-center justify-center">
-                      {sub.submittedBy.name.substring(0, 2).toUpperCase()}
+                      {initials}
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-200">{sub.submittedBy.name}</span>
-                      <span className="text-[10px] text-gray-400 ml-1.5">({sub.submittedBy.role})</span>
+                      <span className="font-semibold text-gray-200">{submitterName}</span>
+                      <span className="text-[10px] text-gray-400 ml-1.5">({submitterRole})</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500 text-[11px]">
-                      {new Date(sub.submittedAt).toLocaleDateString()}
+                      {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : 'Recent'}
                     </span>
 
                     {/* Submission Type Badge */}
@@ -239,44 +274,44 @@ export const ReviewTab: React.FC = () => {
                 <div className="space-y-2.5">
                   <div>
                     <h4 className="text-base font-bold text-gray-100">
-                      {sub.templeData.name}
+                      {templeName}
                     </h4>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      📍 {sub.templeData.location}
+                      📍 {templeLocation}
                     </p>
                   </div>
 
-                    {/* Tags */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {sub.templeData.planets.map(pId => {
-                        const planet = PLANETS.find(p => p.id === pId);
-                        return planet ? (
-                          <span
-                            key={planet.id}
-                            className="px-2 py-0.5 rounded-full text-xs font-tamil text-[#f5a623] bg-[#1a1c29] border border-[#f5a623]/60"
-                          >
-                            {planet.nameTamil}
-                          </span>
-                        ) : null;
-                      })}
-
-                      {deityObj && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-tamil text-gray-300 bg-[#1e2236] border border-[#343852]">
-                          {deityObj.nameTamil}
+                  {/* Tags */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {planetsList.map(pId => {
+                      const planet = PLANETS.find(p => p.id === pId);
+                      return planet ? (
+                        <span
+                          key={planet.id}
+                          className="px-2 py-0.5 rounded-full text-xs font-tamil text-[#f5a623] bg-[#1a1c29] border border-[#f5a623]/60"
+                        >
+                          {planet.nameTamil}
                         </span>
-                      )}
-                    </div>
+                      ) : null;
+                    })}
 
-                    {/* Significance */}
-                    <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
-                      {sub.templeData.significance || sub.templeData.descriptionTamil}
-                    </p>
-
-                    {/* Timings */}
-                    <p className="text-[11px] text-gray-400 font-tamil">
-                      🕒 <span className="text-amber-400/90">தரிசன நேரம்:</span> {sub.templeData.timings}
-                    </p>
+                    {deityObj && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-tamil text-gray-300 bg-[#1e2236] border border-[#343852]">
+                        {deityObj.nameTamil}
+                      </span>
+                    )}
                   </div>
+
+                  {/* Significance */}
+                  <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
+                    {sub.templeData?.significance || sub.templeData?.descriptionTamil || ''}
+                  </p>
+
+                  {/* Timings */}
+                  <p className="text-[11px] text-gray-400 font-tamil">
+                    🕒 <span className="text-amber-400/90">தரிசன நேரம்:</span> {sub.templeData?.timings || 'காலை & மாலை'}
+                  </p>
+                </div>
 
                 {/* Edit Diff Highlight Section (If submission is an edit) */}
                 {sub.type === 'edit' && sub.previousData && (
