@@ -5,7 +5,7 @@ import { PLANETS, STATES } from '../data/constants';
 import { FilterState } from '../types';
 
 export const FilterModal: React.FC = () => {
-  const { filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame, deities } = useApp();
+  const { filters, setFilters, resetFilters, isFilterOpen, setIsFilterOpen, isMobileFrame, deities, refreshFreshData } = useApp();
 
   // Local draft filter state before applying
   const [draftFilters, setDraftFilters] = useState<FilterState>(filters);
@@ -26,6 +26,7 @@ export const FilterModal: React.FC = () => {
   const handleApply = () => {
     setFilters(draftFilters);
     setIsFilterOpen(false);
+    refreshFreshData();
   };
 
   const handleReset = () => {
@@ -39,6 +40,12 @@ export const FilterModal: React.FC = () => {
       significance: null,
       searchQuery: draftFilters.searchQuery,
     });
+    refreshFreshData();
+  };
+
+  const handleClose = () => {
+    setIsFilterOpen(false);
+    refreshFreshData();
   };
 
   const togglePlanet = (planetId: string) => {
@@ -74,7 +81,7 @@ export const FilterModal: React.FC = () => {
         {/* Header: [X] Filter [Reset] */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#22253a]">
           <button
-            onClick={() => setIsFilterOpen(false)}
+            onClick={handleClose}
             className="w-8 h-8 rounded-full bg-[#1b1e2f] text-gray-300 hover:text-white flex items-center justify-center transition-colors"
             aria-label="Close"
           >

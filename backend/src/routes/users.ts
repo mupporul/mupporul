@@ -4,8 +4,9 @@ import { db } from '../db/database.js';
 export const usersRouter = Router();
 
 // GET /api/users - list all users
-usersRouter.get('/', (_req: Request, res: Response) => {
+usersRouter.get('/', async (_req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const list = db.getUsers();
     res.json({ success: true, count: list.length, data: list });
   } catch (err: any) {
@@ -14,8 +15,9 @@ usersRouter.get('/', (_req: Request, res: Response) => {
 });
 
 // GET /api/users/:id - get single user
-usersRouter.get('/:id', (req: Request, res: Response) => {
+usersRouter.get('/:id', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const user = db.getUserById(req.params.id);
     if (!user) {
       res.status(404).json({ success: false, error: 'User not found' });

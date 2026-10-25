@@ -4,8 +4,10 @@ import { db } from '../db/database.js';
 export const templesRouter = Router();
 
 // GET /api/temples - with filters (planets, matchMode, deity, state, search)
-templesRouter.get('/', (req: Request, res: Response) => {
+templesRouter.get('/', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
+
     const { planets, planetMatchMode, deity, state, search } = req.query;
 
     let planetArray: string[] | undefined;
@@ -36,8 +38,9 @@ templesRouter.get('/', (req: Request, res: Response) => {
 });
 
 // GET /api/temples/:id - fetch single temple & increment views
-templesRouter.get('/:id', (req: Request, res: Response) => {
+templesRouter.get('/:id', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const temple = db.getTempleById(req.params.id);
     if (!temple) {
       res.status(404).json({ success: false, error: 'Temple not found' });

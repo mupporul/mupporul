@@ -11,6 +11,7 @@ export const FilterSidebar: React.FC = () => {
     togglePlanetFilter,
     setPlanetMatchMode,
     deities,
+    refreshFreshData,
   } = useApp();
 
   // Accordion collapsed state for sections (open by default for quick desktop filtering)
@@ -41,6 +42,7 @@ export const FilterSidebar: React.FC = () => {
       ...prev,
       deity: prev.deity === deityId ? null : deityId,
     }));
+    refreshFreshData();
   };
 
   return (
@@ -221,7 +223,10 @@ export const FilterSidebar: React.FC = () => {
               <div className="relative animate-in fade-in duration-150">
                 <select
                   value={filters.state || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value || null }))}
+                  onChange={(e) => {
+                    setFilters(prev => ({ ...prev, state: e.target.value || null }));
+                    refreshFreshData();
+                  }}
                   className="w-full appearance-none bg-[#161828] text-gray-200 text-xs rounded-xl px-3 py-2 border border-[#2b2e46] focus:outline-none focus:border-[#f5a623] cursor-pointer"
                 >
                   <option value="">Select state (All States)</option>

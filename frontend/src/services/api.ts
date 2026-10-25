@@ -56,9 +56,9 @@ class ApiService {
 
   /**
    * Internal anti-cache fetch wrapper:
-   * - Appends dynamic timestamp query param `_t` on GET requests
-   * - Sets Cache-Control, Pragma, and Expires headers
-   * - Sets fetch mode `cache: 'no-store'` so browser never serves stale cached data
+   * - Appends dynamic timestamp query param `_t` on GET requests so browser & CDN never cache
+   * - Sets standard fetch mode `cache: 'no-store'`
+   * - Avoids non-simple request headers (Cache-Control / Pragma) that trigger browser CORS preflight blocks
    */
   private async fetchWithAntiCache(inputUrl: string, init?: RequestInit): Promise<Response> {
     const isAbsolute = inputUrl.startsWith('http://') || inputUrl.startsWith('https://');
@@ -66,15 +66,19 @@ class ApiService {
       ? new URL(inputUrl)
       : new URL(inputUrl, window.location.origin);
 
-    // Append cache-buster on GET requests
-    if (!init?.method || init.method.toUpperCase() === 'GET') {
+    const isGet = !init?.method || init.method.toUpperCase() === 'GET';
+
+    // Append unique timestamp query param on GET requests to guarantee fresh data
+    if (isGet) {
       urlObj.searchParams.set('_t', Date.now().toString());
     }
 
     const headers = new Headers(init?.headers || {});
-    headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    headers.set('Pragma', 'no-cache');
-    headers.set('Expires', '0');
+
+    // For POST/PUT requests with body, ensure Content-Type is set
+    if (!isGet && !headers.has('Content-Type') && typeof init?.body === 'string') {
+      headers.set('Content-Type', 'application/json');
+    }
 
     return fetch(urlObj.toString(), {
       ...init,
@@ -248,14 +252,21 @@ class ApiService {
     }
   }
 
-  async login(usernameOrEmail: string, password?: string): Promise<{ success: boolean; user?: UserProfile; message?: string }> {
+  async login(usernameOrEmail: string, password?: string): Promise<UserProfile> {
     const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: usernameOrEmail, password }),
     });
     const json = await res.json();
-    return json;
+    if (!res.ok || json.success === false) {
+      throw new Error(json.error || json.message || 'Invalid username or password');
+    }
+    const user = json.data || json.user || json;
+    if (!user || !user.id) {
+      throw new Error('User profile data missing in response');
+    }
+    return user;
   }
 
   async createUser(userData: {

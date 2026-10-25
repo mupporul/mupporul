@@ -258,6 +258,81 @@ export async function deleteDeityFromSupabase(id: string): Promise<boolean> {
 }
 
 // ==========================================
+// SUBMISSIONS METHODS
+// ==========================================
+
+export async function fetchSubmissionsFromSupabase(): Promise<TempleSubmission[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.warn('[Supabase] Could not fetch submissions:', error.message);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      type: row.type,
+      templeId: row.temple_id,
+      templeData: row.temple_data,
+      previousData: row.previous_data,
+      submittedBy: row.submitted_by,
+      submittedAt: row.submitted_at,
+      status: row.status,
+      reviewedBy: row.reviewed_by,
+      reviewedAt: row.reviewed_at,
+      reviewNotes: row.review_notes,
+    }));
+  } catch (err: any) {
+    console.warn('[Supabase] Exception fetching submissions:', err);
+    return [];
+  }
+}
+
+export async function insertSubmissionToSupabase(sub: TempleSubmission): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('submissions').upsert({
+      id: sub.id,
+      type: sub.type,
+      temple_id: sub.templeId,
+      temple_data: sub.templeData,
+      previous_data: sub.previousData,
+      submitted_by: sub.submittedBy,
+      submitted_at: sub.submittedAt,
+      status: sub.status,
+      reviewed_by: sub.reviewedBy,
+      reviewed_at: sub.reviewedAt,
+      review_notes: sub.reviewNotes,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateSubmissionInSupabase(id: string, updates: Partial<TempleSubmission>): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: any = {};
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.reviewedBy !== undefined) payload.reviewed_by = updates.reviewedBy;
+    if (updates.reviewedAt !== undefined) payload.reviewed_at = updates.reviewedAt;
+    if (updates.reviewNotes !== undefined) payload.review_notes = updates.reviewNotes;
+    if (updates.templeData !== undefined) payload.temple_data = updates.templeData;
+
+    const { error } = await supabase.from('submissions').update(payload).eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// ==========================================
 // SUPABASE STORAGE (IMAGE UPLOADS)
 // ==========================================
 

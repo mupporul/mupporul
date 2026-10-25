@@ -404,16 +404,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+    refreshFreshData();
+  };
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    refreshFreshData();
+  };
 
   // Admin User Management Handlers
   const openAddUserModal = () => {
     setIsAddUserModalOpen(true);
+    refreshFreshData();
   };
 
   const closeAddUserModal = () => {
     setIsAddUserModalOpen(false);
+    refreshFreshData();
   };
 
   const addUser = async (userData: {
@@ -654,8 +662,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const openChangePasswordModal = () => setIsChangePasswordModalOpen(true);
-  const closeChangePasswordModal = () => setIsChangePasswordModalOpen(false);
+  const openChangePasswordModal = () => {
+    setIsChangePasswordModalOpen(true);
+    refreshFreshData();
+  };
+  const closeChangePasswordModal = () => {
+    setIsChangePasswordModalOpen(false);
+    refreshFreshData();
+  };
 
   const loginWithCredentials = async (
     usernameOrEmail: string,
@@ -691,7 +705,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (apiErr: any) {
       console.warn('[AppContext] API Login call returned error:', apiErr.message);
 
-      // 2. Check local fallback users (e.g. if offline or cached)
+      // If backend explicitly rejected the login credentials (e.g. invalid username or password), return that error
+      if (apiErr.message && !apiErr.message.toLowerCase().includes('failed to fetch')) {
+        return {
+          success: false,
+          message: apiErr.message,
+        };
+      }
+
+      // 2. Check local fallback users ONLY if network was completely unreachable
       const localUser = users.find(
         u =>
           u.username?.toLowerCase() === cleanId.toLowerCase() ||
@@ -835,8 +857,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUserId]);
 
-  // Actions
-  const resetFilters = () => setFilters(initialFilters);
+  // Actions - Always interact with fresh table data without cache
+  const resetFilters = () => {
+    setFilters(initialFilters);
+    refreshFreshData();
+  };
 
   const togglePlanetFilter = (planetId: string) => {
     setFilters(prev => {
@@ -851,6 +876,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         planet: nextPlanets[0] || null,
       };
     });
+    refreshFreshData();
   };
 
   const setPlanetMatchMode = (mode: 'all' | 'exact') => {
@@ -858,11 +884,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...prev,
       planetMatchMode: mode,
     }));
+    refreshFreshData();
   };
 
   const setSelectedPlanetFilter = (planetId: string | null) => {
     if (!planetId) {
       setFilters(prev => ({ ...prev, planets: [], planet: null }));
+      refreshFreshData();
       return;
     }
     togglePlanetFilter(planetId);
@@ -878,40 +906,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prev.map(u => (u.id === currentUser.id ? { ...u, role: newRole } : u))
       );
     }
+    refreshFreshData();
   };
 
   const setCurrentUserById = (userId: string) => {
     const found = users.find(u => u.id === userId);
     if (found) setCurrentUserId(userId);
+    refreshFreshData();
   };
 
   const updateUserRole = (userId: string, newRole: Role) => {
     setUsers(prev =>
       prev.map(u => (u.id === userId ? { ...u, role: newRole } : u))
     );
+    refreshFreshData();
   };
 
   const openAddModal = () => {
     setTempleToEdit(null);
     setIsAddEditModalOpen(true);
+    refreshFreshData();
   };
 
   const openEditModal = (temple: Temple) => {
     setTempleToEdit(temple);
     setIsAddEditModalOpen(true);
+    refreshFreshData();
   };
 
   const closeAddEditModal = () => {
     setIsAddEditModalOpen(false);
     setTempleToEdit(null);
+    refreshFreshData();
   };
 
   const openDetailModal = (temple: Temple) => {
     setSelectedTempleForDetail(temple);
     incrementViews(temple.id);
+    refreshFreshData();
   };
 
-  const closeDetailModal = () => setSelectedTempleForDetail(null);
+  const closeDetailModal = () => {
+    setSelectedTempleForDetail(null);
+    refreshFreshData();
+  };
 
   const openVideoModal = (url: string, title: string) => {
     setVideoModalUrl({ url, title });

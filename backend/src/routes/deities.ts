@@ -4,8 +4,9 @@ import { db } from '../db/database.js';
 export const deitiesRouter = Router();
 
 // GET /api/deities - List all deities
-deitiesRouter.get('/', (_req: Request, res: Response) => {
+deitiesRouter.get('/', async (_req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const deities = db.getDeities();
     res.json({ success: true, data: deities });
   } catch (error: any) {
@@ -14,8 +15,9 @@ deitiesRouter.get('/', (_req: Request, res: Response) => {
 });
 
 // GET /api/deities/:id - Get deity by ID
-deitiesRouter.get('/:id', (req: Request, res: Response) => {
+deitiesRouter.get('/:id', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const deity = db.getDeityById(req.params.id);
     if (!deity) {
       return res.status(404).json({ success: false, error: 'Deity not found' });

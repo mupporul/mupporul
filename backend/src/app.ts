@@ -10,12 +10,15 @@ import { deitiesRouter } from './routes/deities.js';
 export function createBackendApp(): Express {
   const app = express();
 
-  // Middleware
+  // Middleware - Allow all CORS origins, methods, and headers
   app.use(cors({
     origin: '*', // Allows GitHub Pages, local dev, Vercel, Netlify
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Cache-Control', 'Pragma', 'Expires'],
   }));
+  app.options('*', cors());
+
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

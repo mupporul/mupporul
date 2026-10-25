@@ -18,6 +18,9 @@ import {
   insertDeityToSupabase,
   updateDeityInSupabase,
   deleteDeityFromSupabase,
+  fetchSubmissionsFromSupabase,
+  insertSubmissionToSupabase,
+  updateSubmissionInSupabase,
 } from './supabaseClient.js';
 
 interface DatabaseSchema {
@@ -32,6 +35,8 @@ interface DatabaseSchema {
 export class Database {
   private dbPath: string;
   private data: DatabaseSchema;
+  private lastSupabaseSync: number = 0;
+  private activeSyncPromise: Promise<void> | null = null;
 
   constructor() {
     // Determine path to database storage file
@@ -51,33 +56,61 @@ export class Database {
     this.data = this.loadData();
 
     if (isSupabaseConfigured) {
-      this.syncFromSupabase();
+      this.syncFromSupabase(true);
     }
   }
 
-  private async syncFromSupabase(): Promise<void> {
-    try {
-      const supaTemples = await fetchTemplesFromSupabase();
-      this.data.temples = supaTemples.map(t => ({ ...t, remedies: [] }));
-      // Also update remote Supabase rows if any had remedies tags
-      for (const t of supaTemples) {
-        if (t.remedies && t.remedies.length > 0) {
-          updateTempleInSupabase(t.id, { remedies: [] }).catch(() => {});
-        }
-      }
-      const supaUsers = await fetchUsersFromSupabase();
-      if (supaUsers.length > 0) {
-        this.data.users = supaUsers;
-      }
-      const supaDeities = await fetchDeitiesFromSupabase();
-      if (supaDeities.length > 0) {
-        this.data.deities = supaDeities;
-      }
-      this.saveData();
-      console.log(`[Database] Synced ${supaTemples.length} temples, ${supaUsers.length} users, and ${supaDeities.length} deities from Supabase.`);
-    } catch (err) {
-      console.warn('[Database] Initial Supabase sync:', err);
+  public async syncFromSupabase(force = false): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const now = Date.now();
+    if (!force && now - this.lastSupabaseSync < 400) {
+      return;
     }
+    if (this.activeSyncPromise) {
+      return this.activeSyncPromise;
+    }
+
+    this.activeSyncPromise = (async () => {
+      try {
+        const [supaTemples, supaUsers, supaDeities, supaSubmissions] = await Promise.allSettled([
+          fetchTemplesFromSupabase(),
+          fetchUsersFromSupabase(),
+          fetchDeitiesFromSupabase(),
+          fetchSubmissionsFromSupabase(),
+        ]);
+
+        if (supaTemples.status === 'fulfilled' && Array.isArray(supaTemples.value)) {
+          this.data.temples = supaTemples.value.map(t => ({ ...t, remedies: [] }));
+          for (const t of supaTemples.value) {
+            if (t.remedies && t.remedies.length > 0) {
+              updateTempleInSupabase(t.id, { remedies: [] }).catch(() => {});
+            }
+          }
+        }
+        if (supaUsers.status === 'fulfilled' && Array.isArray(supaUsers.value) && supaUsers.value.length > 0) {
+          this.data.users = supaUsers.value;
+        }
+        if (supaDeities.status === 'fulfilled' && Array.isArray(supaDeities.value) && supaDeities.value.length > 0) {
+          this.data.deities = supaDeities.value;
+        }
+        if (supaSubmissions.status === 'fulfilled' && Array.isArray(supaSubmissions.value)) {
+          this.data.submissions = supaSubmissions.value.map(s => {
+            if (s.templeData) s.templeData.remedies = [];
+            if (s.previousData) s.previousData.remedies = [];
+            return s;
+          });
+        }
+
+        this.lastSupabaseSync = Date.now();
+        this.saveData();
+      } catch (err) {
+        console.warn('[Database] Supabase sync error:', err);
+      } finally {
+        this.activeSyncPromise = null;
+      }
+    })();
+
+    return this.activeSyncPromise;
   }
 
   private loadData(): DatabaseSchema {
@@ -329,6 +362,9 @@ export class Database {
     }
 
     this.saveData();
+    if (isSupabaseConfigured) {
+      insertSubmissionToSupabase(newSubmission).catch(e => console.error('[Supabase] Insert submission error:', e));
+    }
     return newSubmission;
   }
 
@@ -381,6 +417,16 @@ export class Database {
     }
 
     this.saveData();
+
+    if (isSupabaseConfigured) {
+      updateSubmissionInSupabase(sub.id, {
+        status: sub.status,
+        reviewedBy: sub.reviewedBy,
+        reviewedAt: sub.reviewedAt,
+        reviewNotes: sub.reviewNotes,
+      }).catch(e => console.error('[Supabase] Update submission error:', e));
+    }
+
     return { submission: sub, temple: updatedTemple };
   }
 

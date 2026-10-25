@@ -4,8 +4,9 @@ import { db } from '../db/database.js';
 export const submissionsRouter = Router();
 
 // GET /api/submissions - list submissions
-submissionsRouter.get('/', (req: Request, res: Response) => {
+submissionsRouter.get('/', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const { status, userId } = req.query;
     const list = db.getSubmissions(
       typeof status === 'string' ? status : undefined,
