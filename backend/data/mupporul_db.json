@@ -1,7 +1,183 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-10-18T20:48:57.159Z",
+  "updatedAt": "2026-10-26T22:47:14.262Z",
   "temples": [
+    {
+      "name": "Self-Healing Test Temple 1793054834261",
+      "location": "PoovarasanKuppam, Viluppuram",
+      "state": "Tamil Nadu",
+      "planets": [
+        "suri",
+        "sani",
+        "sev",
+        "suk"
+      ],
+      "deity": "narasimmar",
+      "significance": "Spiritual pariharam temple",
+      "remedies": [],
+      "submittedBy": {
+        "id": "user-thangaraj",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "temple-1793054834261-yl0yk",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T22:47:14.261Z",
+      "updatedAt": "2026-10-26T22:47:14.261Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793054834246",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "temple-1793054834252-qzo22",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T22:47:14.252Z",
+      "updatedAt": "2026-10-26T22:47:14.252Z"
+    },
+    {
+      "name": "Self-Healing Test Temple 1793054795618",
+      "location": "PoovarasanKuppam, Viluppuram",
+      "state": "Tamil Nadu",
+      "planets": [
+        "suri",
+        "sani",
+        "sev",
+        "suk"
+      ],
+      "deity": "narasimmar",
+      "significance": "Spiritual pariharam temple",
+      "remedies": [],
+      "submittedBy": {
+        "id": "user-thangaraj",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "temple-1793054795618-lm3vm",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T22:46:35.618Z",
+      "updatedAt": "2026-10-26T22:46:35.618Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793054795602",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "temple-1793054795608-4lei3",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T22:46:35.608Z",
+      "updatedAt": "2026-10-26T22:46:35.608Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793042066372",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793042066378-jo8sf",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:14:26.378Z",
+      "updatedAt": "2026-10-26T19:14:26.378Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793042054355",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793042054363-hu1ny",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:14:14.363Z",
+      "updatedAt": "2026-10-26T19:14:14.363Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793042011015",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793042011023-mukr2",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:13:31.023Z",
+      "updatedAt": "2026-10-26T19:13:31.023Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793041960425",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793041960430-8nvne",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:12:40.430Z",
+      "updatedAt": "2026-10-26T19:12:40.430Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793041945920",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793041945927-twxhm",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:12:25.927Z",
+      "updatedAt": "2026-10-26T19:12:25.927Z"
+    },
+    {
+      "name": "Approval Flow Temple 1793041907036",
+      "location": "Madurai, Tamil Nadu",
+      "state": "Tamil Nadu",
+      "planets": [
+        "saturn"
+      ],
+      "deity": "shivan",
+      "significance": "Special test temple for approval flow guard",
+      "remedies": [],
+      "id": "temple-1793041907043-wgp2o",
+      "viewsCount": 0,
+      "createdAt": "2026-10-26T19:11:47.043Z",
+      "updatedAt": "2026-10-26T19:11:47.043Z"
+    },
     {
       "name": "Arulmigu Kuzhandhai Velappar Thirukkovil",
       "location": "Poombarai, Kodaikkanal",
@@ -21,10 +197,698 @@
       "id": "temple-1792356537159-0yz0s",
       "viewsCount": 0,
       "createdAt": "2026-10-18T20:48:57.159Z",
-      "updatedAt": "2026-10-18T20:48:57.159Z"
+      "updatedAt": "2026-10-18T20:48:57.159Z",
+      "remedies": []
     }
   ],
   "submissions": [
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Self-Healing Test Temple 1793054834261",
+        "location": "PoovarasanKuppam, Viluppuram",
+        "state": "Tamil Nadu",
+        "planets": [
+          "suri",
+          "sani",
+          "sev",
+          "suk"
+        ],
+        "deity": "narasimmar",
+        "significance": "Spiritual pariharam temple",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-thangaraj",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793054834261-x5aav",
+      "submittedAt": "2026-10-26T22:47:14.261Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-murugan",
+        "name": "ammurugan",
+        "role": "contributor"
+      },
+      "reviewedAt": "2026-10-26T22:47:14.261Z",
+      "reviewNotes": "Verified and approved for publication."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793054834256",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793054834256-9iall",
+      "submittedAt": "2026-10-26T22:47:14.256Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T22:47:14.259Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793054834246",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793054834246-rwtml",
+      "submittedAt": "2026-10-26T22:47:14.246Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T22:47:14.252Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793054834204",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard"
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793054834237-nmz7c",
+      "submittedAt": "2026-10-26T22:47:14.237Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Self-Healing Test Temple 1793054795618",
+        "location": "PoovarasanKuppam, Viluppuram",
+        "state": "Tamil Nadu",
+        "planets": [
+          "suri",
+          "sani",
+          "sev",
+          "suk"
+        ],
+        "deity": "narasimmar",
+        "significance": "Spiritual pariharam temple",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-thangaraj",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793054795618-768m6",
+      "submittedAt": "2026-10-26T22:46:35.618Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-murugan",
+        "name": "ammurugan",
+        "role": "contributor"
+      },
+      "reviewedAt": "2026-10-26T22:46:35.618Z",
+      "reviewNotes": "Verified and approved for publication."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793054795612",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793054795612-l4vse",
+      "submittedAt": "2026-10-26T22:46:35.613Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T22:46:35.616Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793054795602",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793054795602-oyi5w",
+      "submittedAt": "2026-10-26T22:46:35.602Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T22:46:35.608Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793054795558",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793054795592-4boro",
+      "submittedAt": "2026-10-26T22:46:35.592Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793042066381",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793042066381-vrpj0",
+      "submittedAt": "2026-10-26T19:14:26.381Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:14:26.384Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793042066372",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793042066372-aujx9",
+      "submittedAt": "2026-10-26T19:14:26.372Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:14:26.378Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793042066331",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793042066363-6pbu3",
+      "submittedAt": "2026-10-26T19:14:26.363Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793042054367",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793042054367-pf39v",
+      "submittedAt": "2026-10-26T19:14:14.367Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:14:14.370Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793042054355",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793042054355-iozeq",
+      "submittedAt": "2026-10-26T19:14:14.355Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:14:14.362Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793042054311",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793042054346-q71wm",
+      "submittedAt": "2026-10-26T19:14:14.346Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793042011027",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793042011027-04lm6",
+      "submittedAt": "2026-10-26T19:13:31.027Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:13:31.030Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793042011015",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793042011015-zalhs",
+      "submittedAt": "2026-10-26T19:13:31.015Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:13:31.023Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793042010965",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793042011003-0lwt6",
+      "submittedAt": "2026-10-26T19:13:31.003Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793041960434",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793041960434-poick",
+      "submittedAt": "2026-10-26T19:12:40.434Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:12:40.447Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793041960425",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793041960425-hs4a6",
+      "submittedAt": "2026-10-26T19:12:40.425Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:12:40.430Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793041960385",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793041960416-wssh3",
+      "submittedAt": "2026-10-26T19:12:40.416Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793041945931",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793041945931-a50ok",
+      "submittedAt": "2026-10-26T19:12:25.931Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:12:25.936Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793041945920",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793041945920-dl3m0",
+      "submittedAt": "2026-10-26T19:12:25.920Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:12:25.927Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793041945869",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793041945910-lewjp",
+      "submittedAt": "2026-10-26T19:12:25.910Z",
+      "status": "pending"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Rejected Temple 1793041907047",
+        "location": "Coimbatore, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "rahu"
+        ],
+        "deity": "amman",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test",
+        "name": "User",
+        "role": "user"
+      },
+      "id": "sub-1793041907047-wzd2o",
+      "submittedAt": "2026-10-26T19:11:47.047Z",
+      "status": "rejected",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:11:47.050Z",
+      "reviewNotes": "Missing primary deity details and authentic pariharam information."
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Approval Flow Temple 1793041907036",
+        "location": "Madurai, Tamil Nadu",
+        "state": "Tamil Nadu",
+        "planets": [
+          "saturn"
+        ],
+        "deity": "shivan",
+        "significance": "Special test temple for approval flow guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-contributor-test",
+        "name": "Thangaraj",
+        "role": "contributor"
+      },
+      "id": "sub-1793041907036-c59cr",
+      "submittedAt": "2026-10-26T19:11:47.036Z",
+      "status": "approved",
+      "reviewedBy": {
+        "id": "user-admin",
+        "name": "Admin Murugan",
+        "role": "admin"
+      },
+      "reviewedAt": "2026-10-26T19:11:47.043Z",
+      "reviewNotes": "Verified and approved by admin"
+    },
+    {
+      "type": "new",
+      "templeData": {
+        "name": "Automated Test Temple 1793041906991",
+        "location": "Thanjavur, Tamil Nadu",
+        "planets": [
+          "jupiter"
+        ],
+        "deity": "shivan",
+        "significance": "Spiritual significance for test guard",
+        "remedies": []
+      },
+      "submittedBy": {
+        "id": "user-test-contributor",
+        "name": "Test Contributor",
+        "role": "contributor"
+      },
+      "id": "sub-1793041907025-g3jqf",
+      "submittedAt": "2026-10-26T19:11:47.025Z",
+      "status": "pending"
+    },
     {
       "type": "new",
       "templeData": {
@@ -42,7 +906,8 @@
         "timings": "காலை 6:00 - இரவு 8:00",
         "history": "",
         "poojaDetails": "",
-        "contactNumber": ""
+        "contactNumber": "",
+        "remedies": []
       },
       "submittedBy": {
         "id": "user-admin",
@@ -74,16 +939,168 @@
       "avatarColor": "#e53e3e",
       "contributionsCount": 13,
       "approvedCount": 13
+    },
+    {
+      "id": "user-1793042006339-nnx5",
+      "name": "Test Devotee 1793042006335",
+      "username": "devotee_1793042006335",
+      "password": "DevoteePassword@123",
+      "email": "devotee_1793042006335@mupporul.com",
+      "role": "contributor",
+      "avatarText": "T1",
+      "avatarColor": "from-rose-500 to-rose-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793042006351-4z1h",
+      "name": "Password Test User",
+      "username": "user_pw_1793042006349",
+      "password": "UpdatedSecretPassword2",
+      "email": "user_pw_1793042006349@mupporul.app",
+      "role": "user",
+      "avatarText": "PU",
+      "avatarColor": "from-blue-500 to-blue-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793042049867-jjxw",
+      "name": "Test Devotee 1793042049864",
+      "username": "devotee_1793042049864",
+      "password": "DevoteePassword@123",
+      "email": "devotee_1793042049864@mupporul.com",
+      "role": "contributor",
+      "avatarText": "T1",
+      "avatarColor": "from-purple-500 to-purple-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793042049875-n69u",
+      "name": "Password Test User",
+      "username": "user_pw_1793042049874",
+      "password": "UpdatedSecretPassword2",
+      "email": "user_pw_1793042049874@mupporul.app",
+      "role": "user",
+      "avatarText": "PU",
+      "avatarColor": "from-amber-500 to-amber-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793042064300-2d4r",
+      "name": "Test Devotee 1793042064297",
+      "username": "devotee_1793042064297",
+      "password": "DevoteePassword@123",
+      "email": "devotee_1793042064297@mupporul.com",
+      "role": "contributor",
+      "avatarText": "T1",
+      "avatarColor": "from-amber-500 to-amber-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793042064310-iwxh",
+      "name": "Password Test User",
+      "username": "user_pw_1793042064307",
+      "password": "UpdatedSecretPassword2",
+      "email": "user_pw_1793042064307@mupporul.app",
+      "role": "user",
+      "avatarText": "PU",
+      "avatarColor": "from-rose-500 to-rose-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793054793533-y1z7",
+      "name": "Test Devotee 1793054793530",
+      "username": "devotee_1793054793530",
+      "password": "DevoteePassword@123",
+      "email": "devotee_1793054793530@mupporul.com",
+      "role": "contributor",
+      "avatarText": "T1",
+      "avatarColor": "from-blue-500 to-blue-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793054793542-3j2l",
+      "name": "Password Test User",
+      "username": "user_pw_1793054793540",
+      "password": "UpdatedSecretPassword2",
+      "email": "user_pw_1793054793540@mupporul.app",
+      "role": "user",
+      "avatarText": "PU",
+      "avatarColor": "from-emerald-500 to-emerald-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793054832152-u7ks",
+      "name": "Test Devotee 1793054832149",
+      "username": "devotee_1793054832149",
+      "password": "DevoteePassword@123",
+      "email": "devotee_1793054832149@mupporul.com",
+      "role": "contributor",
+      "avatarText": "T1",
+      "avatarColor": "from-blue-500 to-blue-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
+    },
+    {
+      "id": "user-1793054832161-tcgi",
+      "name": "Password Test User",
+      "username": "user_pw_1793054832159",
+      "password": "UpdatedSecretPassword2",
+      "email": "user_pw_1793054832159@mupporul.app",
+      "role": "user",
+      "avatarText": "PU",
+      "avatarColor": "from-rose-500 to-rose-700",
+      "contributionsCount": 0,
+      "approvedCount": 0
     }
   ],
   "deities": [
-    { "id": "amman", "nameTamil": "அம்மன்", "nameEnglish": "Amman / Devi" },
-    { "id": "shivan", "nameTamil": "சிவன்", "nameEnglish": "Shiva" },
-    { "id": "vishnu", "nameTamil": "விஷ்ணு", "nameEnglish": "Vishnu / Perumal" },
-    { "id": "murugan", "nameTamil": "முருகன்", "nameEnglish": "Murugan / Karthikeya" },
-    { "id": "ayyappan", "nameTamil": "ஐயப்பன்", "nameEnglish": "Ayyappan" },
-    { "id": "pillaiyar", "nameTamil": "பிள்ளையார்", "nameEnglish": "Pillaiyar / Ganesha" },
-    { "id": "bhairavar", "nameTamil": "பைரவர்", "nameEnglish": "Bhairavar" },
-    { "id": "anjaneyar", "nameTamil": "ஆஞ்சநேயர்", "nameEnglish": "Anjaneyar / Hanuman" }
+    {
+      "id": "amman",
+      "nameTamil": "அம்மன்",
+      "nameEnglish": "Amman / Devi"
+    },
+    {
+      "id": "shivan",
+      "nameTamil": "சிவன்",
+      "nameEnglish": "Shiva"
+    },
+    {
+      "id": "vishnu",
+      "nameTamil": "விஷ்ணு",
+      "nameEnglish": "Vishnu / Perumal"
+    },
+    {
+      "id": "murugan",
+      "nameTamil": "முருகன்",
+      "nameEnglish": "Murugan / Karthikeya"
+    },
+    {
+      "id": "ayyappan",
+      "nameTamil": "ஐயப்பன்",
+      "nameEnglish": "Ayyappan"
+    },
+    {
+      "id": "pillaiyar",
+      "nameTamil": "பிள்ளையார்",
+      "nameEnglish": "Pillaiyar / Ganesha"
+    },
+    {
+      "id": "bhairavar",
+      "nameTamil": "பைரவர்",
+      "nameEnglish": "Bhairavar"
+    },
+    {
+      "id": "anjaneyar",
+      "nameTamil": "ஆஞ்சநேயர்",
+      "nameEnglish": "Anjaneyar / Hanuman"
+    }
   ]
 }

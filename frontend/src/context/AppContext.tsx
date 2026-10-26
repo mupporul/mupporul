@@ -251,16 +251,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         api.getDeities()
       ]);
 
+      let cleanedTemples: Temple[] = [];
       if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
-        const cleanedTemples = remoteTemples.value.map((t: Temple) => ({ ...t, remedies: [] }));
-        setTemples(cleanedTemples);
-        try {
-          localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
-        } catch {}
+        cleanedTemples = remoteTemples.value.map((t: Temple) => ({ ...t, remedies: [] }));
       }
 
+      let cleanedSubmissions: TempleSubmission[] = [];
       if (remoteSubmissions.status === 'fulfilled' && Array.isArray(remoteSubmissions.value)) {
-        const cleaned = remoteSubmissions.value
+        cleanedSubmissions = remoteSubmissions.value
           .filter(
             (s: TempleSubmission) =>
               !['sub-new-kanjanur', 'sub-edit-melmalayanoor', 'sub-new-thirunallar'].includes(s.id)
@@ -270,9 +268,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (s.previousData) s.previousData.remedies = [];
             return s;
           });
-        setSubmissions(cleaned);
+        setSubmissions(cleanedSubmissions);
         try {
-          localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleaned));
+          localStorage.setItem('mupporul_submissions_v2', JSON.stringify(cleanedSubmissions));
+        } catch {}
+      }
+
+      // Self-healing guard: Reconcile any approved submissions into temples directory
+      const approvedSubs = (cleanedSubmissions.length > 0 ? cleanedSubmissions : submissions).filter(
+        (s: TempleSubmission) => s.status === 'approved'
+      );
+
+      for (const sub of approvedSubs) {
+        if (!sub.templeData?.name) continue;
+        const nameClean = sub.templeData.name.trim().toLowerCase();
+        const exists = cleanedTemples.some(
+          t => (sub.templeId && t.id === sub.templeId) || t.name.trim().toLowerCase() === nameClean
+        );
+        if (!exists) {
+          cleanedTemples.unshift({
+            id: sub.templeId || `temple-approved-${sub.id}`,
+            name: sub.templeData.name,
+            location: sub.templeData.location || '',
+            state: sub.templeData.state || 'Tamil Nadu',
+            planets: Array.isArray(sub.templeData.planets) ? sub.templeData.planets : [],
+            deity: sub.templeData.deity || 'shivan',
+            significance: sub.templeData.significance || (sub.templeData as any).descriptionTamil || '',
+            remedies: [],
+            imageUrl: sub.templeData.imageUrl || '',
+            videoUrl: sub.templeData.videoUrl || '',
+            timings: sub.templeData.timings || '',
+            history: sub.templeData.history || '',
+            poojaDetails: sub.templeData.poojaDetails || '',
+            contactNumber: sub.templeData.contactNumber || '',
+            submittedBy: sub.submittedBy || { id: 'contributor', name: 'Contributor', role: 'contributor' },
+            viewsCount: 0,
+            createdAt: sub.reviewedAt || sub.submittedAt || new Date().toISOString(),
+            updatedAt: sub.reviewedAt || new Date().toISOString(),
+          });
+        }
+      }
+
+      if (cleanedTemples.length > 0 || remoteTemples.status === 'fulfilled') {
+        setTemples(cleanedTemples);
+        try {
+          localStorage.setItem('mupporul_temples_v2', JSON.stringify(cleanedTemples));
         } catch {}
       }
 
@@ -1070,6 +1110,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const approveSubmission = async (submissionId: string, notes?: string): Promise<void> => {
     setActionLoadingText('Approving Submission...');
     try {
+      const targetSub = submissions.find(s => s.id === submissionId);
+      if (targetSub?.templeData?.name) {
+        const approvedTemple: Temple = {
+          id: targetSub.templeId || `temple-approved-${targetSub.id}`,
+          name: targetSub.templeData.name,
+          location: targetSub.templeData.location || '',
+          state: targetSub.templeData.state || 'Tamil Nadu',
+          planets: Array.isArray(targetSub.templeData.planets) ? targetSub.templeData.planets : [],
+          deity: targetSub.templeData.deity || 'shivan',
+          significance: targetSub.templeData.significance || (targetSub.templeData as any).descriptionTamil || '',
+          remedies: [],
+          imageUrl: targetSub.templeData.imageUrl || '',
+          videoUrl: targetSub.templeData.videoUrl || '',
+          timings: targetSub.templeData.timings || '',
+          history: targetSub.templeData.history || '',
+          poojaDetails: targetSub.templeData.poojaDetails || '',
+          contactNumber: targetSub.templeData.contactNumber || '',
+          submittedBy: targetSub.submittedBy || {
+            id: currentUser.id,
+            name: currentUser.name,
+            role: currentUser.role,
+          },
+          viewsCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        setTemples(prev => {
+          const cleanName = approvedTemple.name.trim().toLowerCase();
+          const exists = prev.some(t => t.name.trim().toLowerCase() === cleanName);
+          return exists ? prev : [approvedTemple, ...prev];
+        });
+      }
+
       await api.reviewSubmission(submissionId, 'approved', {
         id: currentUser.id,
         name: currentUser.name,

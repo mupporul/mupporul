@@ -178,4 +178,44 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(res.body.data.status).toBe('rejected');
     expect(res.body.data.reviewNotes).toContain('Missing primary deity details');
   });
+
+  it('self-heals and auto-reconciles approved submissions into temples directory when temples list is queried', async () => {
+    // Simulate an approved submission that was reviewed by a contributor/admin
+    const templeName = 'Self-Healing Test Temple ' + Date.now();
+    const approvedSub = db.createSubmission({
+      type: 'new',
+      templeData: {
+        name: templeName,
+        location: 'PoovarasanKuppam, Viluppuram',
+        state: 'Tamil Nadu',
+        planets: ['suri', 'sani', 'sev', 'suk'],
+        deity: 'narasimmar',
+        significance: 'Spiritual pariharam temple',
+        remedies: [],
+      },
+      submittedBy: {
+        id: 'user-thangaraj',
+        name: 'Thangaraj',
+        role: 'contributor',
+      },
+    });
+
+    // Mark as approved
+    db.reviewSubmission(approvedSub.id, 'approved', {
+      id: 'user-murugan',
+      name: 'ammurugan',
+      role: 'contributor',
+    }, 'Verified and approved for publication.');
+
+    // Query temples directly via GET /api/temples
+    const res = await request(app).get('/api/temples');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const found = res.body.data.find((t: any) => t.name === templeName);
+    expect(found).toBeDefined();
+    expect(found.deity).toBe('narasimmar');
+    expect(found.location).toBe('PoovarasanKuppam, Viluppuram');
+    expect(found.planets).toEqual(['suri', 'sani', 'sev', 'suk']);
+  });
 });

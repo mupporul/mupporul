@@ -61,28 +61,32 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
   if (!supabase) throw new Error('Supabase not configured');
   const row = {
     id: temple.id,
-    name: temple.name,
-    location: temple.location,
-    state: temple.state,
-    planets: temple.planets,
-    deity: temple.deity,
-    significance: temple.significance,
+    name: temple.name || 'Sacred Temple',
+    location: temple.location || '',
+    state: temple.state || 'Tamil Nadu',
+    planets: Array.isArray(temple.planets) ? temple.planets : [],
+    deity: temple.deity || 'shivan',
+    significance: temple.significance || '',
     remedies: [],
-    image_url: temple.imageUrl,
-    video_url: temple.videoUrl,
-    timings: temple.timings,
-    history: temple.history,
-    pooja_details: temple.poojaDetails,
-    contact_number: temple.contactNumber,
-    submitted_by: temple.submittedBy,
-    views_count: temple.viewsCount,
-    created_at: temple.createdAt,
-    updated_at: temple.updatedAt,
+    image_url: temple.imageUrl || '',
+    video_url: temple.videoUrl || '',
+    timings: temple.timings || '',
+    history: temple.history || '',
+    pooja_details: temple.poojaDetails || '',
+    contact_number: temple.contactNumber || '',
+    submitted_by: temple.submittedBy || {
+      id: 'user-admin',
+      name: 'Admin Murugan',
+      role: 'admin',
+    },
+    views_count: temple.viewsCount || 0,
+    created_at: temple.createdAt || new Date().toISOString(),
+    updated_at: temple.updatedAt || new Date().toISOString(),
   };
 
-  const { error } = await supabase.from('temples').insert([row]);
+  const { error } = await supabase.from('temples').upsert(row);
   if (error) {
-    console.error('[Supabase] Error inserting temple:', error.message);
+    console.error('[Supabase] Error inserting/upserting temple:', error.message);
     throw error;
   }
   return temple;

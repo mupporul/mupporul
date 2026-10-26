@@ -54,6 +54,7 @@ export class Database {
 
     this.dbPath = process.env.DB_FILE_PATH || path.join(dataDir, 'mupporul_db.json');
     this.data = this.loadData();
+    this.reconcileApprovedSubmissions();
 
     if (isSupabaseConfigured) {
       this.syncFromSupabase(true);
@@ -101,6 +102,7 @@ export class Database {
           });
         }
 
+        this.reconcileApprovedSubmissions();
         this.lastSupabaseSync = Date.now();
         this.saveData();
       } catch (err) {
@@ -197,6 +199,7 @@ export class Database {
     state?: string;
     search?: string;
   }): Temple[] {
+    this.reconcileApprovedSubmissions();
     let list = [...this.data.temples];
 
     if (!filters) return list;
@@ -412,9 +415,17 @@ export class Database {
             updatedAt: new Date().toISOString()
           }) || existingByName;
         } else {
-          updatedTemple = this.createTemple(sub.templeData);
+          updatedTemple = this.createTemple({
+            ...sub.templeData,
+            submittedBy: sub.submittedBy || {
+              id: reviewer.id,
+              name: reviewer.name,
+              role: reviewer.role,
+            },
+          });
         }
       }
+      this.reconcileApprovedSubmissions();
     }
 
     this.saveData();
@@ -429,6 +440,69 @@ export class Database {
     }
 
     return { submission: sub, temple: updatedTemple };
+  }
+
+  /**
+   * Reconciles any approved submissions:
+   * If a submission has status 'approved', guarantees that its corresponding temple exists
+   * in the active temples directory. If missing (e.g. from prior approval or interrupted sync),
+   * synthesizes and registers the temple automatically and persists to Supabase/JSON.
+   */
+  public reconcileApprovedSubmissions(): void {
+    if (!this.data || !Array.isArray(this.data.submissions) || !Array.isArray(this.data.temples)) return;
+
+    const approvedSubs = this.data.submissions.filter(s => s.status === 'approved');
+    let hasChanges = false;
+
+    for (const sub of approvedSubs) {
+      if (!sub.templeData || !sub.templeData.name) continue;
+      const cleanName = sub.templeData.name.trim().toLowerCase();
+
+      const existing = this.data.temples.find(
+        t => (sub.templeId && t.id === sub.templeId) || t.name.trim().toLowerCase() === cleanName
+      );
+
+      if (!existing) {
+        console.log(`[Database] Auto-reconciling approved submission into temples directory: "${sub.templeData.name}"`);
+        const synthesizedTemple: Temple = {
+          id: sub.templeId || `temple-approved-${sub.id}`,
+          name: sub.templeData.name,
+          location: sub.templeData.location || '',
+          state: sub.templeData.state || 'Tamil Nadu',
+          planets: Array.isArray(sub.templeData.planets) ? sub.templeData.planets : [],
+          deity: sub.templeData.deity || 'shivan',
+          significance: sub.templeData.significance || (sub.templeData as any).descriptionTamil || '',
+          remedies: [],
+          imageUrl: sub.templeData.imageUrl || '',
+          videoUrl: sub.templeData.videoUrl || '',
+          timings: sub.templeData.timings || '',
+          history: sub.templeData.history || '',
+          poojaDetails: sub.templeData.poojaDetails || '',
+          contactNumber: sub.templeData.contactNumber || '',
+          submittedBy: sub.submittedBy || {
+            id: 'contributor',
+            name: 'Contributor',
+            role: 'contributor',
+          },
+          viewsCount: 0,
+          createdAt: sub.reviewedAt || sub.submittedAt || new Date().toISOString(),
+          updatedAt: sub.reviewedAt || new Date().toISOString(),
+        };
+
+        this.data.temples.unshift(synthesizedTemple);
+        hasChanges = true;
+
+        if (isSupabaseConfigured) {
+          insertTempleToSupabase(synthesizedTemple).catch(e =>
+            console.warn('[Supabase] Auto-sync insert approved temple error:', e)
+          );
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.saveData();
+    }
   }
 
   public deleteSubmission(id: string): boolean {
