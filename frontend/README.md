@@ -10,69 +10,13 @@ Designed to be hosted on **GitHub Pages Free Tier** (or **Vercel / Netlify / Clo
 
 GitHub Pages hosts static websites directly from your GitHub repository for free forever.
 
-### Method A: Automated GitHub Actions (Recommended)
+### Automated GitHub Actions deployment (recommended)
 
-1. Push this code to a GitHub repository (e.g. `https://github.com/your-username/mupporul-temples`).
+The repository workflow at `.github/workflows/deploy.yml` builds the frontend from the repository root and deploys it to GitHub Pages when changes are pushed to `main`.
 
-2. In your repo, go to **Settings** > **Pages**.
-   - Under **Build and deployment** > **Source**, select **GitHub Actions**.
-
-3. Create the workflow file at `.github/workflows/deploy.yml`:
-   ```yaml
-   name: Deploy Frontend to GitHub Pages
-
-   on:
-     push:
-       branches: ['main']
-
-   permissions:
-     contents: read
-     pages: write
-     id-token: write
-
-   concurrency:
-     group: 'pages'
-     cancel-in-progress: true
-
-   jobs:
-     deploy:
-       environment:
-         name: github-pages
-         url: ${{ steps.deployment.outputs.page_url }}
-       runs-on: ubuntu-latest
-       steps:
-         - name: Checkout
-           uses: actions/checkout@v4
-
-         - name: Set up Node
-           uses: actions/setup-node@v4
-           with:
-             node-version: 20
-             cache: 'npm'
-
-         - name: Install dependencies
-           run: npm ci
-
-         - name: Build with Backend API URL
-           env:
-             VITE_API_URL: https://mupporul-backend.onrender.com/api
-           run: npm run build
-
-         - name: Setup Pages
-           uses: actions/configure-pages@v4
-
-         - name: Upload artifact
-           uses: actions/upload-pages-artifact@v3
-           with:
-             path: ./dist
-
-         - name: Deploy to GitHub Pages
-           id: deployment
-           uses: actions/deploy-pages@v4
-   ```
-
-4. Push to `main`, and your site will be live at:
-   `https://<your-username>.github.io/<repo-name>/`!
+1. In the repository, open **Settings** > **Pages** and select **GitHub Actions** as the build and deployment source.
+2. In **Settings** > **Secrets and variables** > **Actions** > **Variables**, add `VITE_API_URL` with the deployed Render API URL, including `/api` (for example, `https://<your-render-service>.onrender.com/api`). This is a public URL, not a secret.
+3. Push to `main` or run the workflow manually from the **Actions** tab. The workflow runs the test suite, builds the frontend, and deploys the `dist` artifact.
 
 ---
 
@@ -99,8 +43,8 @@ GitHub Pages hosts static websites directly from your GitHub repository for free
 
 ## ⚙️ Connecting to Backend API
 
-In `frontend/.env`:
+For local development, set `VITE_API_URL` in `frontend/.env`:
 ```env
 VITE_API_URL=https://<your-render-app>.onrender.com/api
 ```
-When `VITE_API_URL` is omitted, the frontend automatically proxies requests to `/api` on the current host.
+The deployment workflow reads the same setting from the GitHub Actions repository variable. If it is unset, the frontend retains its existing default backend URL.
