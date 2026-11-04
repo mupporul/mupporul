@@ -71,11 +71,12 @@ export const TemplesList: React.FC = () => {
     if (filters.searchQuery.trim()) {
       const q = filters.searchQuery.toLowerCase().trim();
       const matchName = temple.name.toLowerCase().includes(q);
+      const matchTamilName = temple.nameTamil?.toLowerCase().includes(q);
       const matchLocation = temple.location.toLowerCase().includes(q);
       const matchSignificance = temple.significance?.toLowerCase().includes(q);
       const matchDesc = temple.descriptionTamil?.toLowerCase().includes(q);
       const matchEng = temple.descriptionEnglish?.toLowerCase().includes(q);
-      if (!matchName && !matchLocation && !matchSignificance && !matchDesc && !matchEng) {
+      if (!matchName && !matchTamilName && !matchLocation && !matchSignificance && !matchDesc && !matchEng) {
         return false;
       }
     }
