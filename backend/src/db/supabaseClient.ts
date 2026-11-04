@@ -2,26 +2,88 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { Temple, TempleSubmission, UserProfile, Deity } from '../types.js';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+dotenv.config();
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
+export function resolveSupabaseCredentials(
+  env: Record<string, string | undefined> = process.env,
+): { url: string; key: string } | null {
+  const url = env.SUPABASE_URL?.trim();
+  const key = [
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    env.SUPABASE_KEY,
+    env.SUPABASE_ANON_KEY,
+  ].find((value) => value?.trim())?.trim();
+  return url && key ? { url, key } : null;
+}
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseKey, {
+const credentials = resolveSupabaseCredentials();
+
+export const isSupabaseConfigured = Boolean(credentials);
+
+export const supabase: SupabaseClient | null = credentials
+  ? createClient(credentials.url, credentials.key, {
       auth: { persistSession: false },
     })
   : null;
 
 if (isSupabaseConfigured) {
-  console.log('[Supabase] Initialized cloud PostgreSQL database client with URL:', supabaseUrl);
+  console.log('[Supabase] Initialized cloud PostgreSQL database client.');
 } else {
-  console.log('[Supabase] No SUPABASE_URL / SUPABASE_KEY set; using fast local JSON database.');
+  console.log('[Supabase] Supabase credentials not set; using local JSON database.');
 }
 
 // ==========================================
 // SUPABASE DATABASE ADAPTER METHODS
 // ==========================================
+
+export function toSupabaseTempleRow(temple: Temple): Record<string, unknown> {
+  return {
+    id: temple.id,
+    name: temple.name || 'Sacred Temple',
+    name_tamil: temple.nameTamil || null,
+    location: temple.location || '',
+    state: temple.state || 'Tamil Nadu',
+    district: temple.district || null,
+    planets: Array.isArray(temple.planets) ? temple.planets : [],
+    deity: temple.deity || 'shivan',
+    significance: temple.significance || '',
+    description_tamil: temple.descriptionTamil || null,
+    description_english: temple.descriptionEnglish || null,
+    pariharam_info: temple.pariharamInfo || null,
+    image_url: temple.imageUrl || '',
+    video_url: temple.videoUrl || '',
+    timings: temple.timings || '',
+    history: temple.history || '',
+    pooja_details: temple.poojaDetails || '',
+    contact_number: temple.contactNumber || '',
+    latitude: temple.coordinates?.lat ?? null,
+    longitude: temple.coordinates?.lng ?? null,
+    submitted_by: temple.submittedBy || {
+      id: 'user-admin',
+      name: 'Admin Murugan',
+      role: 'admin',
+    },
+    views_count: temple.viewsCount || 0,
+    created_at: temple.createdAt || new Date().toISOString(),
+    updated_at: temple.updatedAt || new Date().toISOString(),
+  };
+}
+
+export function toSupabaseUserRow(user: UserProfile): Record<string, unknown> {
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    password: user.password,
+    email: user.email || null,
+    role: user.role,
+    avatar_text: user.avatarText,
+    avatar_color: user.avatarColor,
+    contributions_count: user.contributionsCount || 0,
+    approved_count: user.approvedCount || 0,
+    created_at: user.createdAt || new Date().toISOString(),
+  };
+}
 
 export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
   if (!supabase) return [];
@@ -40,16 +102,24 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
     name: row.name,
     location: row.location,
     state: row.state,
+    nameTamil: row.name_tamil || undefined,
+    district: row.district || undefined,
     planets: row.planets || [],
     deity: row.deity,
     significance: row.significance,
     remedies: [],
+    descriptionTamil: row.description_tamil || undefined,
+    descriptionEnglish: row.description_english || undefined,
+    pariharamInfo: row.pariharam_info || undefined,
     imageUrl: row.image_url,
     videoUrl: row.video_url || '',
     timings: row.timings || '',
     history: row.history || '',
     poojaDetails: row.pooja_details || '',
     contactNumber: row.contact_number || '',
+    coordinates: row.latitude != null && row.longitude != null
+      ? { lat: Number(row.latitude), lng: Number(row.longitude) }
+      : undefined,
     submittedBy: row.submitted_by,
     viewsCount: row.views_count || 0,
     createdAt: row.created_at,
@@ -59,32 +129,7 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
 
 export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
   if (!supabase) throw new Error('Supabase not configured');
-  const row = {
-    id: temple.id,
-    name: temple.name || 'Sacred Temple',
-    location: temple.location || '',
-    state: temple.state || 'Tamil Nadu',
-    planets: Array.isArray(temple.planets) ? temple.planets : [],
-    deity: temple.deity || 'shivan',
-    significance: temple.significance || '',
-    remedies: [],
-    image_url: temple.imageUrl || '',
-    video_url: temple.videoUrl || '',
-    timings: temple.timings || '',
-    history: temple.history || '',
-    pooja_details: temple.poojaDetails || '',
-    contact_number: temple.contactNumber || '',
-    submitted_by: temple.submittedBy || {
-      id: 'user-admin',
-      name: 'Admin Murugan',
-      role: 'admin',
-    },
-    views_count: temple.viewsCount || 0,
-    created_at: temple.createdAt || new Date().toISOString(),
-    updated_at: temple.updatedAt || new Date().toISOString(),
-  };
-
-  const { error } = await supabase.from('temples').upsert(row);
+  const { error } = await supabase.from('temples').upsert(toSupabaseTempleRow(temple));
   if (error) {
     console.error('[Supabase] Error inserting/upserting temple:', error.message);
     throw error;
@@ -104,13 +149,21 @@ export async function updateTempleInSupabase(id: string, updates: Partial<Temple
   if (updates.planets !== undefined) row.planets = updates.planets;
   if (updates.deity !== undefined) row.deity = updates.deity;
   if (updates.significance !== undefined) row.significance = updates.significance;
-  row.remedies = [];
+  if (updates.nameTamil !== undefined) row.name_tamil = updates.nameTamil;
+  if (updates.district !== undefined) row.district = updates.district;
+  if (updates.descriptionTamil !== undefined) row.description_tamil = updates.descriptionTamil;
+  if (updates.descriptionEnglish !== undefined) row.description_english = updates.descriptionEnglish;
+  if (updates.pariharamInfo !== undefined) row.pariharam_info = updates.pariharamInfo;
   if (updates.imageUrl !== undefined) row.image_url = updates.imageUrl;
   if (updates.videoUrl !== undefined) row.video_url = updates.videoUrl;
   if (updates.timings !== undefined) row.timings = updates.timings;
   if (updates.history !== undefined) row.history = updates.history;
   if (updates.poojaDetails !== undefined) row.pooja_details = updates.poojaDetails;
   if (updates.contactNumber !== undefined) row.contact_number = updates.contactNumber;
+  if (updates.coordinates !== undefined) {
+    row.latitude = updates.coordinates?.lat ?? null;
+    row.longitude = updates.coordinates?.lng ?? null;
+  }
   if (updates.viewsCount !== undefined) row.views_count = updates.viewsCount;
 
   const { error } = await supabase.from('temples').update(row).eq('id', id);
@@ -165,19 +218,7 @@ export async function fetchUsersFromSupabase(): Promise<UserProfile[]> {
 
 export async function insertUserToSupabase(user: UserProfile): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase.from('users').insert([{
-    id: user.id,
-    name: user.name,
-    username: user.username,
-    password: user.password,
-    email: user.email || '',
-    role: user.role,
-    avatar_text: user.avatarText,
-    avatar_color: user.avatarColor,
-    contributions_count: user.contributionsCount || 0,
-    approved_count: user.approvedCount || 0,
-    created_at: new Date().toISOString(),
-  }]);
+  const { error } = await supabase.from('users').insert([toSupabaseUserRow(user)]);
   if (error) {
     console.error('[Supabase] Error inserting user:', error.message);
     throw error;
@@ -419,4 +460,3 @@ export async function uploadImageToSupabaseStorage(
     return { url: null, error: err.message };
   }
 }
-

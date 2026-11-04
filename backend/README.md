@@ -55,23 +55,38 @@ Designed to be hosted on **Render.com Free Tier** or **Railway / Fly.io / Glitch
 3. **Environment Variables**:
    Under the **Environment** tab on Render, add:
    - `NODE_ENV`: `production`
-   - `FRONTEND_URL`: `https://<your-username>.github.io` (your GitHub Pages URL)
-   - *(Optional for Supabase)* `DATABASE_URL`: `postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres`
+   - `SUPABASE_URL`: the Project URL from Supabase > Project Settings > API
+   - `SUPABASE_SERVICE_ROLE_KEY`: the server-side service role key from Supabase > Project Settings > API
+   - `SUPABASE_STORAGE_BUCKET`: `temple-images` (optional; this is the default)
+
+   Keep the service role key in Render's backend environment only. Do not add it to GitHub Pages,
+   any `VITE_*` setting, or a committed file. `DATABASE_URL` alone does not configure this API.
 
 4. Click **Deploy Web Service**.
    Your backend will be live at: `https://mupporul-backend.onrender.com`!
 
 ---
 
-## 🗄️ Supabase Free Tier Setup (Optional)
+## Supabase setup
 
-If you wish to use Supabase PostgreSQL instead of the built-in storage:
-1. Create a free account at [supabase.com](https://supabase.com).
-2. Create a new project (e.g. `mupporul-db`).
-3. Open the **SQL Editor** in your Supabase dashboard.
-4. Copy and paste the contents of `src/db/schema.sql` and click **Run**.
-5. Copy your connection string from **Project Settings** > **Database** > **URI**.
-6. Set `DATABASE_URL` in your `.env` or Render environment variables!
+The backend uses the Supabase REST API. It does not connect through `DATABASE_URL`.
+
+1. Create a project at [supabase.com](https://supabase.com), or select an existing project.
+2. In the Supabase dashboard, open **SQL Editor** and choose **New query**.
+3. Open `backend/src/db/schema.sql` from this repository, copy the complete SQL script, and paste it into the SQL Editor.
+4. Click **Run**. The script creates or updates the backend tables, enables row-level security without public table policies, creates the public temple-image bucket, and seeds the deity list. It does not create an administrator or add credentials.
+5. In **Project Settings > API**, copy the **Project URL** and server-side **service role** key. In Render's backend service **Environment** settings, add them as `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. For local development, copy `backend/.env.example` to `backend/.env` and set those same values there.
+6. Restart/redeploy the backend and check `GET /api/health` and `GET /api/stats`; the stats response should report `isSupabase: true`.
+
+Never expose or commit `SUPABASE_SERVICE_ROLE_KEY`. It bypasses row-level security and must only be available to the backend. The schema deliberately does not grant anonymous clients read/write access to the application tables; use the backend API.
+
+### Optional: apply the SQL with psql
+
+If PostgreSQL's `psql` client is installed, copy the database connection string from the Supabase dashboard and set it locally as `SUPABASE_DB_URL` (do not commit it). From the repository root run:
+
+```sh
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f backend/src/db/schema.sql
+```
 
 ---
 
