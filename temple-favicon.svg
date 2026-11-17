@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#171b30" />
+      <stop offset="100%" stop-color="#0b0d17" />
+    </linearGradient>
+    <linearGradient id="gold" x1="32" y1="7" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="45%" stop-color="#f5a623" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded obsidian badge with subtle gold rim (crisp on light & dark browser tabs) -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)" stroke="#f5a623" stroke-opacity="0.45" stroke-width="2" />
+
+  <!-- Five Sacred Kalasams (Finials) -->
+  <path d="M32 7L34.2 12H29.8L32 7Z" fill="#fef08a" />
+  <path d="M25.5 8.5L27.2 12.2H23.8L25.5 8.5Z" fill="#fde047" />
+  <path d="M38.5 8.5L40.2 12.2H36.8L38.5 8.5Z" fill="#fde047" />
+  <path d="M20 10L21.4 12.6H18.6L20 10Z" fill="#f5a623" />
+  <path d="M44 10L45.4 12.6H42.6L44 10Z" fill="#f5a623" />
+
+  <!-- Sala Shikhara Crest -->
+  <path d="M16 14.5C14 13 13 11.2 14.5 10C15.5 11.2 16.5 12.5 18 13H46C47.5 12.5 48.5 11.2 49.5 10C51 11.2 50 13 48 14.5L46 18H18L16 14.5Z" fill="url(#gold)" />
+
+  <!-- Tiered Raja Gopuram Pyramidal Body (5 bold tiers for 16px readability) -->
+  <path d="M18.5 19H45.5L47 23H17L18.5 19Z" fill="url(#gold)" />
+  <path d="M16.5 24H47.5L49 28.5H15L16.5 24Z" fill="url(#gold)" />
+  <path d="M14.5 29.5H49.5L51 34.5H13L14.5 29.5Z" fill="url(#gold)" />
+  <path d="M12.5 35.5H51.5L53 41H11L12.5 35.5Z" fill="url(#gold)" />
+
+  <!-- Grand Base Adhishthana & Maha Dwaram -->
+  <path d="M10 42H54V51H10V42Z" fill="url(#gold)" />
+  <rect x="7" y="51.5" width="50" height="4.5" rx="1.5" fill="#d97706" />
+
+  <!-- Central Sanctum Archway (Maha Dwaram) -->
+  <path d="M26 51.5V41C26 37.7 28.7 35 32 35C35.3 35 38 37.7 38 41V51.5H26Z" fill="#0b0d17" />
+  <!-- Inner Sanctum Lamp / Sacred Flame -->
+  <circle cx="32" cy="43.5" r="2.2" fill="#fde047" />
+</svg>
