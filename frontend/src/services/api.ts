@@ -308,6 +308,19 @@ class ApiService {
     return true;
   }
 
+  async updateUserRole(userId: string, role: string): Promise<UserProfile> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.success === false) {
+      throw new Error(json.error || 'Failed to update user role');
+    }
+    return json.data;
+  }
+
   async changePasswordByCredentials(identifier: string, currentPassword: string, newPassword: string): Promise<boolean> {
     const res = await this.fetchWithAntiCache(`${this.baseUrl}/users/change-password`, {
       method: 'POST',

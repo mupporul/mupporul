@@ -13,6 +13,7 @@ import {
   fetchUsersFromSupabase,
   insertUserToSupabase,
   updateUserPasswordInSupabase,
+  updateUserRoleInSupabase,
   deleteUserFromSupabase,
   fetchDeitiesFromSupabase,
   insertDeityToSupabase,
@@ -625,6 +626,30 @@ export class Database {
     }
 
     return true;
+  }
+
+  public async updateUserRole(id: string, role: Role): Promise<UserProfile | null> {
+    if (!['user', 'contributor', 'admin'].includes(role)) {
+      throw new Error(`Invalid role "${role}". Must be user, contributor, or admin.`);
+    }
+
+    const user = this.data.users.find(u => u.id === id);
+    if (!user) return null;
+
+    const previousRole = user.role;
+    user.role = role;
+
+    if (isSupabaseConfigured) {
+      try {
+        await updateUserRoleInSupabase(user.id, role);
+      } catch (e) {
+        user.role = previousRole;
+        throw e;
+      }
+    }
+
+    this.saveData();
+    return user;
   }
 
   // ==========================================

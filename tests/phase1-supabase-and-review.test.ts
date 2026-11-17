@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createBackendApp } from '../backend/src/app.js';
-import { normalizeSupabaseSubmission, safeParseJson } from '../backend/src/db/supabaseClient.js';
+import {
+  normalizeSupabaseSubmission,
+  safeParseJson,
+  buildSupabaseTempleRow,
+  buildSupabaseTempleUpdateRow,
+} from '../backend/src/db/supabaseClient.js';
 import { db } from '../backend/src/db/database.js';
 
 describe('Phase 1: Supabase Mapper & Schema Normalization', () => {
@@ -72,6 +77,36 @@ describe('Phase 1: Supabase Mapper & Schema Normalization', () => {
     expect(normalized.submittedBy.name).toBe('Contributor');
     expect(normalized.submittedBy.role).toBe('contributor');
     expect(normalized.status).toBe('pending');
+  });
+
+  it('omits non-existent remedies column from Supabase temples insert and update payloads', () => {
+    const insertRow = buildSupabaseTempleRow({
+      id: 'temple-schema-guard',
+      name: 'Parikkal Narasimmar Temple',
+      location: 'Viluppuram, Tamil Nadu',
+      state: 'Tamil Nadu',
+      planets: ['suriyan'],
+      deity: 'narasimmar',
+      significance: 'Pariharam temple',
+      remedies: ['legacy-tag'],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 AM - 8 PM',
+      viewsCount: 0,
+      createdAt: '2026-11-17T00:00:00Z',
+      updatedAt: '2026-11-17T00:00:00Z',
+    });
+
+    expect('remedies' in insertRow).toBe(false);
+    expect(insertRow.name).toBe('Parikkal Narasimmar Temple');
+
+    const updateRow = buildSupabaseTempleUpdateRow({
+      name: 'Parikkal Narasimmar Temple',
+      remedies: [],
+    });
+
+    expect('remedies' in updateRow).toBe(false);
+    expect(updateRow.name).toBe('Parikkal Narasimmar Temple');
   });
 });
 

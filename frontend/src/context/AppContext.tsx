@@ -84,7 +84,7 @@ interface AppContextType {
   setSelectedPlanetFilter: (planetId: string | null) => void;
   switchRole: (role: Role) => void;
   setCurrentUserById: (userId: string) => void;
-  updateUserRole: (userId: string, newRole: Role) => void;
+  updateUserRole: (userId: string, newRole: Role) => Promise<{ success: boolean; message: string }>;
   openAddModal: () => void;
   openEditModal: (temple: Temple) => void;
   closeAddEditModal: () => void;
@@ -958,11 +958,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshFreshData();
   };
 
-  const updateUserRole = (userId: string, newRole: Role) => {
-    setUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, role: newRole } : u))
-    );
-    refreshFreshData();
+  const updateUserRole = async (
+    userId: string,
+    newRole: Role
+  ): Promise<{ success: boolean; message: string }> => {
+    if (currentUser.role !== 'admin') {
+      return {
+        success: false,
+        message: 'Unauthorized: Only administrators can update user roles.',
+      };
+    }
+
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      return { success: false, message: 'User not found.' };
+    }
+
+    const previousRole = targetUser.role;
+    if (previousRole === newRole) {
+      return {
+        success: true,
+        message: `${targetUser.name} is already assigned the ${newRole.toUpperCase()} role.`,
+      };
+    }
+
+    setActionLoadingText('Updating User Role...');
+    try {
+      // Optimistically update local state so dropdown reflects immediately
+      setUsers(prev =>
+        prev.map(u => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+
+      // Persist to backend API & Supabase DB
+      await api.updateUserRole(userId, newRole);
+      await refreshFreshData();
+
+      return {
+        success: true,
+        message: `Updated ${targetUser.name} role to ${newRole.toUpperCase()} successfully.`,
+      };
+    } catch (e: any) {
+      // Rollback optimistic update if backend/DB persistence failed
+      setUsers(prev =>
+        prev.map(u => (u.id === userId ? { ...u, role: previousRole } : u))
+      );
+      return {
+        success: false,
+        message: e.message || 'Failed to update user role on backend.',
+      };
+    } finally {
+      setActionLoadingText(null);
+    }
   };
 
   const openAddModal = () => {

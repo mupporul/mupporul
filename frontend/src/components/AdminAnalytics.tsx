@@ -41,7 +41,8 @@ export const AdminAnalytics: React.FC = () => {
   } = useApp();
 
   const [filterUserRole, setFilterUserRole] = useState<'all' | Role>('all');
-  const [roleUpdatedMsg, setRoleUpdatedMsg] = useState<string | null>(null);
+  const [roleUpdatedMsg, setRoleUpdatedMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
@@ -81,11 +82,28 @@ export const AdminAnalytics: React.FC = () => {
     };
   }).sort((a, b) => b.count - a.count);
 
-  const handleRoleChange = (userId: string, newRole: Role) => {
-    updateUserRole(userId, newRole);
-    const targetUser = users.find(u => u.id === userId);
-    setRoleUpdatedMsg(`Updated ${targetUser?.name || 'User'} role to ${newRole.toUpperCase()} successfully.`);
-    setTimeout(() => setRoleUpdatedMsg(null), 3000);
+  const handleRoleChange = async (userId: string, newRole: Role) => {
+    setUpdatingRoleUserId(userId);
+    try {
+      const result = await updateUserRole(userId, newRole);
+      const targetUser = users.find(u => u.id === userId);
+      setRoleUpdatedMsg({
+        type: result.success ? 'success' : 'error',
+        text:
+          result.message ||
+          (result.success
+            ? `Updated ${targetUser?.name || 'User'} role to ${newRole.toUpperCase()} successfully.`
+            : `Failed to update ${targetUser?.name || 'User'} role.`),
+      });
+    } catch (err: any) {
+      setRoleUpdatedMsg({
+        type: 'error',
+        text: err?.message || 'Failed to update user role.',
+      });
+    } finally {
+      setUpdatingRoleUserId(null);
+      setTimeout(() => setRoleUpdatedMsg(null), 4000);
+    }
   };
 
   const handleExportData = () => {
@@ -173,9 +191,19 @@ export const AdminAnalytics: React.FC = () => {
 
       {/* Notification Toast */}
       {roleUpdatedMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-500 text-purple-200 text-xs font-medium flex items-center gap-2 animate-in fade-in">
-          <CheckCircle className="w-4 h-4 text-purple-400" />
-          <span>{roleUpdatedMsg}</span>
+        <div
+          className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 animate-in fade-in ${
+            roleUpdatedMsg.type === 'error'
+              ? 'bg-red-950/80 border-red-500 text-red-200'
+              : 'bg-purple-950/80 border-purple-500 text-purple-200'
+          }`}
+        >
+          {roleUpdatedMsg.type === 'error' ? (
+            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+          ) : (
+            <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />
+          )}
+          <span>{roleUpdatedMsg.text}</span>
         </div>
       )}
 
@@ -443,8 +471,9 @@ export const AdminAnalytics: React.FC = () => {
                     <div className="flex items-center justify-end gap-2">
                       <select
                         value={u.role}
+                        disabled={updatingRoleUserId === u.id}
                         onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
-                        className="bg-[#121422] text-gray-200 border border-[#2b304c] rounded-xl px-2.5 py-1 text-xs focus:border-[#f5a623] cursor-pointer"
+                        className="bg-[#121422] text-gray-200 border border-[#2b304c] rounded-xl px-2.5 py-1 text-xs focus:border-[#f5a623] cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                       >
                         <option value="user">User (Viewer)</option>
                         <option value="contributor">Contributor (Add/Review)</option>
@@ -520,7 +549,7 @@ export const AdminAnalytics: React.FC = () => {
                   setDeleteLoading(false);
                   setUserToDelete(null);
                   if (res.success) {
-                    setRoleUpdatedMsg(res.message);
+                    setRoleUpdatedMsg({ type: 'success', text: res.message });
                     setTimeout(() => setRoleUpdatedMsg(null), 3000);
                   } else {
                     alert(res.message);
@@ -575,7 +604,10 @@ export const AdminAnalytics: React.FC = () => {
                 setClearLoading(true);
                 await clearAllTemples();
                 setClearLoading(false);
-                setRoleUpdatedMsg('All temples have been successfully removed! Catalog is now clean.');
+                setRoleUpdatedMsg({
+                  type: 'success',
+                  text: 'All temples have been successfully removed! Catalog is now clean.',
+                });
                 setTimeout(() => setRoleUpdatedMsg(null), 4000);
               }
             }}
@@ -602,7 +634,7 @@ export const AdminAnalytics: React.FC = () => {
             onClick={() => {
               if (confirm('Restore default sample temples and contributors?')) {
                 resetToDefaultData();
-                setRoleUpdatedMsg('Default demo temples restored.');
+                setRoleUpdatedMsg({ type: 'success', text: 'Default demo temples restored.' });
                 setTimeout(() => setRoleUpdatedMsg(null), 3000);
               }
             }}

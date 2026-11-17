@@ -31,8 +31,9 @@ usersRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/users/login - login user
-usersRouter.post('/login', (req: Request, res: Response) => {
+usersRouter.post('/login', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const username = req.body.username || req.body.identifier || req.body.email;
     const password = req.body.password;
     if (!username) {
@@ -119,6 +120,41 @@ usersRouter.put('/:id/password', (req: Request, res: Response) => {
     res.status(400).json({ success: false, error: err.message });
   }
 });
+
+// PUT & PATCH /api/users/:id/role - update role for user (Admin RBAC)
+const handleUpdateUserRole = async (req: Request, res: Response) => {
+  try {
+    await db.syncFromSupabase();
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role || !['user', 'contributor', 'admin'].includes(role)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid role. Must be one of: user, contributor, admin',
+      });
+      return;
+    }
+
+    const updatedUser = await db.updateUserRole(id, role);
+    if (!updatedUser) {
+      res.status(404).json({ success: false, error: 'User not found' });
+      return;
+    }
+
+    const { password: _, ...safeUser } = updatedUser;
+    res.json({
+      success: true,
+      message: `User role updated to ${role}`,
+      data: safeUser,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+usersRouter.put('/:id/role', handleUpdateUserRole);
+usersRouter.patch('/:id/role', handleUpdateUserRole);
 
 // POST /api/users/change-password - change password using username, email, or id
 usersRouter.post('/change-password', (req: Request, res: Response) => {

@@ -57,9 +57,8 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
   }));
 }
 
-export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
-  if (!supabase) throw new Error('Supabase not configured');
-  const row = {
+export function buildSupabaseTempleRow(temple: Temple) {
+  return {
     id: temple.id,
     name: temple.name || 'Sacred Temple',
     location: temple.location || '',
@@ -67,7 +66,6 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
     planets: Array.isArray(temple.planets) ? temple.planets : [],
     deity: temple.deity || 'shivan',
     significance: temple.significance || '',
-    remedies: [],
     image_url: temple.imageUrl || '',
     video_url: temple.videoUrl || '',
     timings: temple.timings || '',
@@ -83,6 +81,33 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
     created_at: temple.createdAt || new Date().toISOString(),
     updated_at: temple.updatedAt || new Date().toISOString(),
   };
+}
+
+export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>): Record<string, any> {
+  const row: Record<string, any> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (updates.name !== undefined) row.name = updates.name;
+  if (updates.location !== undefined) row.location = updates.location;
+  if (updates.state !== undefined) row.state = updates.state;
+  if (updates.planets !== undefined) row.planets = updates.planets;
+  if (updates.deity !== undefined) row.deity = updates.deity;
+  if (updates.significance !== undefined) row.significance = updates.significance;
+  if (updates.imageUrl !== undefined) row.image_url = updates.imageUrl;
+  if (updates.videoUrl !== undefined) row.video_url = updates.videoUrl;
+  if (updates.timings !== undefined) row.timings = updates.timings;
+  if (updates.history !== undefined) row.history = updates.history;
+  if (updates.poojaDetails !== undefined) row.pooja_details = updates.poojaDetails;
+  if (updates.contactNumber !== undefined) row.contact_number = updates.contactNumber;
+  if (updates.viewsCount !== undefined) row.views_count = updates.viewsCount;
+
+  return row;
+}
+
+export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const row = buildSupabaseTempleRow(temple);
 
   const { error } = await supabase.from('temples').upsert(row);
   if (error) {
@@ -94,24 +119,7 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
 
 export async function updateTempleInSupabase(id: string, updates: Partial<Temple>): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
-  const row: Record<string, any> = {
-    updated_at: new Date().toISOString(),
-  };
-
-  if (updates.name !== undefined) row.name = updates.name;
-  if (updates.location !== undefined) row.location = updates.location;
-  if (updates.state !== undefined) row.state = updates.state;
-  if (updates.planets !== undefined) row.planets = updates.planets;
-  if (updates.deity !== undefined) row.deity = updates.deity;
-  if (updates.significance !== undefined) row.significance = updates.significance;
-  row.remedies = [];
-  if (updates.imageUrl !== undefined) row.image_url = updates.imageUrl;
-  if (updates.videoUrl !== undefined) row.video_url = updates.videoUrl;
-  if (updates.timings !== undefined) row.timings = updates.timings;
-  if (updates.history !== undefined) row.history = updates.history;
-  if (updates.poojaDetails !== undefined) row.pooja_details = updates.poojaDetails;
-  if (updates.contactNumber !== undefined) row.contact_number = updates.contactNumber;
-  if (updates.viewsCount !== undefined) row.views_count = updates.viewsCount;
+  const row = buildSupabaseTempleUpdateRow(updates);
 
   const { error } = await supabase.from('temples').update(row).eq('id', id);
   if (error) {
@@ -188,6 +196,19 @@ export async function updateUserPasswordInSupabase(userId: string, newPass: stri
   if (!supabase) return false;
   const { error } = await supabase.from('users').update({ password: newPass }).eq('id', userId);
   return !error;
+}
+
+export async function updateUserRoleInSupabase(userId: string, role: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('users')
+    .update({ role })
+    .eq('id', userId);
+  if (error) {
+    console.error('[Supabase] Error updating user role:', error.message);
+    throw error;
+  }
+  return true;
 }
 
 export async function deleteUserFromSupabase(userId: string): Promise<boolean> {

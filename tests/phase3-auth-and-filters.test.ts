@@ -128,6 +128,63 @@ describe('Phase 3: Auth & User Security Integration Tests', () => {
     expect(newLoginRes.status).toBe(200);
     expect(newLoginRes.body.success).toBe(true);
   });
+
+  it('updates user role from contributor to user (viewer) and persists across GET /api/users and login', async () => {
+    const timestamp = Date.now();
+    const createRes = await request(app)
+      .post('/api/users')
+      .send({
+        name: `Role Guard User ${timestamp}`,
+        username: `roleguard_${timestamp}`,
+        password: 'RolePassword123',
+        role: 'contributor',
+      });
+
+    expect(createRes.status).toBe(201);
+    const createdUserId = createRes.body.data.id;
+    expect(createRes.body.data.role).toBe('contributor');
+
+    // Update role from contributor -> user
+    const updateRes = await request(app)
+      .put(`/api/users/${createdUserId}/role`)
+      .send({ role: 'user' });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+    expect(updateRes.body.data.role).toBe('user');
+    expect(updateRes.body.data.password).toBeUndefined();
+
+    // Verify GET /api/users returns updated role
+    const listRes = await request(app).get('/api/users');
+    expect(listRes.status).toBe(200);
+    const listedUser = listRes.body.data.find((u: any) => u.id === createdUserId);
+    expect(listedUser).toBeDefined();
+    expect(listedUser.role).toBe('user');
+
+    // Verify login also returns updated role
+    const loginRes = await request(app)
+      .post('/api/users/login')
+      .send({ identifier: `roleguard_${timestamp}`, password: 'RolePassword123' });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.data.role).toBe('user');
+
+    // Cleanup temporary test user
+    await request(app).delete(`/api/users/${createdUserId}`);
+  });
+
+  it('rejects invalid role and unknown user on PUT /api/users/:id/role', async () => {
+    const invalidRoleRes = await request(app)
+      .put('/api/users/user-admin/role')
+      .send({ role: 'superadmin' });
+    expect(invalidRoleRes.status).toBe(400);
+    expect(invalidRoleRes.body.success).toBe(false);
+
+    const missingUserRes = await request(app)
+      .put('/api/users/non-existent-user-id/role')
+      .send({ role: 'user' });
+    expect(missingUserRes.status).toBe(404);
+    expect(missingUserRes.body.success).toBe(false);
+  });
 });
 
 describe('Phase 3: Filter & Search Calculation Tests', () => {
