@@ -20,6 +20,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
@@ -30,6 +31,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
+        setConfirmingDelete(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -49,24 +51,29 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
   const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
 
   return (
-    <article className="rounded-2xl bg-[#161825] border border-[#272a3d] overflow-hidden shadow-lg hover:border-[#383d58] transition-all flex flex-col">
-      {/* Temple Banner Image with 3-dot action menu */}
-      <div className="relative aspect-[16/9] w-full bg-[#10121d] overflow-hidden">
-        <img
-          src={temple.imageUrl}
-          alt={temple.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 cursor-pointer"
-          loading="lazy"
-          onClick={() => openDetailModal(temple)}
-        />
+    <article className="rounded-2xl bg-[#161825] border border-[#272a3d] shadow-lg hover:border-[#383d58] transition-all flex flex-col">
+      {/* Temple Banner Image with 3-dot action menu (menu lives outside overflow-hidden so items are never clipped) */}
+      <div className="relative aspect-[16/9] w-full bg-[#10121d] rounded-t-2xl">
+        <div className="w-full h-full overflow-hidden rounded-t-2xl relative">
+          <img
+            src={temple.imageUrl}
+            alt={temple.name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 cursor-pointer"
+            loading="lazy"
+            onClick={() => openDetailModal(temple)}
+          />
 
-        {/* Gradient Overlay for contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#161825] via-transparent to-black/30 pointer-events-none" />
+          {/* Gradient Overlay for contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#161825] via-transparent to-black/30 pointer-events-none" />
+        </div>
 
         {/* 3-dot Action Menu Button (Top Right) */}
-        <div className="absolute top-3 right-3 z-10" ref={menuRef}>
+        <div className="absolute top-3 right-3 z-20" ref={menuRef}>
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => {
+              setIsMenuOpen(!isMenuOpen);
+              setConfirmingDelete(false);
+            }}
             aria-label="More options"
             className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-gray-200 hover:text-white flex items-center justify-center border border-white/10 hover:bg-black/70 transition-colors shadow-md cursor-pointer"
           >
@@ -75,11 +82,12 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
 
           {/* 3-dot Dropdown */}
           {isMenuOpen && (
-            <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-[#1b1e2e] border border-[#31364e] shadow-xl py-1.5 z-20 text-xs">
+            <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#1b1e2e] border border-[#31364e] shadow-2xl py-1.5 z-30 text-xs">
               <button
                 onClick={() => {
                   openDetailModal(temple);
                   setIsMenuOpen(false);
+                  setConfirmingDelete(false);
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-200 hover:bg-[#252a3f] text-left cursor-pointer"
               >
@@ -92,6 +100,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                   onClick={() => {
                     openEditModal(temple);
                     setIsMenuOpen(false);
+                    setConfirmingDelete(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-amber-300 hover:bg-[#252a3f] text-left font-medium cursor-pointer"
                 >
@@ -109,18 +118,41 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
               </button>
 
               {canDelete && (
-                <button
-                  onClick={() => {
-                    if (confirm(`Admin Action: Are you sure you want to delete ${temple.name}?`)) {
-                      deleteTemple(temple.id);
-                    }
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-red-400 hover:bg-red-950/40 text-left border-t border-[#2d3249] mt-1 cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete Temple (Admin)</span>
-                </button>
+                <div className="border-t border-[#2d3249] mt-1 pt-1">
+                  {!confirmingDelete ? (
+                    <button
+                      onClick={() => setConfirmingDelete(true)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-red-400 hover:bg-red-950/40 text-left cursor-pointer font-medium"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Temple (Admin)</span>
+                    </button>
+                  ) : (
+                    <div className="px-3 py-2 space-y-2 bg-red-950/30">
+                      <p className="text-[11px] text-red-200 font-semibold leading-snug">
+                        Delete "{temple.name}"?
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={async () => {
+                            setIsMenuOpen(false);
+                            setConfirmingDelete(false);
+                            await deleteTemple(temple.id);
+                          }}
+                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-[11px] cursor-pointer text-center"
+                        >
+                          Confirm Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmingDelete(false)}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#252a3f] hover:bg-[#31364e] text-gray-300 text-[11px] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

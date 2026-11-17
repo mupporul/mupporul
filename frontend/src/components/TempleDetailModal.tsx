@@ -9,6 +9,7 @@ import {
   Phone,
   Compass,
   Edit3,
+  Trash2,
   Check,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -20,6 +21,7 @@ export const TempleDetailModal: React.FC = () => {
     closeDetailModal,
     openVideoModal,
     openEditModal,
+    deleteTemple,
     currentUser,
     isMobileFrame,
     deities,
@@ -27,6 +29,7 @@ export const TempleDetailModal: React.FC = () => {
   } = useApp();
 
   const [copiedShare, setCopiedShare] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Close on Escape key press
   useEffect(() => {
@@ -43,6 +46,7 @@ export const TempleDetailModal: React.FC = () => {
 
   const temple = temples?.find(t => t.id === selectedTempleForDetail.id) || selectedTempleForDetail;
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
+  const canDelete = currentUser.role === 'admin';
   const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
 
   const handleShare = () => {
@@ -267,8 +271,8 @@ export const TempleDetailModal: React.FC = () => {
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="p-3.5 sm:p-4 border-t border-[#24273c] bg-[#111320] flex items-center justify-between shrink-0">
-          <div>
+        <div className="p-3.5 sm:p-4 border-t border-[#24273c] bg-[#111320] flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
             {canEdit && (
               <button
                 onClick={() => {
@@ -280,6 +284,37 @@ export const TempleDetailModal: React.FC = () => {
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit Temple ({currentUser.role})</span>
               </button>
+            )}
+
+            {canDelete && !confirmingDelete && (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Temple (Admin)</span>
+              </button>
+            )}
+
+            {canDelete && confirmingDelete && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={async () => {
+                    setConfirmingDelete(false);
+                    closeDetailModal();
+                    await deleteTemple(temple.id);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold cursor-pointer"
+                >
+                  Confirm Delete
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="px-3 py-1.5 rounded-xl bg-[#202336] hover:bg-[#282d46] text-gray-300 text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             )}
           </div>
 

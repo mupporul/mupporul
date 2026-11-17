@@ -5,6 +5,7 @@ import { ReviewTab } from '../frontend/src/components/ReviewTab';
 import { BottomNav } from '../frontend/src/components/BottomNav';
 import { ProfileTab } from '../frontend/src/components/ProfileTab';
 import { AddEditTempleModal } from '../frontend/src/components/AddEditTempleModal';
+import { TempleCard } from '../frontend/src/components/TempleCard';
 import * as AppContextModule from '../frontend/src/context/AppContext';
 import { TempleSubmission } from '../frontend/src/types';
 
@@ -490,5 +491,66 @@ describe('Phase 2: AddEditTempleModal Edit Persistence & Error Handling', () => 
       expect(screen.getAllByText(/Failed to save temple updates/i).length).toBeGreaterThan(0);
     });
     expect(closeMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('Phase 2: TempleCard Admin Delete Menu', () => {
+  const sampleTemple = {
+    id: 'temple-del-1',
+    name: 'Karungalakudi Thiruchunai Sri Agatheeswarar Temple',
+    location: 'Karungalakudi, Madurai',
+    state: 'Tamil Nadu',
+    planets: ['suri'],
+    deity: 'agathiyar',
+    significance: 'Sacred hill temple',
+    remedies: [],
+    imageUrl: '',
+    videoUrl: '',
+    timings: '6 AM - 8 PM',
+    viewsCount: 0,
+    createdAt: '2026-10-01T00:00:00Z',
+    updatedAt: '2026-10-01T00:00:00Z',
+  };
+
+  it('shows Delete Temple (Admin) option and triggers deleteTemple after inline confirmation', async () => {
+    const deleteTempleMock = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      currentUser: { id: 'user-admin', name: 'ammurugan', username: 'ammurugan', role: 'admin' },
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      deleteTemple: deleteTempleMock,
+      deities: [{ id: 'agathiyar', nameTamil: 'அகஸ்தியர்', nameEnglish: 'Agathiyar' }],
+    } as any);
+
+    render(<TempleCard temple={sampleTemple} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /More options/i }));
+    const deleteOption = screen.getByRole('button', { name: /Delete Temple \(Admin\)/i });
+    expect(deleteOption).toBeInTheDocument();
+
+    fireEvent.click(deleteOption);
+    const confirmBtn = screen.getByRole('button', { name: /Confirm Delete/i });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(deleteTempleMock).toHaveBeenCalledWith('temple-del-1');
+    });
+  });
+
+  it('hides Delete Temple (Admin) option for non-admin contributor role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      currentUser: { id: 'user-c', name: 'Contrib', username: 'contrib', role: 'contributor' },
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      deleteTemple: vi.fn(),
+      deities: [],
+    } as any);
+
+    render(<TempleCard temple={sampleTemple} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /More options/i }));
+    expect(screen.queryByRole('button', { name: /Delete Temple/i })).not.toBeInTheDocument();
   });
 });
