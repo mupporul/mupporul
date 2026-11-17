@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewTab } from '../frontend/src/components/ReviewTab';
+import { BottomNav } from '../frontend/src/components/BottomNav';
 import * as AppContextModule from '../frontend/src/context/AppContext';
 import { TempleSubmission } from '../frontend/src/types';
 
@@ -223,5 +224,56 @@ describe('Phase 2: ReviewTab Component Boundary & Resilience Tests', () => {
     fireEvent.click(refreshBtn);
 
     expect(mockRefreshFreshData).toHaveBeenCalled();
+  });
+});
+
+describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
+  const baseNavContext = {
+    activeTab: 'temples' as const,
+    setActiveTab: vi.fn(),
+    submissions: [],
+    openAddModal: vi.fn(),
+  };
+
+  it('hides Review, Add, and Analytics tabs for user (Viewer) role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseNavContext,
+      currentUser: { id: 'u-user', name: 'Thangaraj', username: 'thangaraj', role: 'user' },
+    } as any);
+
+    render(<BottomNav />);
+
+    expect(screen.getByRole('button', { name: /Temples/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Quiz/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Profile/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Review/i })).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Add Temple')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Analytics/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Review and Add tabs for contributor role, while hiding Analytics', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseNavContext,
+      currentUser: { id: 'u-contrib', name: 'Contributor', username: 'contrib', role: 'contributor' },
+    } as any);
+
+    render(<BottomNav />);
+
+    expect(screen.getByRole('button', { name: /Review/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Add Temple')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Analytics/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Review, Add, and Analytics tabs for admin role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseNavContext,
+      currentUser: { id: 'u-admin', name: 'Admin', username: 'admin', role: 'admin' },
+    } as any);
+
+    render(<BottomNav />);
+
+    expect(screen.getByRole('button', { name: /Review/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Add Temple')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Analytics/i })).toBeInTheDocument();
   });
 });

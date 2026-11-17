@@ -31,26 +31,28 @@ export const BottomNav: React.FC = () => {
           )}
         </button>
 
-        {/* Review Tab (With Badge Count) */}
-        <button
-          onClick={() => setActiveTab('review')}
-          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer relative ${
-            activeTab === 'review' ? 'text-[#f5a623]' : 'text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          <div className="relative shrink-0">
-            <ClipboardList className="w-5 h-5 mb-0.5" />
-            {pendingReviewCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#f5a623] text-black text-[9px] font-extrabold flex items-center justify-center ring-1 ring-black">
-                {pendingReviewCount}
-              </span>
+        {/* Review Tab (Contributors & Admins Only, With Badge Count) */}
+        {isContributorOrAdmin && (
+          <button
+            onClick={() => setActiveTab('review')}
+            className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer relative ${
+              activeTab === 'review' ? 'text-[#f5a623]' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <div className="relative shrink-0">
+              <ClipboardList className="w-5 h-5 mb-0.5" />
+              {pendingReviewCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#f5a623] text-black text-[9px] font-extrabold flex items-center justify-center ring-1 ring-black">
+                  {pendingReviewCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] sm:text-[11px] font-semibold tracking-tight truncate max-w-full text-center">Review</span>
+            {activeTab === 'review' && (
+              <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
             )}
-          </div>
-          <span className="text-[10px] sm:text-[11px] font-semibold tracking-tight truncate max-w-full text-center">Review</span>
-          {activeTab === 'review' && (
-            <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
-          )}
-        </button>
+          </button>
+        )}
 
         {/* Floating Quick Add Button for Contributors & Admins */}
         {isContributorOrAdmin && (

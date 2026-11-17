@@ -243,12 +243,14 @@ export const ProfileTab: React.FC = () => {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setActiveTab('review')}
-                  className="text-xs text-amber-400 hover:underline font-medium"
-                >
-                  View in Review Tab →
-                </button>
+                {(currentUser.role === 'contributor' || currentUser.role === 'admin') && (
+                  <button
+                    onClick={() => setActiveTab('review')}
+                    className="text-xs text-amber-400 hover:underline font-medium"
+                  >
+                    View in Review Tab →
+                  </button>
+                )}
               </div>
             ))
           )}

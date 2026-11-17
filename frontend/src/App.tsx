@@ -19,7 +19,16 @@ import { BottomNav } from './components/BottomNav';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, isLoggedIn, isLoading, isTabLoading, actionLoadingText } = useApp();
+  const { activeTab, setActiveTab, currentUser, isLoggedIn, isLoading, isTabLoading, actionLoadingText } = useApp();
+  const isContributorOrAdmin = currentUser.role === 'contributor' || currentUser.role === 'admin';
+
+  React.useEffect(() => {
+    if (activeTab === 'review' && !isContributorOrAdmin) {
+      setActiveTab('temples');
+    } else if (activeTab === 'analytics' && currentUser.role !== 'admin') {
+      setActiveTab('temples');
+    }
+  }, [activeTab, currentUser.role, isContributorOrAdmin]);
 
   if (isLoading) {
     return (
@@ -65,7 +74,7 @@ const MainAppContent: React.FC = () => {
           ) : (
             <>
               {activeTab === 'temples' && <TemplesList />}
-              {activeTab === 'review' && (
+              {activeTab === 'review' && isContributorOrAdmin && (
                 <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
                   <ReviewTab />
                 </div>
