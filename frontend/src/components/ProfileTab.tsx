@@ -74,9 +74,11 @@ export const ProfileTab: React.FC = () => {
               </div>
               <p className="text-xs text-gray-400 mt-0.5">{currentUser.email}</p>
 
-              <div className="flex items-center gap-2 mt-2 text-xs text-gray-300">
-                <strong className="text-emerald-400">{currentUser.contributionsCount || 0}</strong> Contributions
-              </div>
+              {currentUser.role !== 'user' && (
+                <div className="flex items-center gap-2 mt-2 text-xs text-gray-300">
+                  <strong className="text-emerald-400">{currentUser.contributionsCount || 0}</strong> Contributions
+                </div>
+              )}
             </div>
           </div>
 
@@ -120,13 +122,15 @@ export const ProfileTab: React.FC = () => {
               <span>Change Password</span>
             </button>
 
-            <button
-              onClick={openLoginModal}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#17192a] border border-[#2b304c] text-gray-300 hover:text-white text-xs font-semibold hover:bg-[#22253d] transition-colors cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5 text-gray-400" />
-              <span>Switch User</span>
-            </button>
+            {currentUser.role !== 'user' && (
+              <button
+                onClick={openLoginModal}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#17192a] border border-[#2b304c] text-gray-300 hover:text-white text-xs font-semibold hover:bg-[#22253d] transition-colors cursor-pointer"
+              >
+                <User className="w-3.5 h-3.5 text-gray-400" />
+                <span>Switch User</span>
+              </button>
+            )}
 
             <button
               onClick={logout}
@@ -154,7 +158,9 @@ export const ProfileTab: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
-              Change your password anytime to protect your account and temple contributions.
+              {currentUser.role === 'user'
+                ? 'Change your password anytime to protect your account.'
+                : 'Change your password anytime to protect your account and temple contributions.'}
             </p>
           </div>
         </div>
@@ -168,8 +174,10 @@ export const ProfileTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Tabs: My Submissions | Roles Guide */}
-      <div className="flex items-center gap-2 p-1 bg-[#121422] rounded-2xl border border-[#22253a]">
+      {/* Tabs: My Submissions | RBAC Matrix (Contributors & Admins only) */}
+      {currentUser.role !== 'user' && (
+        <>
+          <div className="flex items-center gap-2 p-1 bg-[#121422] rounded-2xl border border-[#22253a]">
         <button
           onClick={() => setActiveSubTab('my_submissions')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
@@ -301,6 +309,8 @@ export const ProfileTab: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

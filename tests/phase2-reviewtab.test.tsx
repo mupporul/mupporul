@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewTab } from '../frontend/src/components/ReviewTab';
 import { BottomNav } from '../frontend/src/components/BottomNav';
+import { ProfileTab } from '../frontend/src/components/ProfileTab';
 import * as AppContextModule from '../frontend/src/context/AppContext';
 import { TempleSubmission } from '../frontend/src/types';
 
@@ -275,5 +276,97 @@ describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
     expect(screen.getByRole('button', { name: /Review/i })).toBeInTheDocument();
     expect(screen.getByTitle('Add Temple')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Analytics/i })).toBeInTheDocument();
+  });
+});
+
+describe('Phase 2: ProfileTab Role-Based Visibility Guard', () => {
+  const baseProfileContext = {
+    switchRole: vi.fn(),
+    temples: [],
+    submissions: [
+      {
+        id: 'sub-old-1',
+        type: 'new',
+        status: 'approved',
+        submittedAt: '2026-10-26T00:00:00Z',
+        templeData: {
+          name: 'Lakshmi Narasimmar Temple',
+          location: 'Poovarasankuppam',
+          state: 'Tamil Nadu',
+          planets: ['sun'],
+          deity: 'narasimmar',
+          significance: 'Pariharam temple',
+          imageUrl: '',
+          videoUrl: '',
+          timings: '',
+          remedies: [],
+        },
+        submittedBy: {
+          id: 'user-thangaraj',
+          name: 'Thangaraj',
+          email: 'thangaraj@mupporul.app',
+          role: 'contributor',
+        },
+      },
+    ],
+    openDetailModal: vi.fn(),
+    openAddModal: vi.fn(),
+    openAddUserModal: vi.fn(),
+    openChangePasswordModal: vi.fn(),
+    logout: vi.fn(),
+    setActiveTab: vi.fn(),
+    resetToDefaultData: vi.fn(),
+    openLoginModal: vi.fn(),
+    setIsArchitectureModalOpen: vi.fn(),
+  };
+
+  it('hides Switch User, My Submissions, and RBAC Matrix when demoted to user (Viewer) role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseProfileContext,
+      currentUser: {
+        id: 'user-thangaraj',
+        name: 'Thangaraj',
+        username: 'thangaraj',
+        email: 'thangaraj@mupporul.app',
+        role: 'user',
+        avatarText: 'TH',
+        avatarColor: 'from-cyan-500 to-cyan-700',
+        contributionsCount: 0,
+        approvedCount: 0,
+      },
+    } as any);
+
+    render(<ProfileTab />);
+
+    expect(screen.getByRole('button', { name: /Log Out/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Switch User/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/My Submissions/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/RBAC Matrix/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Lakshmi Narasimmar Temple')).not.toBeInTheDocument();
+  });
+
+  it('shows Switch User, My Submissions, and RBAC Matrix for contributor role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseProfileContext,
+      currentUser: {
+        id: 'user-thangaraj',
+        name: 'Thangaraj',
+        username: 'thangaraj',
+        email: 'thangaraj@mupporul.app',
+        role: 'contributor',
+        avatarText: 'TH',
+        avatarColor: 'from-cyan-500 to-cyan-700',
+        contributionsCount: 1,
+        approvedCount: 1,
+      },
+    } as any);
+
+    render(<ProfileTab />);
+
+    expect(screen.getByRole('button', { name: /Log Out/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Switch User/i })).toBeInTheDocument();
+    expect(screen.getByText(/My Submissions \(1\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/RBAC Matrix/i)).toBeInTheDocument();
+    expect(screen.getByText('Lakshmi Narasimmar Temple')).toBeInTheDocument();
   });
 });
