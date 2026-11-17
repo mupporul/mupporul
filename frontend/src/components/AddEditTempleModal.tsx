@@ -452,10 +452,13 @@ export const AddEditTempleModal: React.FC = () => {
 
             {/* Deity and Timings (Side-by-side in fluid wide, stacked in mobile) */}
             <div className={`grid gap-3.5 ${isMobileFrame ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-gray-300">
-                    Primary Deity (மூலவர் / இறைவன் / இறைவி)
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2 min-h-[24px] mb-1.5">
+                  <label
+                    className="block text-xs font-semibold text-gray-300 truncate"
+                    title="Primary Deity (மூலவர் / இறைவன் / இறைவி)"
+                  >
+                    Primary Deity (மூலவர்)
                   </label>
                   {currentUser.role === 'admin' && (
                     <button
@@ -466,20 +469,20 @@ export const AddEditTempleModal: React.FC = () => {
                         setDeityFormEnglish('');
                         setDeityFormError(null);
                       }}
-                      className="text-[11px] font-semibold text-[#f5a623] hover:text-amber-300 flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+                      className="text-[11px] font-semibold text-[#f5a623] hover:text-amber-300 flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
                       title="Add new deity in Tamil (Admin only)"
                     >
-                      <Plus className="w-3 h-3" />
-                      <span>+ மூலவர் சேர்</span>
+                      <Plus className="w-3 h-3 shrink-0" />
+                      <span>மூலவர் சேர்</span>
                     </button>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <select
                     value={formData.deity}
                     onChange={(e) => setFormData(prev => ({ ...prev, deity: e.target.value }))}
-                    className="flex-1 bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none cursor-pointer text-xs sm:text-sm font-tamil"
+                    className="min-w-0 w-full flex-1 bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none cursor-pointer text-xs sm:text-sm font-tamil"
                   >
                     {deities.map(d => (
                       <option key={d.id} value={d.id}>
@@ -597,28 +600,30 @@ export const AddEditTempleModal: React.FC = () => {
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  தரிசன நேரம் (Timings)
-                </label>
+              <div className="min-w-0">
+                <div className="flex items-center min-h-[24px] mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-300">
+                    தரிசன நேரம் (Timings)
+                  </label>
+                </div>
                 <input
                   type="text"
                   placeholder="காலை 6:00 - 12:30, மாலை 4:00 - இரவு 8:30"
                   value={formData.timings}
                   onChange={(e) => setFormData(prev => ({ ...prev, timings: e.target.value }))}
-                  className="w-full bg-[#1a1c2d] text-gray-100 font-tamil text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623]"
+                  className="w-full bg-[#1a1c2d] text-gray-100 font-tamil text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Location details (State + Location) */}
             <div className={`grid gap-3.5 ${isMobileFrame ? 'grid-cols-2 gap-2' : 'grid-cols-1 md:grid-cols-2'}`}>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-gray-300 mb-1">State</label>
                 <select
                   value={formData.state}
                   onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                  className="w-full bg-[#1a1c2d] text-gray-100 text-xs sm:text-sm px-3 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] cursor-pointer"
+                  className="w-full bg-[#1a1c2d] text-gray-100 text-xs sm:text-sm px-3 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none cursor-pointer"
                 >
                   {STATES.map(s => (
                     <option key={s} value={s}>{s}</option>
@@ -626,7 +631,7 @@ export const AddEditTempleModal: React.FC = () => {
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-gray-300 mb-1">Location *</label>
                 <input
                   type="text"
