@@ -122,7 +122,7 @@ export const ProfileTab: React.FC = () => {
               <span>Change Password</span>
             </button>
 
-            {currentUser.role !== 'user' && (
+            {currentUser.role === 'admin' && (
               <button
                 onClick={openLoginModal}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#17192a] border border-[#2b304c] text-gray-300 hover:text-white text-xs font-semibold hover:bg-[#22253d] transition-colors cursor-pointer"

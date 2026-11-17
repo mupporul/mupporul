@@ -345,7 +345,7 @@ describe('Phase 2: ProfileTab Role-Based Visibility Guard', () => {
     expect(screen.queryByText('Lakshmi Narasimmar Temple')).not.toBeInTheDocument();
   });
 
-  it('shows Switch User, My Submissions, and RBAC Matrix for contributor role', () => {
+  it('hides Switch User while keeping My Submissions and RBAC Matrix for contributor role', () => {
     vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
       ...baseProfileContext,
       currentUser: {
@@ -364,9 +364,33 @@ describe('Phase 2: ProfileTab Role-Based Visibility Guard', () => {
     render(<ProfileTab />);
 
     expect(screen.getByRole('button', { name: /Log Out/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Switch User/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Switch User/i })).not.toBeInTheDocument();
     expect(screen.getByText(/My Submissions \(1\)/i)).toBeInTheDocument();
     expect(screen.getByText(/RBAC Matrix/i)).toBeInTheDocument();
     expect(screen.getByText('Lakshmi Narasimmar Temple')).toBeInTheDocument();
+  });
+
+  it('shows Switch User, My Submissions, and RBAC Matrix for admin role', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...baseProfileContext,
+      currentUser: {
+        id: 'user-admin',
+        name: 'Admin Murugan',
+        username: 'ammurugan',
+        email: 'admin@mupporul.app',
+        role: 'admin',
+        avatarText: 'AM',
+        avatarColor: 'from-purple-500 to-purple-700',
+        contributionsCount: 5,
+        approvedCount: 5,
+      },
+    } as any);
+
+    render(<ProfileTab />);
+
+    expect(screen.getByRole('button', { name: /Log Out/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Switch User/i })).toBeInTheDocument();
+    expect(screen.getByText(/My Submissions/i)).toBeInTheDocument();
+    expect(screen.getByText(/RBAC Matrix/i)).toBeInTheDocument();
   });
 });
