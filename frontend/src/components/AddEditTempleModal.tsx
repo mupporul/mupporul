@@ -58,6 +58,7 @@ export const AddEditTempleModal: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [photoMode, setPhotoMode] = useState<'url' | 'upload'>('url');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -75,6 +76,8 @@ export const AddEditTempleModal: React.FC = () => {
   }, [formData.imageUrl]);
 
   useEffect(() => {
+    if (!isAddEditModalOpen) return;
+
     if (templeToEdit) {
       setFormData({
         name: templeToEdit.name,
@@ -111,10 +114,19 @@ export const AddEditTempleModal: React.FC = () => {
       });
       setPhotoMode('url');
     }
+    setErrorMessage(null);
+    setSuccessMessage(null);
     setUploadStatus(null);
     setDeityModalMode('none');
     setDeityFormError(null);
-  }, [templeToEdit, isAddEditModalOpen, deities]);
+  }, [templeToEdit?.id, isAddEditModalOpen]);
+
+  useEffect(() => {
+    if (!isAddEditModalOpen || templeToEdit) return;
+    if (!formData.deity && deities.length > 0) {
+      setFormData(prev => ({ ...prev, deity: deities[0].id }));
+    }
+  }, [deities, isAddEditModalOpen, templeToEdit, formData.deity]);
 
   if (!isAddEditModalOpen) return null;
 
@@ -252,15 +264,40 @@ export const AddEditTempleModal: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    setErrorMessage(null);
+
+    const trimmedName = formData.name.trim();
+    const trimmedLocation = formData.location.trim();
+    const trimmedSignificance = formData.significance.trim();
+
+    if (!trimmedName) {
+      setErrorMessage('Temple Name (English) is required.');
+      return;
+    }
+    if (!trimmedLocation) {
+      setErrorMessage('Location is required.');
+      return;
+    }
+    if (!trimmedSignificance) {
+      setErrorMessage('Significance is required.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const submissionData = {
         ...formData,
+        name: trimmedName,
+        location: trimmedLocation,
+        significance: trimmedSignificance,
         imageUrl: formData.imageUrl || '',
       };
-      await submitTemple(submissionData, templeToEdit?.id);
+      const ok = await submitTemple(submissionData, templeToEdit?.id);
+      if (!ok) {
+        setErrorMessage('Failed to save temple updates. Please check your connection and try again.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const isAdmin = currentUser.role === 'admin';
       setSuccessMessage(
@@ -283,7 +320,8 @@ export const AddEditTempleModal: React.FC = () => {
           setActiveTab('review');
         }
       }, 1200);
-    } catch {
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to save temple updates. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -354,9 +392,16 @@ export const AddEditTempleModal: React.FC = () => {
           </div>
         ) : (
           /* Form for Contributor & Admin */
-          <form onSubmit={handleSubmit} className={`overflow-y-auto space-y-4 flex-1 no-scrollbar text-sm ${
+          <form noValidate onSubmit={handleSubmit} className={`overflow-y-auto space-y-4 flex-1 no-scrollbar text-sm ${
             isMobileFrame ? 'p-5' : 'p-6'
           }`}>
+            {errorMessage && (
+              <div role="alert" className="p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500 text-rose-200 flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium">{errorMessage}</span>
+              </div>
+            )}
+
             {successMessage && (
               <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-500 text-emerald-200 flex items-center gap-3 animate-in fade-in">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
@@ -820,6 +865,13 @@ export const AddEditTempleModal: React.FC = () => {
                   <strong>Community Review Policy:</strong> Submissions are queued in the <strong>Review</strong> tab.
                   Contributors and Admins will review details before making it live to all devotees.
                 </span>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="p-3 rounded-xl bg-rose-950/70 border border-rose-500/70 text-rose-200 flex items-center gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                <span>{errorMessage}</span>
               </div>
             )}
 

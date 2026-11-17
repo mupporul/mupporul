@@ -55,8 +55,9 @@ templesRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/temples - create direct temple (Admin only)
-templesRouter.post('/', (req: Request, res: Response) => {
+templesRouter.post('/', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const { name, location, state, planets, deity, significance, remedies, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber } = req.body;
 
     if (!name || !location || !deity || !significance) {
@@ -88,6 +89,7 @@ templesRouter.post('/', (req: Request, res: Response) => {
       },
     });
 
+    await db.flushSupabaseWrites();
     res.status(201).json({ success: true, data: newTemple });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -95,13 +97,15 @@ templesRouter.post('/', (req: Request, res: Response) => {
 });
 
 // PUT /api/temples/:id - update temple
-templesRouter.put('/:id', (req: Request, res: Response) => {
+templesRouter.put('/:id', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const updated = db.updateTemple(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ success: false, error: 'Temple not found' });
       return;
     }
+    await db.flushSupabaseWrites();
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -119,13 +123,15 @@ templesRouter.delete('/', async (_req: Request, res: Response) => {
 });
 
 // DELETE /api/temples/:id - delete single temple
-templesRouter.delete('/:id', (req: Request, res: Response) => {
+templesRouter.delete('/:id', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const deleted = db.deleteTemple(req.params.id);
     if (!deleted) {
       res.status(404).json({ success: false, error: 'Temple not found' });
       return;
     }
+    await db.flushSupabaseWrites();
     res.json({ success: true, message: 'Temple successfully removed' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

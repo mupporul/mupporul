@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewTab } from '../frontend/src/components/ReviewTab';
 import { BottomNav } from '../frontend/src/components/BottomNav';
 import { ProfileTab } from '../frontend/src/components/ProfileTab';
+import { AddEditTempleModal } from '../frontend/src/components/AddEditTempleModal';
 import * as AppContextModule from '../frontend/src/context/AppContext';
 import { TempleSubmission } from '../frontend/src/types';
 
@@ -392,5 +393,102 @@ describe('Phase 2: ProfileTab Role-Based Visibility Guard', () => {
     expect(screen.getByRole('button', { name: /Switch User/i })).toBeInTheDocument();
     expect(screen.getByText(/My Submissions/i)).toBeInTheDocument();
     expect(screen.getByText(/RBAC Matrix/i)).toBeInTheDocument();
+  });
+});
+
+describe('Phase 2: AddEditTempleModal Edit Persistence & Error Handling', () => {
+  const sampleTemple = {
+    id: 'temple-edit-1',
+    name: 'Karungalakudi Sri Agatheeswarar Temple',
+    location: 'Karungalakudi, Madurai',
+    state: 'Tamil Nadu',
+    planets: ['suri'],
+    deity: 'agathiyar',
+    significance: 'Ancient hill temple significance',
+    remedies: [],
+    imageUrl: '',
+    videoUrl: '',
+    timings: '6:00 AM - 8:00 PM',
+    viewsCount: 0,
+    createdAt: '2026-10-01T00:00:00Z',
+    updatedAt: '2026-10-01T00:00:00Z',
+  };
+
+  const buildModalContext = (overrides: Record<string, any> = {}) => ({
+    isAddEditModalOpen: true,
+    closeAddEditModal: vi.fn(),
+    templeToEdit: sampleTemple,
+    submitTemple: vi.fn().mockResolvedValue(true),
+    currentUser: { id: 'user-c', name: 'ammurugan', username: 'ammurugan', role: 'contributor' },
+    switchRole: vi.fn(),
+    setActiveTab: vi.fn(),
+    isMobileFrame: false,
+    deities: [
+      { id: 'agathiyar', nameTamil: 'அகஸ்தியர்', nameEnglish: 'Agathiyar' },
+      { id: 'amman', nameTamil: 'அம்மன்', nameEnglish: 'Amman' },
+    ],
+    createDeity: vi.fn(),
+    updateDeity: vi.fn(),
+    deleteDeity: vi.fn(),
+    ...overrides,
+  });
+
+  it('preserves edited Temple Name and Location across async deities updates and submits them', async () => {
+    const submitTempleMock = vi.fn().mockResolvedValue(true);
+    const useAppSpy = vi.spyOn(AppContextModule, 'useApp');
+    const ctx1 = buildModalContext({ submitTemple: submitTempleMock });
+    useAppSpy.mockReturnValue(ctx1 as any);
+
+    const { rerender } = render(<AddEditTempleModal />);
+
+    const nameInput = screen.getByDisplayValue('Karungalakudi Sri Agatheeswarar Temple');
+    const locationInput = screen.getByDisplayValue('Karungalakudi, Madurai');
+
+    fireEvent.change(nameInput, { target: { value: 'Karuungalakudi Updated Temple' } });
+    fireEvent.change(locationInput, { target: { value: 'Melur, Madurai' } });
+
+    // Simulate async refreshFreshData() returning a new deities array reference while modal is open
+    const ctx2 = buildModalContext({
+      submitTemple: submitTempleMock,
+      deities: [
+        { id: 'agathiyar', nameTamil: 'அகஸ்தியர்', nameEnglish: 'Agathiyar' },
+        { id: 'amman', nameTamil: 'அம்மன்', nameEnglish: 'Amman' },
+      ],
+    });
+    useAppSpy.mockReturnValue(ctx2 as any);
+    rerender(<AddEditTempleModal />);
+
+    // User's typed values must remain intact and not reset
+    expect(screen.getByDisplayValue('Karuungalakudi Updated Temple')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Melur, Madurai')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Updates for Review/i }));
+
+    await waitFor(() => {
+      expect(submitTempleMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Karuungalakudi Updated Temple',
+          location: 'Melur, Madurai',
+        }),
+        'temple-edit-1'
+      );
+    });
+  });
+
+  it('displays an error alert and keeps modal open when submitTemple returns false', async () => {
+    const submitTempleMock = vi.fn().mockResolvedValue(false);
+    const closeMock = vi.fn();
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue(
+      buildModalContext({ submitTemple: submitTempleMock, closeAddEditModal: closeMock }) as any
+    );
+
+    render(<AddEditTempleModal />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Updates for Review/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Failed to save temple updates/i).length).toBeGreaterThan(0);
+    });
+    expect(closeMock).not.toHaveBeenCalled();
   });
 });

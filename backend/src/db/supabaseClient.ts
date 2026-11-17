@@ -384,6 +384,7 @@ export async function updateSubmissionInSupabase(id: string, updates: Partial<Te
   try {
     const payload: any = {};
     if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.templeId !== undefined) payload.temple_id = updates.templeId;
     if (updates.reviewedBy !== undefined) payload.reviewed_by = updates.reviewedBy;
     if (updates.reviewedAt !== undefined) payload.reviewed_at = updates.reviewedAt;
     if (updates.reviewNotes !== undefined) payload.review_notes = updates.reviewNotes;

@@ -274,14 +274,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch {}
       }
 
-      // Self-healing guard: Reconcile any approved submissions into temples directory
+      // Self-healing guard: Reconcile missing 'new' approved submissions without creating duplicates from edits or deleted temples
       const approvedSubs = (cleanedSubmissions.length > 0 ? cleanedSubmissions : submissions).filter(
         (s: TempleSubmission) => s.status === 'approved'
       );
+      const supersededNames = new Set<string>();
+      for (const s of approvedSubs) {
+        if (s.type === 'edit' && s.previousData?.name) {
+          supersededNames.add(s.previousData.name.trim().toLowerCase());
+        }
+      }
 
       for (const sub of approvedSubs) {
         if (!sub.templeData?.name) continue;
+        if (sub.type === 'edit') continue;
+        if (sub.templeId && sub.templeId.startsWith('deleted:')) continue;
+
         const nameClean = sub.templeData.name.trim().toLowerCase();
+        if (!sub.templeId && supersededNames.has(nameClean)) continue;
+
         const exists = cleanedTemples.some(
           t => (sub.templeId && t.id === sub.templeId) || t.name.trim().toLowerCase() === nameClean
         );
@@ -1070,6 +1081,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // If Admin: Publish directly to live temples directory and database!
       if (currentUser.role === 'admin') {
         if (isEdit && existingTempleId) {
+          setTemples(prev =>
+            prev.map(t => (t.id === existingTempleId ? { ...t, ...cleanData, updatedAt: now } : t))
+          );
+          setSelectedTempleForDetail(prev =>
+            prev && prev.id === existingTempleId ? { ...prev, ...cleanData, updatedAt: now } : prev
+          );
           await api.updateTemple(existingTempleId, cleanData);
         } else {
           await api.createTemple(cleanData);
@@ -1184,8 +1201,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
 
         setTemples(prev => {
+          if (targetSub.type === 'edit') {
+            const prevNameClean = (targetSub.previousData?.name || '').trim().toLowerCase();
+            const isMatch = (t: Temple) =>
+              (targetSub.templeId && t.id === targetSub.templeId) ||
+              (prevNameClean && t.name.trim().toLowerCase() === prevNameClean);
+            if (prev.some(isMatch)) {
+              return prev.map(t =>
+                isMatch(t)
+                  ? {
+                      ...t,
+                      ...approvedTemple,
+                      id: t.id,
+                      viewsCount: t.viewsCount,
+                      createdAt: t.createdAt,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : t
+              );
+            }
+          }
           const cleanName = approvedTemple.name.trim().toLowerCase();
-          const exists = prev.some(t => t.name.trim().toLowerCase() === cleanName);
+          const exists = prev.some(
+            t => (targetSub.templeId && t.id === targetSub.templeId) || t.name.trim().toLowerCase() === cleanName
+          );
           return exists ? prev : [approvedTemple, ...prev];
         });
       }

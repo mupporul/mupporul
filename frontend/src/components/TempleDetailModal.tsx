@@ -23,6 +23,7 @@ export const TempleDetailModal: React.FC = () => {
     currentUser,
     isMobileFrame,
     deities,
+    temples,
   } = useApp();
 
   const [copiedShare, setCopiedShare] = useState(false);
@@ -40,7 +41,7 @@ export const TempleDetailModal: React.FC = () => {
 
   if (!selectedTempleForDetail) return null;
 
-  const temple = selectedTempleForDetail;
+  const temple = temples?.find(t => t.id === selectedTempleForDetail.id) || selectedTempleForDetail;
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
 

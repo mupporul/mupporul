@@ -253,4 +253,123 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(found.location).toBe('PoovarasanKuppam, Viluppuram');
     expect(found.planets).toEqual(['suri', 'sani', 'sev', 'suk']);
   });
+
+  it('updates temple name and location via PUT /api/temples/:id without creating duplicates', async () => {
+    const initialName = 'Original Edit Temple ' + Date.now();
+    const renamedName = 'Renamed Edit Temple ' + Date.now();
+
+    const sub = db.createSubmission({
+      type: 'new',
+      templeData: {
+        name: initialName,
+        location: 'Old Location, Madurai',
+        state: 'Tamil Nadu',
+        planets: ['suriyan'],
+        deity: 'agathiyar',
+        significance: 'Initial significance details',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        timings: '',
+      },
+      submittedBy: { id: 'user-admin', name: 'Admin Murugan', email: 'admin@mupporul.app', role: 'admin' },
+    });
+
+    const approvedRes = db.reviewSubmission(sub.id, 'approved', {
+      id: 'user-admin',
+      name: 'Admin Murugan',
+      role: 'admin',
+    });
+    const templeId = approvedRes!.temple!.id;
+
+    // Simulate legacy unlinked submission (temple_id null) before rename
+    sub.templeId = undefined;
+
+    const updateRes = await request(app)
+      .put(`/api/temples/${templeId}`)
+      .send({
+        name: renamedName,
+        location: 'New Updated Location, Madurai',
+      });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.name).toBe(renamedName);
+    expect(updateRes.body.data.location).toBe('New Updated Location, Madurai');
+
+    const listRes = await request(app).get('/api/temples');
+    expect(listRes.status).toBe(200);
+    const matchingNew = listRes.body.data.filter((t: any) => t.name === renamedName);
+    const matchingOld = listRes.body.data.filter((t: any) => t.name === initialName);
+    expect(matchingNew).toHaveLength(1);
+    expect(matchingOld).toHaveLength(0);
+    expect(matchingNew[0].location).toBe('New Updated Location, Madurai');
+  });
+
+  it('approves a contributor edit submission renaming a temple without creating a duplicate card', async () => {
+    const originalName = 'Contributor Pre-Edit Temple ' + Date.now();
+    const editedName = 'Contributor Post-Edit Temple ' + Date.now();
+
+    const created = db.createTemple({
+      name: originalName,
+      location: 'Karungalakudi, Madurai',
+      state: 'Tamil Nadu',
+      planets: ['suri'],
+      deity: 'agathiyar',
+      significance: 'Original significance',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '',
+      submittedBy: { id: 'user-contrib', name: 'ammurugan', role: 'contributor' },
+    });
+
+    const editSubRes = await request(app)
+      .post('/api/submissions')
+      .send({
+        type: 'edit',
+        templeId: created.id,
+        templeData: {
+          name: editedName,
+          location: 'Melur, Madurai',
+          state: 'Tamil Nadu',
+          planets: ['suri'],
+          deity: 'amman',
+          significance: 'Updated significance',
+          remedies: [],
+        },
+        previousData: {
+          name: originalName,
+          location: 'Karungalakudi, Madurai',
+          planets: ['suri'],
+          deity: 'agathiyar',
+          significance: 'Original significance',
+        },
+        submittedBy: { id: 'user-contrib', name: 'ammurugan', role: 'contributor' },
+      });
+
+    expect(editSubRes.status).toBe(201);
+
+    const approveRes = await request(app)
+      .put(`/api/submissions/${editSubRes.body.data.id}/review`)
+      .send({
+        action: 'approved',
+        reviewer: { id: 'user-admin', name: 'Admin Murugan', role: 'admin' },
+      });
+
+    expect(approveRes.status).toBe(200);
+    expect(approveRes.body.temple.id).toBe(created.id);
+    expect(approveRes.body.temple.name).toBe(editedName);
+
+    const templesRes = await request(app).get('/api/temples');
+    expect(templesRes.body.data.filter((t: any) => t.name === editedName)).toHaveLength(1);
+    expect(templesRes.body.data.filter((t: any) => t.name === originalName)).toHaveLength(0);
+
+    // Deleting the temple should not cause reconcileApprovedSubmissions to resurrect it
+    const delRes = await request(app).delete(`/api/temples/${created.id}`);
+    expect(delRes.status).toBe(200);
+
+    const afterDeleteRes = await request(app).get('/api/temples');
+    expect(afterDeleteRes.body.data.find((t: any) => t.id === created.id)).toBeUndefined();
+    expect(afterDeleteRes.body.data.find((t: any) => t.name === editedName)).toBeUndefined();
+  });
 });

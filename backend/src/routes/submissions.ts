@@ -19,8 +19,9 @@ submissionsRouter.get('/', async (req: Request, res: Response) => {
 });
 
 // POST /api/submissions - create new or edit submission
-submissionsRouter.post('/', (req: Request, res: Response) => {
+submissionsRouter.post('/', async (req: Request, res: Response) => {
   try {
+    await db.syncFromSupabase();
     const { type, templeId, templeData, previousData, submittedBy } = req.body;
 
     if (!type || !templeData || !submittedBy) {
@@ -39,6 +40,7 @@ submissionsRouter.post('/', (req: Request, res: Response) => {
       submittedBy,
     });
 
+    await db.flushSupabaseWrites();
     res.status(201).json({ success: true, data: newSub });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -70,6 +72,8 @@ submissionsRouter.put('/:id/review', async (req: Request, res: Response) => {
       res.status(404).json({ success: false, error: 'Submission not found' });
       return;
     }
+
+    await db.flushSupabaseWrites();
 
     res.json({
       success: true,

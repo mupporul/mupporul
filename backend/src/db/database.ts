@@ -38,6 +38,21 @@ export class Database {
   private data: DatabaseSchema;
   private lastSupabaseSync: number = 0;
   private activeSyncPromise: Promise<void> | null = null;
+  private pendingSupabaseWrites: Set<Promise<any>> = new Set();
+
+  private trackSupabaseWrite(promise: Promise<any>, label: string): void {
+    const tracked = promise
+      .catch(e => console.error(`[Supabase] ${label} error:`, e))
+      .finally(() => {
+        this.pendingSupabaseWrites.delete(tracked);
+      });
+    this.pendingSupabaseWrites.add(tracked);
+  }
+
+  public async flushSupabaseWrites(): Promise<void> {
+    if (this.pendingSupabaseWrites.size === 0) return;
+    await Promise.allSettled(Array.from(this.pendingSupabaseWrites));
+  }
 
   constructor() {
     // Determine path to database storage file
@@ -64,6 +79,7 @@ export class Database {
 
   public async syncFromSupabase(force = false): Promise<void> {
     if (!isSupabaseConfigured) return;
+    await this.flushSupabaseWrites();
     const now = Date.now();
     if (!force && now - this.lastSupabaseSync < 400) {
       return;
@@ -281,7 +297,7 @@ export class Database {
     this.saveData();
 
     if (isSupabaseConfigured) {
-      insertTempleToSupabase(newTemple).catch(e => console.error('[Supabase] Insert error:', e));
+      this.trackSupabaseWrite(insertTempleToSupabase(newTemple), 'Insert temple');
     }
 
     return newTemple;
@@ -291,32 +307,69 @@ export class Database {
     const index = this.data.temples.findIndex(t => t.id === id);
     if (index === -1) return null;
 
+    const previousTemple = this.data.temples[index];
+    const prevNameClean = (previousTemple.name || '').trim().toLowerCase();
+
     const sanitizedUpdates = {
       ...updates,
       remedies: [],
     };
 
     this.data.temples[index] = {
-      ...this.data.temples[index],
+      ...previousTemple,
       ...sanitizedUpdates,
       updatedAt: new Date().toISOString()
     };
+
+    // Keep any historical submissions linked to this temple ID so renaming a temple
+    // never causes reconcileApprovedSubmissions() to resurrect the old name as a duplicate.
+    for (const sub of this.data.submissions) {
+      const subNameClean = (sub.templeData?.name || '').trim().toLowerCase();
+      if (!sub.templeId && prevNameClean && subNameClean === prevNameClean) {
+        sub.templeId = id;
+        if (isSupabaseConfigured) {
+          this.trackSupabaseWrite(
+            updateSubmissionInSupabase(sub.id, { templeId: id }),
+            'Link submission templeId'
+          );
+        }
+      }
+    }
+
     this.saveData();
 
     if (isSupabaseConfigured) {
-      updateTempleInSupabase(id, sanitizedUpdates).catch(e => console.error('[Supabase] Update error:', e));
+      this.trackSupabaseWrite(updateTempleInSupabase(id, sanitizedUpdates), 'Update temple');
     }
 
     return this.data.temples[index];
   }
 
   public deleteTemple(id: string): boolean {
+    const targetTemple = this.data.temples.find(t => t.id === id);
     const prevLength = this.data.temples.length;
     this.data.temples = this.data.temples.filter(t => t.id !== id);
     if (this.data.temples.length !== prevLength) {
+      // Mark matching approved submissions as deleted so reconciliation doesn't resurrect the deleted temple
+      const targetNameClean = (targetTemple?.name || '').trim().toLowerCase();
+      for (const sub of this.data.submissions) {
+        const subNameClean = (sub.templeData?.name || '').trim().toLowerCase();
+        const matchesId = sub.templeId === id;
+        const matchesOrphanName = !sub.templeId && targetNameClean && subNameClean === targetNameClean;
+        if (matchesId || matchesOrphanName) {
+          sub.templeId = `deleted:${id}`;
+          if (isSupabaseConfigured) {
+            this.trackSupabaseWrite(
+              updateSubmissionInSupabase(sub.id, { templeId: sub.templeId }),
+              'Mark deleted temple submission'
+            );
+          }
+        }
+      }
+
       this.saveData();
       if (isSupabaseConfigured) {
-        deleteTempleFromSupabase(id).catch(e => console.error('[Supabase] Delete error:', e));
+        this.trackSupabaseWrite(deleteTempleFromSupabase(id), 'Delete temple');
       }
       return true;
     }
@@ -367,7 +420,7 @@ export class Database {
 
     this.saveData();
     if (isSupabaseConfigured) {
-      insertSubmissionToSupabase(newSubmission).catch(e => console.error('[Supabase] Insert submission error:', e));
+      this.trackSupabaseWrite(insertSubmissionToSupabase(newSubmission), 'Insert submission');
     }
     return newSubmission;
   }
@@ -395,14 +448,30 @@ export class Database {
         author.approvedCount = (author.approvedCount || 0) + 1;
       }
 
-      if (sub.type === 'edit' && sub.templeId) {
-        // Apply edit to existing temple
-        const existing = this.getTempleById(sub.templeId);
-        if (existing) {
-          updatedTemple = this.updateTemple(sub.templeId, {
+      if (sub.type === 'edit') {
+        const existingById = sub.templeId ? this.getTempleById(sub.templeId) : undefined;
+        const prevNameClean = (sub.previousData?.name || '').trim().toLowerCase();
+        const existingByPrevName = !existingById && prevNameClean
+          ? this.data.temples.find(t => t.name.trim().toLowerCase() === prevNameClean)
+          : undefined;
+        const targetExisting = existingById || existingByPrevName;
+
+        if (targetExisting) {
+          sub.templeId = targetExisting.id;
+          updatedTemple = this.updateTemple(targetExisting.id, {
             ...sub.templeData,
             updatedAt: new Date().toISOString()
           }) || undefined;
+        } else {
+          updatedTemple = this.createTemple({
+            ...sub.templeData,
+            submittedBy: sub.submittedBy || {
+              id: reviewer.id,
+              name: reviewer.name,
+              role: reviewer.role,
+            },
+          });
+          sub.templeId = updatedTemple.id;
         }
       } else {
         // Create new temple or update existing if temple with same name exists
@@ -425,6 +494,7 @@ export class Database {
             },
           });
         }
+        sub.templeId = updatedTemple.id;
       }
       this.reconcileApprovedSubmissions();
     }
@@ -432,12 +502,16 @@ export class Database {
     this.saveData();
 
     if (isSupabaseConfigured) {
-      updateSubmissionInSupabase(sub.id, {
-        status: sub.status,
-        reviewedBy: sub.reviewedBy,
-        reviewedAt: sub.reviewedAt,
-        reviewNotes: sub.reviewNotes,
-      }).catch(e => console.error('[Supabase] Update submission error:', e));
+      this.trackSupabaseWrite(
+        updateSubmissionInSupabase(sub.id, {
+          status: sub.status,
+          templeId: sub.templeId,
+          reviewedBy: sub.reviewedBy,
+          reviewedAt: sub.reviewedAt,
+          reviewNotes: sub.reviewNotes,
+        }),
+        'Update submission'
+      );
     }
 
     return { submission: sub, temple: updatedTemple };
@@ -453,11 +527,25 @@ export class Database {
     if (!this.data || !Array.isArray(this.data.submissions) || !Array.isArray(this.data.temples)) return;
 
     const approvedSubs = this.data.submissions.filter(s => s.status === 'approved');
+    const supersededNames = new Set<string>();
+    for (const s of approvedSubs) {
+      if (s.type === 'edit' && s.previousData?.name) {
+        supersededNames.add(s.previousData.name.trim().toLowerCase());
+      }
+    }
+
     let hasChanges = false;
 
     for (const sub of approvedSubs) {
       if (!sub.templeData || !sub.templeData.name) continue;
+      if (sub.templeId && sub.templeId.startsWith('deleted:')) continue;
+
       const cleanName = sub.templeData.name.trim().toLowerCase();
+
+      // Never re-synthesize a duplicate from a submission whose temple name was already renamed by an edit,
+      // or from historical 'edit' submissions (which mutate an existing temple rather than adding a second one).
+      if (sub.type === 'edit') continue;
+      if (!sub.templeId && supersededNames.has(cleanName)) continue;
 
       const existing = this.data.temples.find(
         t => (sub.templeId && t.id === sub.templeId) || t.name.trim().toLowerCase() === cleanName
@@ -490,12 +578,24 @@ export class Database {
           updatedAt: sub.reviewedAt || new Date().toISOString(),
         };
 
+        sub.templeId = synthesizedTemple.id;
         this.data.temples.unshift(synthesizedTemple);
         hasChanges = true;
 
         if (isSupabaseConfigured) {
-          insertTempleToSupabase(synthesizedTemple).catch(e =>
-            console.warn('[Supabase] Auto-sync insert approved temple error:', e)
+          this.trackSupabaseWrite(insertTempleToSupabase(synthesizedTemple), 'Auto-sync approved temple');
+          this.trackSupabaseWrite(
+            updateSubmissionInSupabase(sub.id, { templeId: synthesizedTemple.id }),
+            'Link auto-synced submission templeId'
+          );
+        }
+      } else if (!sub.templeId) {
+        sub.templeId = existing.id;
+        hasChanges = true;
+        if (isSupabaseConfigured) {
+          this.trackSupabaseWrite(
+            updateSubmissionInSupabase(sub.id, { templeId: existing.id }),
+            'Link existing temple to submission'
           );
         }
       }
