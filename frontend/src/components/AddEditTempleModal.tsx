@@ -673,7 +673,7 @@ export const AddEditTempleModal: React.FC = () => {
             </div>
 
             {/* Jothidar Paarvai (ஜோதிடர் பார்வை) Astrologer Notes */}
-            <div className="bg-[#181a2a] p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
+            <div className="bg-[#181a2a] p-3.5 rounded-2xl border border-cyan-500/35 space-y-2.5">
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -684,14 +684,14 @@ export const AddEditTempleModal: React.FC = () => {
                       jothidarPaarvai: e.target.checked,
                     }))
                   }
-                  className="w-4 h-4 rounded border-amber-500/60 bg-[#121422] text-[#f5a623] accent-[#f5a623] cursor-pointer"
+                  className="w-4 h-4 rounded border-cyan-400/60 bg-[#121422] text-cyan-400 accent-cyan-400 cursor-pointer"
                 />
                 <Star
                   className={`w-4 h-4 transition-colors ${
-                    formData.jothidarPaarvai ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                    formData.jothidarPaarvai ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-400/80'
                   }`}
                 />
-                <span className="text-xs sm:text-sm font-semibold text-amber-300 font-tamil">
+                <span className="text-xs sm:text-sm font-semibold text-cyan-300 font-tamil">
                   Jothidar Paarvai (ஜோதிடர் பார்வை)
                 </span>
               </label>
@@ -708,7 +708,7 @@ export const AddEditTempleModal: React.FC = () => {
                     onChange={(e) =>
                       setFormData(prev => ({ ...prev, jothidarPaarvaiNotes: e.target.value }))
                     }
-                    className="w-full bg-[#121422] text-gray-100 px-3.5 py-2.5 rounded-xl border border-amber-500/40 focus:border-[#f5a623] focus:outline-none leading-relaxed text-xs sm:text-sm font-tamil"
+                    className="w-full bg-[#121422] text-gray-100 px-3.5 py-2.5 rounded-xl border border-cyan-500/40 focus:border-cyan-400 focus:outline-none leading-relaxed text-xs sm:text-sm font-tamil"
                   />
                 </div>
               )}

@@ -103,8 +103,8 @@ export const Header: React.FC = () => {
           <label
             className={`flex items-center gap-2 px-3.5 py-2.5 rounded-full border text-xs sm:text-sm font-medium cursor-pointer select-none transition-all shrink-0 ${
               filters.jothidarPaarvaiOnly
-                ? 'bg-amber-500/15 border-[#f5a623] text-amber-300 shadow-sm'
-                : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-amber-500/40'
+                ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 shadow-sm'
+                : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-cyan-400/50'
             }`}
             title="Filter temples with ஜோதிடர் பார்வை (Jothidar Paarvai) notes"
           >
@@ -117,11 +117,11 @@ export const Header: React.FC = () => {
                   jothidarPaarvaiOnly: e.target.checked,
                 }))
               }
-              className="w-3.5 h-3.5 rounded accent-[#f5a623] cursor-pointer"
+              className="w-3.5 h-3.5 rounded accent-cyan-400 cursor-pointer"
             />
             <Star
               className={`w-3.5 h-3.5 shrink-0 ${
-                filters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                filters.jothidarPaarvaiOnly ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-400/80'
               }`}
             />
             <span className="whitespace-nowrap">Jothidar Paarvai</span>

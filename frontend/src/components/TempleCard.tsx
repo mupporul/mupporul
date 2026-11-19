@@ -222,7 +222,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Yellow Star Button -> Opens saved Jothidar Paarvai notes popup */}
+            {/* Cyan Star Button -> Opens saved Jothidar Paarvai notes popup */}
             {hasJothidarNotes && (
               <button
                 type="button"
@@ -232,9 +232,9 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                 }}
                 aria-label="View Jothidar Paarvai"
                 title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
-                className="w-8 h-8 rounded-full bg-amber-400/15 border border-amber-400/70 text-amber-400 hover:bg-amber-400/25 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+                className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-400/80 text-cyan-400 hover:bg-cyan-500/25 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm shadow-cyan-500/20"
               >
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <Star className="w-4 h-4 fill-cyan-400 text-cyan-400" />
               </button>
             )}
 
@@ -261,14 +261,14 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
               role="dialog"
               aria-modal="true"
               aria-label="Jothidar Paarvai"
-              className="w-full max-w-md max-h-[85dvh] flex flex-col bg-[#141624] border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden"
+              className="w-full max-w-md max-h-[85dvh] flex flex-col bg-[#141624] border border-cyan-500/50 rounded-2xl shadow-2xl shadow-cyan-950/40 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[#24273c] bg-[#181b2c] shrink-0">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#24273c] bg-[#161c2c] shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                  <Star className="w-4 h-4 fill-cyan-400 text-cyan-400 shrink-0" />
                   <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-amber-300 font-tamil truncate">
+                    <h4 className="text-sm font-bold text-cyan-300 font-tamil truncate">
                       ஜோதிடர் பார்வை (Jothidar Paarvai)
                     </h4>
                     <p className="text-[11px] text-gray-400 truncate">{temple.name}</p>

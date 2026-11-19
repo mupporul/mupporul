@@ -310,9 +310,9 @@ export const ReviewTab: React.FC = () => {
 
                   {/* Jothidar Paarvai Preview */}
                   {(sub.templeData?.jothidarPaarvai || sub.templeData?.jothidarPaarvaiNotes?.trim()) && sub.templeData?.jothidarPaarvaiNotes?.trim() && (
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/40 space-y-1">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300 font-tamil">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/40 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 font-tamil">
+                        <Star className="w-3.5 h-3.5 fill-cyan-400 text-cyan-400 shrink-0" />
                         <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
                       </div>
                       <p className="text-xs text-gray-200 whitespace-pre-line font-tamil leading-relaxed">

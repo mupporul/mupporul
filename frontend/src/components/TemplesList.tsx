@@ -166,10 +166,10 @@ export const TemplesList: React.FC = () => {
                 {filters.jothidarPaarvaiOnly && (
                   <span
                     onClick={() => setFilters(prev => ({ ...prev, jothidarPaarvaiOnly: false }))}
-                    className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/50 font-semibold flex items-center gap-1 cursor-pointer hover:bg-amber-400/30"
+                    className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-400/50 font-semibold flex items-center gap-1 cursor-pointer hover:bg-cyan-500/25"
                     title="Click to remove"
                   >
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <Star className="w-3 h-3 fill-cyan-400 text-cyan-400" />
                     <span>Jothidar Paarvai</span>
                     <span className="text-xs ml-0.5">✕</span>
                   </span>

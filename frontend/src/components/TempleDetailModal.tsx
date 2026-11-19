@@ -132,13 +132,13 @@ export const TempleDetailModal: React.FC = () => {
                 title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
                 className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
                   showJothidarNotes
-                    ? 'bg-amber-400 text-black border-amber-300 shadow-md shadow-amber-500/30'
-                    : 'bg-amber-400/15 hover:bg-amber-400/25 text-amber-400 border-amber-400/70'
+                    ? 'bg-cyan-400 text-black border-cyan-300 shadow-md shadow-cyan-500/30'
+                    : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 border-cyan-400/80'
                 }`}
               >
                 <Star
                   className={`w-4 h-4 ${
-                    showJothidarNotes ? 'fill-black text-black' : 'fill-amber-400 text-amber-400'
+                    showJothidarNotes ? 'fill-black text-black' : 'fill-cyan-400 text-cyan-400'
                   }`}
                 />
               </button>
@@ -169,12 +169,12 @@ export const TempleDetailModal: React.FC = () => {
 
         {/* Scrollable Content */}
         <div ref={scrollBodyRef} className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1">
-          {/* Jothidar Paarvai Notes Panel (Shown at top when yellow star button is tapped) */}
+          {/* Jothidar Paarvai Notes Panel (Shown at top when cyan star button is tapped) */}
           {hasJothidarNotes && showJothidarNotes && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-[#1d1c2b] to-[#151726] border border-amber-400/60 space-y-2 shadow-lg animate-in fade-in duration-150">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/15 via-[#181f2e] to-[#151726] border border-cyan-400/60 space-y-2 shadow-lg animate-in fade-in duration-150">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm font-tamil">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                <div className="flex items-center gap-2 text-cyan-300 font-bold text-sm font-tamil">
+                  <Star className="w-4 h-4 fill-cyan-400 text-cyan-400 shrink-0" />
                   <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
                 </div>
                 <button

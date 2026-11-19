@@ -267,14 +267,14 @@ export const FilterModal: React.FC = () => {
             <label
               className={`flex items-center justify-between gap-2.5 px-4 py-3 rounded-xl border text-sm font-semibold cursor-pointer transition-all ${
                 draftFilters.jothidarPaarvaiOnly
-                  ? 'bg-amber-500/15 border-[#f5a623] text-amber-300'
-                  : 'bg-[#151726] border-[#2b2e46] text-gray-200 hover:border-[#f5a623]/60'
+                  ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
+                  : 'bg-[#151726] border-[#2b2e46] text-gray-200 hover:border-cyan-400/60'
               }`}
             >
               <span className="flex items-center gap-2 font-tamil">
                 <Star
                   className={`w-4 h-4 ${
-                    draftFilters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                    draftFilters.jothidarPaarvaiOnly ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-400/80'
                   }`}
                 />
                 <span>Jothidar Paarvai (ஜோதிடர் பார்வை)</span>
@@ -288,7 +288,7 @@ export const FilterModal: React.FC = () => {
                     jothidarPaarvaiOnly: e.target.checked,
                   }))
                 }
-                className="w-4 h-4 rounded accent-[#f5a623] cursor-pointer"
+                className="w-4 h-4 rounded accent-cyan-400 cursor-pointer"
               />
             </label>
           </div>

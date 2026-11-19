@@ -246,14 +246,14 @@ export const FilterSidebar: React.FC = () => {
             <label
               className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
                 filters.jothidarPaarvaiOnly
-                  ? 'bg-amber-500/15 border-[#f5a623] text-amber-300'
-                  : 'bg-[#161828] border-[#2b2e46] text-gray-200 hover:border-[#f5a623]/60'
+                  ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
+                  : 'bg-[#161828] border-[#2b2e46] text-gray-200 hover:border-cyan-400/60'
               }`}
             >
               <span className="flex items-center gap-2 font-tamil">
                 <Star
                   className={`w-3.5 h-3.5 ${
-                    filters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                    filters.jothidarPaarvaiOnly ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-400/80'
                   }`}
                 />
                 <span>Jothidar Paarvai (ஜோதிடர் பார்வை)</span>
@@ -265,7 +265,7 @@ export const FilterSidebar: React.FC = () => {
                   setFilters(prev => ({ ...prev, jothidarPaarvaiOnly: e.target.checked }));
                   refreshFreshData();
                 }}
-                className="w-3.5 h-3.5 rounded accent-[#f5a623] cursor-pointer"
+                className="w-3.5 h-3.5 rounded accent-cyan-400 cursor-pointer"
               />
             </label>
           </div>
