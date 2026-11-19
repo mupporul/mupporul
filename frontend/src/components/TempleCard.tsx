@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { MapPin, Play, MoreVertical, Share2, Edit3, Trash2, Info, Star, X } from 'lucide-react';
 import { Temple } from '../types';
 import { PLANETS, DEITIES } from '../data/constants';
@@ -249,54 +250,57 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
         </div>
       </div>
 
-      {/* Jothidar Paarvai Notes Popup */}
-      {showJothidarNotes && hasJothidarNotes && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          onClick={() => setShowJothidarNotes(false)}
-        >
+      {/* Jothidar Paarvai Notes Popup (Portaled to document.body so header/main overflow never clips top/bottom on mobile) */}
+      {showJothidarNotes && hasJothidarNotes && typeof document !== 'undefined' &&
+        createPortal(
           <div
-            role="dialog"
-            aria-label="Jothidar Paarvai"
-            className="w-full max-w-md bg-[#141624] border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-150"
+            onClick={() => setShowJothidarNotes(false)}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#24273c] bg-[#181b2c]">
-              <div className="flex items-center gap-2 min-w-0">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-amber-300 font-tamil truncate">
-                    ஜோதிடர் பார்வை (Jothidar Paarvai)
-                  </h4>
-                  <p className="text-[11px] text-gray-400 truncate">{temple.name}</p>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Jothidar Paarvai"
+              className="w-full max-w-md max-h-[85dvh] flex flex-col bg-[#141624] border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#24273c] bg-[#181b2c] shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-amber-300 font-tamil truncate">
+                      ஜோதிடர் பார்வை (Jothidar Paarvai)
+                    </h4>
+                    <p className="text-[11px] text-gray-400 truncate">{temple.name}</p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowJothidarNotes(false)}
+                  aria-label="Close Jothidar Paarvai"
+                  className="w-7 h-7 rounded-full bg-[#22253a] hover:bg-[#2c304a] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowJothidarNotes(false)}
-                aria-label="Close Jothidar Paarvai"
-                className="w-7 h-7 rounded-full bg-[#22253a] hover:bg-[#2c304a] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="p-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                <p className="text-xs sm:text-sm text-gray-100 leading-relaxed whitespace-pre-line font-tamil">
+                  {temple.jothidarPaarvaiNotes}
+                </p>
+              </div>
+              <div className="px-4 py-2.5 border-t border-[#24273c] bg-[#111320] flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowJothidarNotes(false)}
+                  className="px-4 py-1.5 rounded-xl bg-[#202336] hover:bg-[#282d46] text-gray-200 text-xs font-semibold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-            <div className="p-4 max-h-[60vh] overflow-y-auto">
-              <p className="text-xs sm:text-sm text-gray-100 leading-relaxed whitespace-pre-line font-tamil">
-                {temple.jothidarPaarvaiNotes}
-              </p>
-            </div>
-            <div className="px-4 py-2.5 border-t border-[#24273c] bg-[#111320] flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowJothidarNotes(false)}
-                className="px-4 py-1.5 rounded-xl bg-[#202336] hover:bg-[#282d46] text-gray-200 text-xs font-semibold cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </article>
   );
 };

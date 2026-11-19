@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   MapPin,
@@ -32,6 +32,7 @@ export const TempleDetailModal: React.FC = () => {
   const [copiedShare, setCopiedShare] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showJothidarNotes, setShowJothidarNotes] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape key press
   useEffect(() => {
@@ -118,7 +119,15 @@ export const TempleDetailModal: React.FC = () => {
             {hasJothidarNotes && (
               <button
                 type="button"
-                onClick={() => setShowJothidarNotes(prev => !prev)}
+                onClick={() => {
+                  setShowJothidarNotes(prev => {
+                    const next = !prev;
+                    if (next && scrollBodyRef.current) {
+                      scrollBodyRef.current.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    }
+                    return next;
+                  });
+                }}
                 aria-label="View Jothidar Paarvai"
                 title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
                 className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
@@ -159,7 +168,30 @@ export const TempleDetailModal: React.FC = () => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1">
+        <div ref={scrollBodyRef} className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1">
+          {/* Jothidar Paarvai Notes Panel (Shown at top when yellow star button is tapped) */}
+          {hasJothidarNotes && showJothidarNotes && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-[#1d1c2b] to-[#151726] border border-amber-400/60 space-y-2 shadow-lg animate-in fade-in duration-150">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm font-tamil">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                  <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowJothidarNotes(false)}
+                  aria-label="Hide Jothidar Paarvai"
+                  className="text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-100 leading-relaxed font-tamil whitespace-pre-line font-medium">
+                {temple.jothidarPaarvaiNotes}
+              </p>
+            </div>
+          )}
+
           {/* Temple Hero Banner: Kept on Fluid Wide desktop, hidden on Mobile viewport to save massive space */}
           <div className={`${isMobileFrame ? 'hidden' : 'hidden md:block'} relative aspect-[16/9] w-full rounded-2xl bg-[#0d0f18] overflow-hidden border border-[#23273c]`}>
             <img
@@ -219,29 +251,6 @@ export const TempleDetailModal: React.FC = () => {
                   "{temple.descriptionEnglish}"
                 </p>
               )}
-            </div>
-          )}
-
-          {/* Jothidar Paarvai Notes Panel (Shown when yellow star button is tapped) */}
-          {hasJothidarNotes && showJothidarNotes && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-[#1d1c2b] to-[#151726] border border-amber-400/60 space-y-2 shadow-lg animate-in fade-in duration-150">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm font-tamil">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                  <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowJothidarNotes(false)}
-                  aria-label="Hide Jothidar Paarvai"
-                  className="text-gray-400 hover:text-white cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-xs sm:text-sm text-gray-100 leading-relaxed font-tamil whitespace-pre-line font-medium">
-                {temple.jothidarPaarvaiNotes}
-              </p>
             </div>
           )}
 
