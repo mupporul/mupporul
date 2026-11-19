@@ -207,16 +207,16 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
 
         {/* Bottom Actions Row (Matching Screenshot 1) */}
         <div className="mt-4 pt-3 border-t border-[#24273a] flex items-center justify-between gap-2">
-          {/* "Watch this video" Link */}
+          {/* "Watch this" Link */}
           <button
             onClick={() => openVideoModal(temple.videoUrl, temple.name)}
-            className="flex items-center gap-2 group cursor-pointer text-left"
+            className="flex items-center gap-2 group cursor-pointer text-left shrink-0"
           >
-            <div className="w-6 h-6 rounded-full bg-[#f5a623] flex items-center justify-center text-black group-hover:scale-110 transition-transform shadow-md shadow-amber-500/20">
+            <div className="w-6 h-6 rounded-full bg-[#f5a623] flex items-center justify-center text-black group-hover:scale-110 transition-transform shadow-md shadow-amber-500/20 shrink-0">
               <Play className="w-3 h-3 fill-black ml-0.5" />
             </div>
-            <span className="text-xs font-semibold text-[#f5a623] underline decoration-[#f5a623]/60 group-hover:decoration-[#f5a623] transition-colors">
-              Watch this video
+            <span className="text-xs font-semibold text-[#f5a623] underline decoration-[#f5a623]/60 group-hover:decoration-[#f5a623] transition-colors whitespace-nowrap">
+              Watch this
             </span>
           </button>
 
