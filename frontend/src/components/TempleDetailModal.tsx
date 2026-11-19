@@ -11,6 +11,7 @@ import {
   Edit3,
   Trash2,
   Check,
+  Star,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES } from '../data/constants';
@@ -30,6 +31,7 @@ export const TempleDetailModal: React.FC = () => {
 
   const [copiedShare, setCopiedShare] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [showJothidarNotes, setShowJothidarNotes] = useState(false);
 
   // Close on Escape key press
   useEffect(() => {
@@ -42,12 +44,20 @@ export const TempleDetailModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeDetailModal]);
 
+  useEffect(() => {
+    setShowJothidarNotes(false);
+  }, [selectedTempleForDetail?.id]);
+
   if (!selectedTempleForDetail) return null;
 
   const temple = temples?.find(t => t.id === selectedTempleForDetail.id) || selectedTempleForDetail;
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const canDelete = currentUser.role === 'admin';
   const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
+  const hasJothidarNotes = Boolean(
+    (temple.jothidarPaarvai || temple.jothidarPaarvaiNotes?.trim()) &&
+      temple.jothidarPaarvaiNotes?.trim()
+  );
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -103,8 +113,28 @@ export const TempleDetailModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Header Actions: Share & X Close Button */}
+          {/* Right Header Actions: Jothidar Star, Share & X Close Button */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {hasJothidarNotes && (
+              <button
+                type="button"
+                onClick={() => setShowJothidarNotes(prev => !prev)}
+                aria-label="View Jothidar Paarvai"
+                title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
+                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                  showJothidarNotes
+                    ? 'bg-amber-400 text-black border-amber-300 shadow-md shadow-amber-500/30'
+                    : 'bg-amber-400/15 hover:bg-amber-400/25 text-amber-400 border-amber-400/70'
+                }`}
+              >
+                <Star
+                  className={`w-4 h-4 ${
+                    showJothidarNotes ? 'fill-black text-black' : 'fill-amber-400 text-amber-400'
+                  }`}
+                />
+              </button>
+            )}
+
             <button
               onClick={handleShare}
               aria-label="Share temple"
@@ -189,6 +219,29 @@ export const TempleDetailModal: React.FC = () => {
                   "{temple.descriptionEnglish}"
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Jothidar Paarvai Notes Panel (Shown when yellow star button is tapped) */}
+          {hasJothidarNotes && showJothidarNotes && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-[#1d1c2b] to-[#151726] border border-amber-400/60 space-y-2 shadow-lg animate-in fade-in duration-150">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm font-tamil">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                  <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowJothidarNotes(false)}
+                  aria-label="Hide Jothidar Paarvai"
+                  className="text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-100 leading-relaxed font-tamil whitespace-pre-line font-medium">
+                {temple.jothidarPaarvaiNotes}
+              </p>
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronDown, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleLogoSvg } from './LoadingSpinner';
 
@@ -8,6 +8,7 @@ export const Header: React.FC = () => {
     filters,
     setFilters,
     setIsFilterOpen,
+    activeTab,
     setActiveTab,
     currentUser,
     isLoggedIn,
@@ -20,6 +21,7 @@ export const Header: React.FC = () => {
     [
       filters.deity,
       filters.state,
+      filters.jothidarPaarvaiOnly,
     ].filter(Boolean).length;
 
   return (
@@ -74,17 +76,17 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Search Bar + Filter Button (Matching Screenshot 1) */}
-      <div className="flex items-center gap-2.5">
+      {/* Row 2: Search Bar + Jothidar Paarvai Checkbox + Filter Button */}
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
         {/* Search Input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={filters.searchQuery}
             onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
             placeholder="Search temples..."
-            className="w-full bg-[#181a27] text-gray-100 placeholder-gray-400 text-sm rounded-full pl-10 pr-4 py-2.5 border border-[#2e3146] focus:outline-none focus:border-[#f5a623] focus:ring-1 focus:ring-[#f5a623] transition-all"
+            className="w-full bg-[#181a27] text-gray-100 placeholder-gray-400 text-sm rounded-full pl-10 pr-8 py-2.5 border border-[#2e3146] focus:outline-none focus:border-[#f5a623] focus:ring-1 focus:ring-[#f5a623] transition-all"
           />
           {filters.searchQuery && (
             <button
@@ -96,10 +98,40 @@ export const Header: React.FC = () => {
           )}
         </div>
 
+        {/* Jothidar Paarvai Filter Checkbox (visible on temples search) */}
+        {activeTab === 'temples' && (
+          <label
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-full border text-xs sm:text-sm font-medium cursor-pointer select-none transition-all shrink-0 ${
+              filters.jothidarPaarvaiOnly
+                ? 'bg-amber-500/15 border-[#f5a623] text-amber-300 shadow-sm'
+                : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-amber-500/40'
+            }`}
+            title="Filter temples with ஜோதிடர் பார்வை (Jothidar Paarvai) notes"
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(filters.jothidarPaarvaiOnly)}
+              onChange={(e) =>
+                setFilters(prev => ({
+                  ...prev,
+                  jothidarPaarvaiOnly: e.target.checked,
+                }))
+              }
+              className="w-3.5 h-3.5 rounded accent-[#f5a623] cursor-pointer"
+            />
+            <Star
+              className={`w-3.5 h-3.5 shrink-0 ${
+                filters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+              }`}
+            />
+            <span className="whitespace-nowrap">Jothidar Paarvai</span>
+          </label>
+        )}
+
         {/* Filter Button with Count Badge (Visible on mobile view, hidden on desktop where sidebar is present) */}
         <button
           onClick={() => setIsFilterOpen(true)}
-          className={`flex md:hidden items-center gap-1.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
+          className={`flex md:hidden items-center gap-1.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all shrink-0 ${
             activeFilterCount > 0
               ? 'bg-amber-500/15 border-[#f5a623] text-[#f5a623] shadow-sm'
               : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-gray-500'

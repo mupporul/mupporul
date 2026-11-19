@@ -372,4 +372,96 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(afterDeleteRes.body.data.find((t: any) => t.id === created.id)).toBeUndefined();
     expect(afterDeleteRes.body.data.find((t: any) => t.name === editedName)).toBeUndefined();
   });
+
+  it('persists jothidarPaarvai & jothidarPaarvaiNotes inside submitted_by JSONB without un-migrated columns and filters GET /api/temples?jothidarPaarvai=true', async () => {
+    const noteText = 'வயலூர் - கடக ராசி + செவ்வாய் & சனி சிறப்பு பார்வை';
+    const insertRow = buildSupabaseTempleRow({
+      id: 'temple-jp-schema-1',
+      name: 'Vayalur Jothidar Test Temple',
+      location: 'Vayalur, Tiruchirappalli',
+      state: 'Tamil Nadu',
+      planets: ['sani', 'sev'],
+      deity: 'murugan',
+      significance: 'Test significance',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 AM - 8 PM',
+      jothidarPaarvai: true,
+      jothidarPaarvaiNotes: noteText,
+      submittedBy: { id: 'user-admin', name: 'Admin Murugan', role: 'admin' },
+      viewsCount: 0,
+      createdAt: '2026-11-19T00:00:00Z',
+      updatedAt: '2026-11-19T00:00:00Z',
+    });
+
+    expect('jothidar_paarvai' in insertRow).toBe(false);
+    expect('jothidar_paarvai_notes' in insertRow).toBe(false);
+    expect(insertRow.submitted_by.jothidarPaarvai).toBe(true);
+    expect(insertRow.submitted_by.jothidarPaarvaiNotes).toBe(noteText);
+
+    const updateRow = buildSupabaseTempleUpdateRow(
+      { jothidarPaarvai: true, jothidarPaarvaiNotes: 'Updated astrologer insight' },
+      {
+        id: 'temple-jp-schema-1',
+        name: 'Vayalur Jothidar Test Temple',
+        location: 'Vayalur, Tiruchirappalli',
+        state: 'Tamil Nadu',
+        planets: ['sani'],
+        deity: 'murugan',
+        significance: 'Test significance',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        timings: '6 AM - 8 PM',
+        submittedBy: { id: 'user-admin', name: 'Admin Murugan', role: 'admin' },
+        viewsCount: 0,
+        createdAt: '2026-11-19T00:00:00Z',
+        updatedAt: '2026-11-19T00:00:00Z',
+      }
+    );
+    expect('jothidar_paarvai' in updateRow).toBe(false);
+    expect('jothidar_paarvai_notes' in updateRow).toBe(false);
+    expect(updateRow.submitted_by.jothidarPaarvai).toBe(true);
+    expect(updateRow.submitted_by.jothidarPaarvaiNotes).toBe('Updated astrologer insight');
+
+    // API integration: create one temple WITH Jothidar Paarvai and one WITHOUT
+    const withNotesName = 'Jothidar Enabled Temple ' + Date.now();
+    const withoutNotesName = 'Regular Temple ' + Date.now();
+
+    const withRes = await request(app)
+      .post('/api/temples')
+      .send({
+        name: withNotesName,
+        location: 'Tiruchirappalli',
+        state: 'Tamil Nadu',
+        planets: ['sani'],
+        deity: 'murugan',
+        significance: 'With Jothidar notes',
+        jothidarPaarvai: true,
+        jothidarPaarvaiNotes: noteText,
+      });
+    expect(withRes.status).toBe(201);
+    expect(withRes.body.data.jothidarPaarvai).toBe(true);
+    expect(withRes.body.data.jothidarPaarvaiNotes).toBe(noteText);
+
+    const withoutRes = await request(app)
+      .post('/api/temples')
+      .send({
+        name: withoutNotesName,
+        location: 'Madurai',
+        state: 'Tamil Nadu',
+        planets: ['suri'],
+        deity: 'shivan',
+        significance: 'Without Jothidar notes',
+        jothidarPaarvai: false,
+      });
+    expect(withoutRes.status).toBe(201);
+    expect(withoutRes.body.data.jothidarPaarvai).toBe(false);
+
+    const filteredRes = await request(app).get('/api/temples?jothidarPaarvai=true');
+    expect(filteredRes.status).toBe(200);
+    expect(filteredRes.body.data.some((t: any) => t.name === withNotesName)).toBe(true);
+    expect(filteredRes.body.data.some((t: any) => t.name === withoutNotesName)).toBe(false);
+  });
 });

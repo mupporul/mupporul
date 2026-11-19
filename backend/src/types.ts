@@ -50,6 +50,8 @@ export interface Temple {
   history?: string;
   poojaDetails?: string;
   contactNumber?: string;
+  jothidarPaarvai?: boolean;
+  jothidarPaarvaiNotes?: string;
   coordinates?: { lat: number; lng: number };
   createdAt: string;
   updatedAt: string;

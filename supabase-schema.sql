@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS temples (
   history TEXT,
   pooja_details TEXT,
   contact_number TEXT,
+  jothidar_paarvai BOOLEAN DEFAULT FALSE,
+  jothidar_paarvai_notes TEXT DEFAULT '',
   submitted_by JSONB,
   views_count INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),

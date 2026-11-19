@@ -8,7 +8,7 @@ templesRouter.get('/', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
 
-    const { planets, planetMatchMode, deity, state, search } = req.query;
+    const { planets, planetMatchMode, deity, state, jothidarPaarvai, search } = req.query;
 
     let planetArray: string[] | undefined;
     if (typeof planets === 'string' && planets.trim()) {
@@ -24,6 +24,7 @@ templesRouter.get('/', async (req: Request, res: Response) => {
       planetMatchMode: matchMode,
       deity: typeof deity === 'string' ? deity : undefined,
       state: typeof state === 'string' ? state : undefined,
+      jothidarPaarvai: jothidarPaarvai === 'true',
       search: typeof search === 'string' ? search : undefined,
     });
 
@@ -58,7 +59,7 @@ templesRouter.get('/:id', async (req: Request, res: Response) => {
 templesRouter.post('/', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
-    const { name, location, state, planets, deity, significance, remedies, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber } = req.body;
+    const { name, location, state, planets, deity, significance, remedies, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber, jothidarPaarvai, jothidarPaarvaiNotes } = req.body;
 
     if (!name || !location || !deity || !significance) {
       res.status(400).json({
@@ -82,6 +83,8 @@ templesRouter.post('/', async (req: Request, res: Response) => {
       history: history || '',
       poojaDetails: poojaDetails || '',
       contactNumber: contactNumber || '',
+      jothidarPaarvai: Boolean(jothidarPaarvai || (typeof jothidarPaarvaiNotes === 'string' && jothidarPaarvaiNotes.trim())),
+      jothidarPaarvaiNotes: typeof jothidarPaarvaiNotes === 'string' ? jothidarPaarvaiNotes : '',
       submittedBy: req.body.submittedBy || {
         id: 'user-admin',
         name: 'Admin Murugan',

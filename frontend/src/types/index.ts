@@ -49,6 +49,8 @@ export interface Temple {
   history?: string;
   poojaDetails?: string;
   contactNumber?: string;
+  jothidarPaarvai?: boolean;
+  jothidarPaarvaiNotes?: string;
   coordinates?: { lat: number; lng: number };
   createdAt: string;
   updatedAt: string;
@@ -93,6 +95,7 @@ export interface FilterState {
   deity: string | null;
   state: string | null;
   significance: string | null;
+  jothidarPaarvaiOnly?: boolean;
   searchQuery: string;
 }
 

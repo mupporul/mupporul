@@ -112,6 +112,7 @@ const initialFilters: FilterState = {
   state: null,
   significance: null,
   searchQuery: '',
+  jothidarPaarvaiOnly: false,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -312,6 +313,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             history: sub.templeData.history || '',
             poojaDetails: sub.templeData.poojaDetails || '',
             contactNumber: sub.templeData.contactNumber || '',
+            jothidarPaarvai: Boolean(sub.templeData.jothidarPaarvai || sub.templeData.jothidarPaarvaiNotes?.trim()),
+            jothidarPaarvaiNotes: sub.templeData.jothidarPaarvaiNotes || '',
             submittedBy: sub.submittedBy || { id: 'contributor', name: 'Contributor', role: 'contributor' },
             viewsCount: 0,
             createdAt: sub.reviewedAt || sub.submittedAt || new Date().toISOString(),
@@ -1144,6 +1147,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               deity: existingTemple.deity,
               timings: existingTemple.timings,
               significance: existingTemple.significance,
+              jothidarPaarvai: existingTemple.jothidarPaarvai,
+              jothidarPaarvaiNotes: existingTemple.jothidarPaarvaiNotes,
             }
           : undefined,
       };
@@ -1190,6 +1195,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           history: targetSub.templeData.history || '',
           poojaDetails: targetSub.templeData.poojaDetails || '',
           contactNumber: targetSub.templeData.contactNumber || '',
+          jothidarPaarvai: Boolean(targetSub.templeData.jothidarPaarvai || targetSub.templeData.jothidarPaarvaiNotes?.trim()),
+          jothidarPaarvaiNotes: targetSub.templeData.jothidarPaarvaiNotes || '',
           submittedBy: targetSub.submittedBy || {
             id: currentUser.id,
             name: currentUser.name,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, STATES } from '../data/constants';
 
@@ -35,7 +35,7 @@ export const FilterSidebar: React.FC = () => {
 
   const activeFilterCount =
     selectedPlanets.length +
-    [filters.deity, filters.state, filters.searchQuery].filter(Boolean).length;
+    [filters.deity, filters.state, filters.searchQuery, filters.jothidarPaarvaiOnly].filter(Boolean).length;
 
   const toggleDeity = (deityId: string) => {
     setFilters(prev => ({
@@ -239,6 +239,35 @@ export const FilterSidebar: React.FC = () => {
                 <ChevronDown className="w-3.5 h-3.5 text-[#f5a623] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             )}
+          </div>
+
+          {/* Section 4: Jothidar Paarvai */}
+          <div className="pb-1">
+            <label
+              className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                filters.jothidarPaarvaiOnly
+                  ? 'bg-amber-500/15 border-[#f5a623] text-amber-300'
+                  : 'bg-[#161828] border-[#2b2e46] text-gray-200 hover:border-[#f5a623]/60'
+              }`}
+            >
+              <span className="flex items-center gap-2 font-tamil">
+                <Star
+                  className={`w-3.5 h-3.5 ${
+                    filters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                  }`}
+                />
+                <span>Jothidar Paarvai (ஜோதிடர் பார்வை)</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={Boolean(filters.jothidarPaarvaiOnly)}
+                onChange={(e) => {
+                  setFilters(prev => ({ ...prev, jothidarPaarvaiOnly: e.target.checked }));
+                  refreshFreshData();
+                }}
+                className="w-3.5 h-3.5 rounded accent-[#f5a623] cursor-pointer"
+              />
+            </label>
           </div>
         </div>
       </div>

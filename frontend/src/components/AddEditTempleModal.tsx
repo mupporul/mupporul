@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Plus,
   Pencil,
+  Star,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, STATES } from '../data/constants';
@@ -54,6 +55,8 @@ export const AddEditTempleModal: React.FC = () => {
     history: '',
     poojaDetails: '',
     contactNumber: '',
+    jothidarPaarvai: false,
+    jothidarPaarvaiNotes: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +96,8 @@ export const AddEditTempleModal: React.FC = () => {
         history: templeToEdit.history || '',
         poojaDetails: templeToEdit.poojaDetails || '',
         contactNumber: templeToEdit.contactNumber || '',
+        jothidarPaarvai: Boolean(templeToEdit.jothidarPaarvai || templeToEdit.jothidarPaarvaiNotes?.trim()),
+        jothidarPaarvaiNotes: templeToEdit.jothidarPaarvaiNotes || '',
       });
       // If image is already set, select URL mode by default
       setPhotoMode('url');
@@ -111,6 +116,8 @@ export const AddEditTempleModal: React.FC = () => {
         history: '',
         poojaDetails: '',
         contactNumber: '',
+        jothidarPaarvai: false,
+        jothidarPaarvaiNotes: '',
       });
       setPhotoMode('url');
     }
@@ -282,6 +289,10 @@ export const AddEditTempleModal: React.FC = () => {
       setErrorMessage('Significance is required.');
       return;
     }
+    if (formData.jothidarPaarvai && !formData.jothidarPaarvaiNotes.trim()) {
+      setErrorMessage('Please enter notes for Jothidar Paarvai or uncheck the box.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -291,6 +302,8 @@ export const AddEditTempleModal: React.FC = () => {
         location: trimmedLocation,
         significance: trimmedSignificance,
         imageUrl: formData.imageUrl || '',
+        jothidarPaarvai: formData.jothidarPaarvai,
+        jothidarPaarvaiNotes: formData.jothidarPaarvai ? formData.jothidarPaarvaiNotes.trim() : '',
       };
       const ok = await submitTemple(submissionData, templeToEdit?.id);
       if (!ok) {
@@ -657,6 +670,48 @@ export const AddEditTempleModal: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, significance: e.target.value }))}
                 className="w-full bg-[#1a1c2d] text-gray-100 px-3.5 py-2.5 rounded-xl border border-[#2d314b] focus:border-[#f5a623] focus:outline-none leading-relaxed text-xs sm:text-sm"
               />
+            </div>
+
+            {/* Jothidar Paarvai (ஜோதிடர் பார்வை) Astrologer Notes */}
+            <div className="bg-[#181a2a] p-3.5 rounded-2xl border border-amber-500/30 space-y-2.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.jothidarPaarvai}
+                  onChange={(e) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      jothidarPaarvai: e.target.checked,
+                    }))
+                  }
+                  className="w-4 h-4 rounded border-amber-500/60 bg-[#121422] text-[#f5a623] accent-[#f5a623] cursor-pointer"
+                />
+                <Star
+                  className={`w-4 h-4 transition-colors ${
+                    formData.jothidarPaarvai ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                  }`}
+                />
+                <span className="text-xs sm:text-sm font-semibold text-amber-300 font-tamil">
+                  Jothidar Paarvai (ஜோதிடர் பார்வை)
+                </span>
+              </label>
+
+              {formData.jothidarPaarvai && (
+                <div className="space-y-1 animate-in fade-in duration-150">
+                  <label className="block text-[11px] font-medium text-gray-300 font-tamil">
+                    ஜோதிடர் பார்வை குறிப்புகள் (Astrologer Special Notes) *
+                  </label>
+                  <textarea
+                    rows={isMobileFrame ? 3 : 3}
+                    placeholder="Enter special astrological notes, planetary observations, or remedies (ஜோதிடர் பார்வை குறிப்புகள்)..."
+                    value={formData.jothidarPaarvaiNotes}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, jothidarPaarvaiNotes: e.target.value }))
+                    }
+                    className="w-full bg-[#121422] text-gray-100 px-3.5 py-2.5 rounded-xl border border-amber-500/40 focus:border-[#f5a623] focus:outline-none leading-relaxed text-xs sm:text-sm font-tamil"
+                  />
+                </div>
+              )}
             </div>
 
 

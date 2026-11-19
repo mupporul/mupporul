@@ -1,5 +1,5 @@
 import React from 'react';
-import { SlidersHorizontal, Sparkles, FilterX } from 'lucide-react';
+import { SlidersHorizontal, Sparkles, FilterX, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleCard } from './TempleCard';
 import { FilterSidebar } from './FilterSidebar';
@@ -9,6 +9,7 @@ export const TemplesList: React.FC = () => {
   const {
     temples,
     filters,
+    setFilters,
     resetFilters,
     openAddModal,
     currentUser,
@@ -67,7 +68,17 @@ export const TemplesList: React.FC = () => {
       if (!combinedText.includes(target)) return false;
     }
 
-    // 5. Search query
+    // 5. Jothidar Paarvai filter
+    if (filters.jothidarPaarvaiOnly) {
+      const hasJothidarNotes = Boolean(
+        temple.jothidarPaarvai || (temple.jothidarPaarvaiNotes && temple.jothidarPaarvaiNotes.trim())
+      );
+      if (!hasJothidarNotes) {
+        return false;
+      }
+    }
+
+    // 6. Search query
     if (filters.searchQuery.trim()) {
       const q = filters.searchQuery.toLowerCase().trim();
       const matchName = temple.name.toLowerCase().includes(q);
@@ -75,7 +86,8 @@ export const TemplesList: React.FC = () => {
       const matchSignificance = temple.significance?.toLowerCase().includes(q);
       const matchDesc = temple.descriptionTamil?.toLowerCase().includes(q);
       const matchEng = temple.descriptionEnglish?.toLowerCase().includes(q);
-      if (!matchName && !matchLocation && !matchSignificance && !matchDesc && !matchEng) {
+      const matchJothidar = temple.jothidarPaarvaiNotes?.toLowerCase().includes(q);
+      if (!matchName && !matchLocation && !matchSignificance && !matchDesc && !matchEng && !matchJothidar) {
         return false;
       }
     }
@@ -89,7 +101,8 @@ export const TemplesList: React.FC = () => {
     filters.deity ||
     filters.state ||
     filters.significance ||
-    filters.searchQuery;
+    filters.searchQuery ||
+    filters.jothidarPaarvaiOnly;
 
   return (
     <div className={`w-full ${isMobileFrame ? 'max-w-xl mx-auto py-3 px-3 sm:px-4' : 'flex-1 h-full min-h-0 flex flex-col'}`}>
@@ -148,6 +161,17 @@ export const TemplesList: React.FC = () => {
                 {filters.searchQuery && (
                   <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
                     "{filters.searchQuery}"
+                  </span>
+                )}
+                {filters.jothidarPaarvaiOnly && (
+                  <span
+                    onClick={() => setFilters(prev => ({ ...prev, jothidarPaarvaiOnly: false }))}
+                    className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/50 font-semibold flex items-center gap-1 cursor-pointer hover:bg-amber-400/30"
+                    title="Click to remove"
+                  >
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span>Jothidar Paarvai</span>
+                    <span className="text-xs ml-0.5">✕</span>
                   </span>
                 )}
               </div>

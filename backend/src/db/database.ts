@@ -214,6 +214,7 @@ export class Database {
     planetMatchMode?: 'all' | 'exact';
     deity?: string;
     state?: string;
+    jothidarPaarvai?: boolean;
     search?: string;
   }): Temple[] {
     this.reconcileApprovedSubmissions();
@@ -244,14 +245,20 @@ export class Database {
       list = list.filter(t => t.state.toLowerCase() === filters.state!.toLowerCase());
     }
 
-    // Search Query (name, location, significance)
+    // Filter by Jothidar Paarvai
+    if (filters.jothidarPaarvai) {
+      list = list.filter(t => Boolean(t.jothidarPaarvai || (t.jothidarPaarvaiNotes && t.jothidarPaarvaiNotes.trim())));
+    }
+
+    // Search Query (name, location, significance, jothidarPaarvaiNotes)
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
       list = list.filter(t => 
         t.name.toLowerCase().includes(q) ||
         (t.nameTamil && t.nameTamil.toLowerCase().includes(q)) ||
         t.location.toLowerCase().includes(q) ||
-        (t.significance && t.significance.toLowerCase().includes(q))
+        (t.significance && t.significance.toLowerCase().includes(q)) ||
+        (t.jothidarPaarvaiNotes && t.jothidarPaarvaiNotes.toLowerCase().includes(q))
       );
     }
 
@@ -285,9 +292,12 @@ export class Database {
       return merged || existing;
     }
 
+    const hasJp = Boolean(templeData.jothidarPaarvai || (templeData.jothidarPaarvaiNotes && templeData.jothidarPaarvaiNotes.trim()));
     const newTemple: Temple = {
       ...templeData,
       remedies: [],
+      jothidarPaarvai: hasJp,
+      jothidarPaarvaiNotes: hasJp ? (templeData.jothidarPaarvaiNotes || '').trim() : '',
       id: `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       viewsCount: 0,
       createdAt: new Date().toISOString(),
@@ -310,10 +320,19 @@ export class Database {
     const previousTemple = this.data.temples[index];
     const prevNameClean = (previousTemple.name || '').trim().toLowerCase();
 
-    const sanitizedUpdates = {
+    const sanitizedUpdates: Partial<Temple> = {
       ...updates,
       remedies: [],
     };
+    if (sanitizedUpdates.jothidarPaarvai !== undefined) {
+      sanitizedUpdates.jothidarPaarvai = Boolean(sanitizedUpdates.jothidarPaarvai);
+      if (!sanitizedUpdates.jothidarPaarvai) {
+        sanitizedUpdates.jothidarPaarvaiNotes = '';
+      }
+    }
+    if (typeof sanitizedUpdates.jothidarPaarvaiNotes === 'string') {
+      sanitizedUpdates.jothidarPaarvaiNotes = sanitizedUpdates.jothidarPaarvaiNotes.trim();
+    }
 
     this.data.temples[index] = {
       ...previousTemple,
@@ -339,7 +358,10 @@ export class Database {
     this.saveData();
 
     if (isSupabaseConfigured) {
-      this.trackSupabaseWrite(updateTempleInSupabase(id, sanitizedUpdates), 'Update temple');
+      this.trackSupabaseWrite(
+        updateTempleInSupabase(id, sanitizedUpdates, this.data.temples[index]),
+        'Update temple'
+      );
     }
 
     return this.data.temples[index];
@@ -568,6 +590,8 @@ export class Database {
           history: sub.templeData.history || '',
           poojaDetails: sub.templeData.poojaDetails || '',
           contactNumber: sub.templeData.contactNumber || '',
+          jothidarPaarvai: Boolean(sub.templeData.jothidarPaarvai || (sub.templeData.jothidarPaarvaiNotes && sub.templeData.jothidarPaarvaiNotes.trim())),
+          jothidarPaarvaiNotes: sub.templeData.jothidarPaarvaiNotes || '',
           submittedBy: sub.submittedBy || {
             id: 'contributor',
             name: 'Contributor',

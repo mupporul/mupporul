@@ -12,7 +12,8 @@ import {
   History,
   FileCheck2,
   ExternalLink,
-  RotateCw
+  RotateCw,
+  Star
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleSubmission } from '../types';
@@ -307,6 +308,19 @@ export const ReviewTab: React.FC = () => {
                     {sub.templeData?.significance || sub.templeData?.descriptionTamil || ''}
                   </p>
 
+                  {/* Jothidar Paarvai Preview */}
+                  {(sub.templeData?.jothidarPaarvai || sub.templeData?.jothidarPaarvaiNotes?.trim()) && sub.templeData?.jothidarPaarvaiNotes?.trim() && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/40 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300 font-tamil">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                        <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
+                      </div>
+                      <p className="text-xs text-gray-200 whitespace-pre-line font-tamil leading-relaxed">
+                        {sub.templeData.jothidarPaarvaiNotes}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Timings */}
                   <p className="text-[11px] text-gray-400 font-tamil">
                     🕒 <span className="text-amber-400/90">தரிசன நேரம்:</span> {sub.templeData?.timings || 'காலை & மாலை'}
@@ -328,6 +342,19 @@ export const ReviewTab: React.FC = () => {
                         </div>
                         <div className="text-emerald-400 text-[11px]">
                           + New Significance: {sub.templeData.significance}
+                        </div>
+                      </div>
+                    )}
+
+                    {(sub.previousData.jothidarPaarvaiNotes || '') !== (sub.templeData.jothidarPaarvaiNotes || '') && (
+                      <div className="space-y-1 font-tamil">
+                        {sub.previousData.jothidarPaarvaiNotes && (
+                          <div className="text-red-400/90 line-through text-[11px]">
+                            - Old Jothidar Paarvai: {sub.previousData.jothidarPaarvaiNotes}
+                          </div>
+                        )}
+                        <div className="text-emerald-400 text-[11px]">
+                          + New Jothidar Paarvai: {sub.templeData.jothidarPaarvaiNotes || '(Cleared)'}
                         </div>
                       </div>
                     )}

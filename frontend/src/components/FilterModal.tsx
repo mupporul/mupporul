@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, STATES } from '../data/constants';
 import { FilterState } from '../types';
@@ -9,6 +9,12 @@ export const FilterModal: React.FC = () => {
 
   // Local draft filter state before applying
   const [draftFilters, setDraftFilters] = useState<FilterState>(filters);
+
+  useEffect(() => {
+    if (isFilterOpen) {
+      setDraftFilters(filters);
+    }
+  }, [isFilterOpen, filters]);
 
   // Accordion collapsed state for sections
   const [openSections, setOpenSections] = useState({
@@ -39,6 +45,7 @@ export const FilterModal: React.FC = () => {
       state: null,
       significance: null,
       searchQuery: draftFilters.searchQuery,
+      jothidarPaarvaiOnly: false,
     });
     refreshFreshData();
   };
@@ -253,6 +260,37 @@ export const FilterModal: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Section 4: Jothidar Paarvai */}
+          <div className="pb-2">
+            <label
+              className={`flex items-center justify-between gap-2.5 px-4 py-3 rounded-xl border text-sm font-semibold cursor-pointer transition-all ${
+                draftFilters.jothidarPaarvaiOnly
+                  ? 'bg-amber-500/15 border-[#f5a623] text-amber-300'
+                  : 'bg-[#151726] border-[#2b2e46] text-gray-200 hover:border-[#f5a623]/60'
+              }`}
+            >
+              <span className="flex items-center gap-2 font-tamil">
+                <Star
+                  className={`w-4 h-4 ${
+                    draftFilters.jothidarPaarvaiOnly ? 'fill-amber-400 text-amber-400' : 'text-amber-400/70'
+                  }`}
+                />
+                <span>Jothidar Paarvai (ஜோதிடர் பார்வை)</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={Boolean(draftFilters.jothidarPaarvaiOnly)}
+                onChange={(e) =>
+                  setDraftFilters(prev => ({
+                    ...prev,
+                    jothidarPaarvaiOnly: e.target.checked,
+                  }))
+                }
+                className="w-4 h-4 rounded accent-[#f5a623] cursor-pointer"
+              />
+            </label>
           </div>
         </div>
 

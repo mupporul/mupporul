@@ -35,29 +35,65 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
     throw error;
   }
 
-  return (data || []).map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    location: row.location,
-    state: row.state,
-    planets: row.planets || [],
-    deity: row.deity,
-    significance: row.significance,
-    remedies: [],
-    imageUrl: row.image_url,
-    videoUrl: row.video_url || '',
-    timings: row.timings || '',
-    history: row.history || '',
-    poojaDetails: row.pooja_details || '',
-    contactNumber: row.contact_number || '',
-    submittedBy: row.submitted_by,
-    viewsCount: row.views_count || 0,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  return (data || []).map((row: any) => {
+    const rawSubmittedBy = row.submitted_by && typeof row.submitted_by === 'object' ? row.submitted_by : undefined;
+    const jpFlag =
+      row.jothidar_paarvai !== undefined
+        ? Boolean(row.jothidar_paarvai)
+        : Boolean(rawSubmittedBy?.jothidarPaarvai);
+    const jpNotes =
+      row.jothidar_paarvai_notes !== undefined
+        ? (row.jothidar_paarvai_notes || '')
+        : (rawSubmittedBy?.jothidarPaarvaiNotes || '');
+
+    const cleanSubmittedBy = rawSubmittedBy
+      ? {
+          id: rawSubmittedBy.id || 'user-admin',
+          name: rawSubmittedBy.name || 'Admin Murugan',
+          role: rawSubmittedBy.role || 'admin',
+        }
+      : undefined;
+
+    return {
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      state: row.state,
+      planets: row.planets || [],
+      deity: row.deity,
+      significance: row.significance,
+      remedies: [],
+      imageUrl: row.image_url,
+      videoUrl: row.video_url || '',
+      timings: row.timings || '',
+      history: row.history || '',
+      poojaDetails: row.pooja_details || '',
+      contactNumber: row.contact_number || '',
+      jothidarPaarvai: jpFlag,
+      jothidarPaarvaiNotes: jpNotes,
+      submittedBy: cleanSubmittedBy,
+      viewsCount: row.views_count || 0,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 }
 
 export function buildSupabaseTempleRow(temple: Temple) {
+  const baseSubmittedBy = temple.submittedBy
+    ? {
+        id: temple.submittedBy.id,
+        name: temple.submittedBy.name,
+        role: temple.submittedBy.role,
+      }
+    : {
+        id: 'user-admin',
+        name: 'Admin Murugan',
+        role: 'admin',
+      };
+
+  const hasJp = Boolean(temple.jothidarPaarvai || (temple.jothidarPaarvaiNotes && temple.jothidarPaarvaiNotes.trim()));
+
   return {
     id: temple.id,
     name: temple.name || 'Sacred Temple',
@@ -72,10 +108,10 @@ export function buildSupabaseTempleRow(temple: Temple) {
     history: temple.history || '',
     pooja_details: temple.poojaDetails || '',
     contact_number: temple.contactNumber || '',
-    submitted_by: temple.submittedBy || {
-      id: 'user-admin',
-      name: 'Admin Murugan',
-      role: 'admin',
+    submitted_by: {
+      ...baseSubmittedBy,
+      jothidarPaarvai: hasJp,
+      jothidarPaarvaiNotes: hasJp ? (temple.jothidarPaarvaiNotes || '') : '',
     },
     views_count: temple.viewsCount || 0,
     created_at: temple.createdAt || new Date().toISOString(),
@@ -83,7 +119,7 @@ export function buildSupabaseTempleRow(temple: Temple) {
   };
 }
 
-export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>): Record<string, any> {
+export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTemple?: Temple): Record<string, any> {
   const row: Record<string, any> = {
     updated_at: new Date().toISOString(),
   };
@@ -102,6 +138,34 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>): Record<s
   if (updates.contactNumber !== undefined) row.contact_number = updates.contactNumber;
   if (updates.viewsCount !== undefined) row.views_count = updates.viewsCount;
 
+  if (
+    updates.jothidarPaarvai !== undefined ||
+    updates.jothidarPaarvaiNotes !== undefined ||
+    updates.submittedBy !== undefined
+  ) {
+    const mergedSubmittedBy = updates.submittedBy || currentTemple?.submittedBy || {
+      id: 'user-admin',
+      name: 'Admin Murugan',
+      role: 'admin',
+    };
+    const nextJp =
+      updates.jothidarPaarvai !== undefined
+        ? Boolean(updates.jothidarPaarvai)
+        : Boolean(currentTemple?.jothidarPaarvai);
+    const nextNotes =
+      updates.jothidarPaarvaiNotes !== undefined
+        ? updates.jothidarPaarvaiNotes
+        : (currentTemple?.jothidarPaarvaiNotes || '');
+
+    row.submitted_by = {
+      id: mergedSubmittedBy.id,
+      name: mergedSubmittedBy.name,
+      role: mergedSubmittedBy.role,
+      jothidarPaarvai: nextJp,
+      jothidarPaarvaiNotes: nextJp ? (nextNotes || '') : '',
+    };
+  }
+
   return row;
 }
 
@@ -117,9 +181,13 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
   return temple;
 }
 
-export async function updateTempleInSupabase(id: string, updates: Partial<Temple>): Promise<void> {
+export async function updateTempleInSupabase(
+  id: string,
+  updates: Partial<Temple>,
+  currentTemple?: Temple
+): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
-  const row = buildSupabaseTempleUpdateRow(updates);
+  const row = buildSupabaseTempleUpdateRow(updates, currentTemple);
 
   const { error } = await supabase.from('temples').update(row).eq('id', id);
   if (error) {
@@ -316,6 +384,8 @@ export function normalizeSupabaseSubmission(row: any): TempleSubmission {
       history: templeData?.history || '',
       poojaDetails: templeData?.poojaDetails || '',
       contactNumber: templeData?.contactNumber || '',
+      jothidarPaarvai: Boolean(templeData?.jothidarPaarvai || (templeData?.jothidarPaarvaiNotes && templeData.jothidarPaarvaiNotes.trim())),
+      jothidarPaarvaiNotes: templeData?.jothidarPaarvaiNotes || '',
       remedies: [],
     },
     previousData: row.previous_data ? safeParseJson(row.previous_data) : undefined,

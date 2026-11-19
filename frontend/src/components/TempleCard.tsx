@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Play, MoreVertical, Share2, Edit3, Trash2, Info } from 'lucide-react';
+import { MapPin, Play, MoreVertical, Share2, Edit3, Trash2, Info, Star, X } from 'lucide-react';
 import { Temple } from '../types';
 import { PLANETS, DEITIES } from '../data/constants';
 import { useApp } from '../context/AppContext';
@@ -21,7 +21,13 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [showJothidarNotes, setShowJothidarNotes] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const hasJothidarNotes = Boolean(
+    (temple.jothidarPaarvai || temple.jothidarPaarvaiNotes?.trim()) &&
+      temple.jothidarPaarvaiNotes?.trim()
+  );
 
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const canDelete = currentUser.role === 'admin';
@@ -200,7 +206,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
         </div>
 
         {/* Bottom Actions Row (Matching Screenshot 1) */}
-        <div className="mt-4 pt-3 border-t border-[#24273a] flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-[#24273a] flex items-center justify-between gap-2">
           {/* "Watch this video" Link */}
           <button
             onClick={() => openVideoModal(temple.videoUrl, temple.name)}
@@ -214,16 +220,83 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
             </span>
           </button>
 
-          {/* "Details" Button -> Opens drawer / modal with X icon on click */}
-          <button
-            onClick={() => openDetailModal(temple)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-amber-300 border border-amber-500/50 hover:bg-amber-500/10 active:scale-95 transition-all cursor-pointer shadow-sm"
-          >
-            <span>Details</span>
-            <Info className="w-3.5 h-3.5 text-amber-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Yellow Star Button -> Opens saved Jothidar Paarvai notes popup */}
+            {hasJothidarNotes && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowJothidarNotes(true);
+                }}
+                aria-label="View Jothidar Paarvai"
+                title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
+                className="w-8 h-8 rounded-full bg-amber-400/15 border border-amber-400/70 text-amber-400 hover:bg-amber-400/25 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+              >
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              </button>
+            )}
+
+            {/* "Details" Button -> Opens drawer / modal with X icon on click */}
+            <button
+              onClick={() => openDetailModal(temple)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-amber-300 border border-amber-500/50 hover:bg-amber-500/10 active:scale-95 transition-all cursor-pointer shadow-sm"
+            >
+              <span>Details</span>
+              <Info className="w-3.5 h-3.5 text-amber-400" />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Jothidar Paarvai Notes Popup */}
+      {showJothidarNotes && hasJothidarNotes && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          onClick={() => setShowJothidarNotes(false)}
+        >
+          <div
+            role="dialog"
+            aria-label="Jothidar Paarvai"
+            className="w-full max-w-md bg-[#141624] border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#24273c] bg-[#181b2c]">
+              <div className="flex items-center gap-2 min-w-0">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold text-amber-300 font-tamil truncate">
+                    ஜோதிடர் பார்வை (Jothidar Paarvai)
+                  </h4>
+                  <p className="text-[11px] text-gray-400 truncate">{temple.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowJothidarNotes(false)}
+                aria-label="Close Jothidar Paarvai"
+                className="w-7 h-7 rounded-full bg-[#22253a] hover:bg-[#2c304a] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[60vh] overflow-y-auto">
+              <p className="text-xs sm:text-sm text-gray-100 leading-relaxed whitespace-pre-line font-tamil">
+                {temple.jothidarPaarvaiNotes}
+              </p>
+            </div>
+            <div className="px-4 py-2.5 border-t border-[#24273c] bg-[#111320] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowJothidarNotes(false)}
+                className="px-4 py-1.5 rounded-xl bg-[#202336] hover:bg-[#282d46] text-gray-200 text-xs font-semibold cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 };

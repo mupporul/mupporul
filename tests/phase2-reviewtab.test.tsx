@@ -6,8 +6,11 @@ import { BottomNav } from '../frontend/src/components/BottomNav';
 import { ProfileTab } from '../frontend/src/components/ProfileTab';
 import { AddEditTempleModal } from '../frontend/src/components/AddEditTempleModal';
 import { TempleCard } from '../frontend/src/components/TempleCard';
+import { Header } from '../frontend/src/components/Header';
+import { TemplesList } from '../frontend/src/components/TemplesList';
+import { TempleDetailModal } from '../frontend/src/components/TempleDetailModal';
 import * as AppContextModule from '../frontend/src/context/AppContext';
-import { TempleSubmission } from '../frontend/src/types';
+import { TempleSubmission, Temple } from '../frontend/src/types';
 
 describe('Phase 2: ReviewTab Component Boundary & Resilience Tests', () => {
   const mockRefreshFreshData = vi.fn().mockResolvedValue(undefined);
@@ -552,5 +555,232 @@ describe('Phase 2: TempleCard Admin Delete Menu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /More options/i }));
     expect(screen.queryByRole('button', { name: /Delete Temple/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('Phase 2: Jothidar Paarvai Feature Tests', () => {
+  it('shows textarea only when Jothidar Paarvai checkbox is checked and validates/saves notes in AddEditTempleModal', async () => {
+    const submitTempleMock = vi.fn().mockResolvedValue(true);
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      isAddEditModalOpen: true,
+      closeAddEditModal: vi.fn(),
+      templeToEdit: {
+        id: 'temple-vayalur',
+        name: 'Vayalur Murugan Temple',
+        location: 'Vayalur, Tiruchirappalli',
+        state: 'Tamil Nadu',
+        planets: ['sani', 'sev'],
+        deity: 'murugan',
+        significance: 'Existing significance text',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        timings: '6 am - 8 pm',
+        viewsCount: 0,
+        createdAt: '2026-10-01T00:00:00Z',
+        updatedAt: '2026-10-01T00:00:00Z',
+      },
+      submitTemple: submitTempleMock,
+      currentUser: { id: 'user-admin', name: 'Admin Murugan', username: 'admin', role: 'admin' },
+      switchRole: vi.fn(),
+      setActiveTab: vi.fn(),
+      isMobileFrame: false,
+      deities: [{ id: 'murugan', nameTamil: 'முருகன்', nameEnglish: 'Murugan' }],
+      createDeity: vi.fn(),
+      updateDeity: vi.fn(),
+      deleteDeity: vi.fn(),
+    } as any);
+
+    render(<AddEditTempleModal />);
+
+    const checkbox = screen.getByRole('checkbox', { name: /Jothidar Paarvai/i });
+    expect(checkbox).not.toBeChecked();
+    expect(screen.queryByPlaceholderText(/astrological notes/i)).not.toBeInTheDocument();
+
+    fireEvent.click(checkbox);
+    const notesBox = screen.getByPlaceholderText(/astrological notes/i);
+    expect(notesBox).toBeInTheDocument();
+
+    fireEvent.change(notesBox, {
+      target: { value: 'செவ்வாய் நீசம் பெற்று கடகத்தில் இருந்தாலும் வழிபடலாம்' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Update & Publish \(Admin\)/i }));
+
+    await waitFor(() => {
+      expect(submitTempleMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jothidarPaarvai: true,
+          jothidarPaarvaiNotes: 'செவ்வாய் நீசம் பெற்று கடகத்தில் இருந்தாலும் வழிபடலாம்',
+        }),
+        'temple-vayalur'
+      );
+    });
+  });
+
+  it('filters temple list when Jothidar Paarvai search checkbox is toggled in Header and TemplesList', () => {
+    const templesData: Temple[] = [
+      {
+        id: 't-with-jp',
+        name: 'Vayalur Murugan Temple',
+        location: 'Vayalur, Tiruchirappalli',
+        state: 'Tamil Nadu',
+        planets: ['sani', 'sev'],
+        deity: 'murugan',
+        significance: 'Vayalur significance',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        jothidarPaarvai: true,
+        jothidarPaarvaiNotes: 'Special Jothidar astrologer observation',
+        timings: '6 am - 8 pm',
+        viewsCount: 0,
+        createdAt: '2026-11-18T00:00:00Z',
+        updatedAt: '2026-11-18T00:00:00Z',
+      },
+      {
+        id: 't-without-jp',
+        name: 'Pampuranathar Temple',
+        location: 'Thirupampuram, Thiruvarur',
+        state: 'Tamil Nadu',
+        planets: ['rahu', 'sani'],
+        deity: 'shivan',
+        significance: 'Pampuranathar significance',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        jothidarPaarvai: false,
+        jothidarPaarvaiNotes: '',
+        timings: '6 am - 8 pm',
+        viewsCount: 0,
+        createdAt: '2026-11-17T00:00:00Z',
+        updatedAt: '2026-11-17T00:00:00Z',
+      },
+    ];
+
+    let currentFilters = {
+      planets: [] as string[],
+      planetMatchMode: 'exact' as const,
+      planet: null,
+      deity: null,
+      state: null,
+      significance: null,
+      searchQuery: '',
+      jothidarPaarvaiOnly: false,
+    };
+
+    const useAppSpy = vi.spyOn(AppContextModule, 'useApp');
+    const buildCtx = () =>
+      ({
+        temples: templesData,
+        filters: currentFilters,
+        setFilters: (updater: any) => {
+          currentFilters = typeof updater === 'function' ? updater(currentFilters) : updater;
+        },
+        resetFilters: vi.fn(),
+        openAddModal: vi.fn(),
+        openEditModal: vi.fn(),
+        openDetailModal: vi.fn(),
+        openVideoModal: vi.fn(),
+        deleteTemple: vi.fn(),
+        setIsFilterOpen: vi.fn(),
+        activeTab: 'temples',
+        setActiveTab: vi.fn(),
+        currentUser: { id: 'user-admin', name: 'Admin', username: 'admin', role: 'admin', avatarText: 'AM', avatarColor: 'from-purple-500 to-purple-700' },
+        isLoggedIn: true,
+        openLoginModal: vi.fn(),
+        setPlanetMatchMode: vi.fn(),
+        togglePlanetFilter: vi.fn(),
+        refreshFreshData: vi.fn(),
+        isMobileFrame: false,
+        deities: [],
+      } as any);
+
+    useAppSpy.mockImplementation(buildCtx);
+
+    const { rerender } = render(
+      <>
+        <Header />
+        <TemplesList />
+      </>
+    );
+
+    expect(screen.getByText('Vayalur Murugan Temple')).toBeInTheDocument();
+    expect(screen.getByText('Pampuranathar Temple')).toBeInTheDocument();
+
+    const searchCheckboxes = screen.getAllByRole('checkbox', { name: /Jothidar Paarvai/i });
+    fireEvent.click(searchCheckboxes[0]);
+
+    useAppSpy.mockImplementation(buildCtx);
+    rerender(
+      <>
+        <Header />
+        <TemplesList />
+      </>
+    );
+
+    expect(screen.getByText('Vayalur Murugan Temple')).toBeInTheDocument();
+    expect(screen.queryByText('Pampuranathar Temple')).not.toBeInTheDocument();
+  });
+
+  it('displays yellow star button on TempleCard & TempleDetailModal and shows saved text when tapped', () => {
+    const jpTemple: Temple = {
+      id: 'temple-jp-star',
+      name: 'Vayalur Murugan Temple',
+      location: 'Vayalur, Tiruchirappalli',
+      state: 'Tamil Nadu',
+      planets: ['sani', 'sev'],
+      deity: 'murugan',
+      significance: 'Test significance',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 am - 8 pm',
+      viewsCount: 0,
+      createdAt: '2026-11-18T00:00:00Z',
+      updatedAt: '2026-11-18T00:00:00Z',
+      jothidarPaarvai: true,
+      jothidarPaarvaiNotes: 'வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு',
+    };
+
+    const regularTemple: Temple = {
+      ...jpTemple,
+      id: 'temple-no-star',
+      name: 'Regular Temple',
+      jothidarPaarvai: false,
+      jothidarPaarvaiNotes: '',
+    };
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      currentUser: { id: 'user-admin', name: 'Admin', username: 'admin', role: 'admin' },
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      closeDetailModal: vi.fn(),
+      deleteTemple: vi.fn(),
+      deities: [],
+      temples: [jpTemple, regularTemple],
+      selectedTempleForDetail: jpTemple,
+      isMobileFrame: false,
+    } as any);
+
+    const { unmount } = render(<TempleCard temple={regularTemple} />);
+    expect(screen.queryByRole('button', { name: /View Jothidar Paarvai/i })).not.toBeInTheDocument();
+    unmount();
+
+    render(<TempleCard temple={jpTemple} />);
+    const cardStarBtn = screen.getByRole('button', { name: /View Jothidar Paarvai/i });
+    expect(cardStarBtn).toBeInTheDocument();
+    expect(screen.queryByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு')).not.toBeInTheDocument();
+
+    fireEvent.click(cardStarBtn);
+    expect(screen.getByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு')).toBeInTheDocument();
+
+    // Detail Modal also renders yellow star button & reveals notes on tap
+    render(<TempleDetailModal />);
+    const starBtns = screen.getAllByRole('button', { name: /View Jothidar Paarvai/i });
+    expect(starBtns.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(starBtns[starBtns.length - 1]);
+    expect(screen.getAllByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு').length).toBe(2);
   });
 });
