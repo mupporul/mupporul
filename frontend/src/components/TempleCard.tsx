@@ -60,8 +60,8 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
   return (
     <article className="rounded-2xl bg-[#161825] border border-[#272a3d] shadow-lg hover:border-[#383d58] transition-all flex flex-col">
       {/* Temple Banner Image with 3-dot action menu (menu lives outside overflow-hidden so items are never clipped) */}
-      <div className="relative aspect-[16/9] w-full bg-[#10121d] rounded-t-2xl">
-        <div className="w-full h-full overflow-hidden rounded-t-2xl relative">
+      <div className="relative aspect-[16/9] w-full shrink-0 bg-[#10121d] rounded-t-2xl">
+        <div className="absolute inset-0 overflow-hidden rounded-t-2xl">
           <img
             src={temple.imageUrl}
             alt={temple.name}
