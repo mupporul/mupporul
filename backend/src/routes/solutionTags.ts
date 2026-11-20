@@ -14,6 +14,28 @@ solutionTagsRouter.get('/', async (_req: Request, res: Response) => {
   }
 });
 
+// GET /api/solution-tags/search?tagIds=a,b&mode=any|all - Indexed parent-child lookup
+solutionTagsRouter.get('/search', async (req: Request, res: Response) => {
+  try {
+    await db.syncFromSupabase();
+    const rawTagIds = typeof req.query.tagIds === 'string' ? req.query.tagIds : '';
+    const tagIds = rawTagIds
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const mode = req.query.mode === 'all' ? 'all' : 'any';
+
+    if (tagIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const matches = await db.searchTemplesBySolutionTags(tagIds, mode);
+    res.json({ success: true, data: matches });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Failed to search temples by solution tags' });
+  }
+});
+
 // POST /api/solution-tags - Create a new problem/solution tag (Admin)
 solutionTagsRouter.post('/', async (req: Request, res: Response) => {
   try {

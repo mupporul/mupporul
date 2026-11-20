@@ -874,6 +874,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const next = solutionTags.filter(t => t.id !== id);
       setSolutionTags(next);
+      setTemples(prev =>
+        prev.map(t =>
+          Array.isArray(t.solutionTags) && t.solutionTags.includes(id)
+            ? { ...t, solutionTags: t.solutionTags.filter(tagId => tagId !== id) }
+            : t
+        )
+      );
       try {
         localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
       } catch {}

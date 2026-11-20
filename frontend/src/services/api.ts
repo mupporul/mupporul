@@ -420,6 +420,21 @@ class ApiService {
     return true;
   }
 
+  async searchTemplesBySolutionTags(
+    tagIds: string[],
+    mode: 'any' | 'all' = 'any'
+  ): Promise<{ temple: Temple; matchedTagIds: string[]; matchCount: number }[]> {
+    const cleanIds = tagIds.filter(Boolean);
+    if (cleanIds.length === 0) return [];
+    const url = new URL(`${this.baseUrl}/solution-tags/search`, window.location.origin);
+    url.searchParams.set('tagIds', cleanIds.join(','));
+    url.searchParams.set('mode', mode);
+    const res = await this.fetchWithAntiCache(url.toString());
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const json = await res.json();
+    return json.data || [];
+  }
+
   // Upload Image to Supabase Storage
   async uploadImage(base64Data: string, fileName: string): Promise<{ url: string; source: string } | null> {
     try {

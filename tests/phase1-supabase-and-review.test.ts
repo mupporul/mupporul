@@ -570,5 +570,70 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(postRes.status).toBe(201);
     expect(postRes.body.data.solutionTags).toEqual(['veedu-katta-thadai', 'nilam-virka-thadai']);
   });
+
+  it('supports GET /api/solution-tags/search in any/all modes and cascades deleted tag removal across temples', async () => {
+    const tagARes = await request(app)
+      .post('/api/solution-tags')
+      .send({ nameTamil: 'சோதனை குறிச்சொல் A ' + Date.now(), nameEnglish: 'Test Tag A' });
+    const tagBRes = await request(app)
+      .post('/api/solution-tags')
+      .send({ nameTamil: 'சோதனை குறிச்சொல் B ' + Date.now(), nameEnglish: 'Test Tag B' });
+
+    const tagA = tagARes.body.data.id;
+    const tagB = tagBRes.body.data.id;
+
+    const templeBothRes = await request(app)
+      .post('/api/temples')
+      .send({
+        name: 'Junction Both Temple ' + Date.now(),
+        location: 'Chennai',
+        state: 'Tamil Nadu',
+        planets: ['sani'],
+        deity: 'vishnu',
+        significance: 'Matches both tags',
+        solutionTags: [tagA, tagB],
+      });
+    const templeSingleRes = await request(app)
+      .post('/api/temples')
+      .send({
+        name: 'Junction Single Temple ' + Date.now(),
+        location: 'Madurai',
+        state: 'Tamil Nadu',
+        planets: ['suri'],
+        deity: 'shivan',
+        significance: 'Matches single tag',
+        solutionTags: [tagA],
+      });
+
+    const bothId = templeBothRes.body.data.id;
+    const singleId = templeSingleRes.body.data.id;
+
+    // Best Match (any): 2/2 match ranks ahead of 1/2 match
+    const anyRes = await request(app).get(`/api/solution-tags/search?tagIds=${tagA},${tagB}&mode=any`);
+    expect(anyRes.status).toBe(200);
+    expect(anyRes.body.data).toHaveLength(2);
+    expect(anyRes.body.data[0].temple.id).toBe(bothId);
+    expect(anyRes.body.data[0].matchCount).toBe(2);
+    expect(anyRes.body.data[1].temple.id).toBe(singleId);
+    expect(anyRes.body.data[1].matchCount).toBe(1);
+
+    // Match All (all): only temple solving both tags returned
+    const allRes = await request(app).get(`/api/solution-tags/search?tagIds=${tagA},${tagB}&mode=all`);
+    expect(allRes.status).toBe(200);
+    expect(allRes.body.data).toHaveLength(1);
+    expect(allRes.body.data[0].temple.id).toBe(bothId);
+
+    // Delete tagB -> cascades removal from templeBoth
+    const delTagRes = await request(app).delete(`/api/solution-tags/${tagB}`);
+    expect(delTagRes.status).toBe(200);
+
+    const updatedBoth = db.getTempleById(bothId);
+    expect(updatedBoth?.solutionTags).toEqual([tagA]);
+
+    // Cleanup test tagA and test temples
+    await request(app).delete(`/api/solution-tags/${tagA}`);
+    await request(app).delete(`/api/temples/${bothId}`);
+    await request(app).delete(`/api/temples/${singleId}`);
+  });
 });
 

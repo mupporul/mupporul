@@ -23,12 +23,131 @@ if (isSupabaseConfigured) {
 // SUPABASE DATABASE ADAPTER METHODS
 // ==========================================
 
+export async function fetchTempleSolutionTagsMapFromSupabase(): Promise<{
+  available: boolean;
+  hasRows: boolean;
+  map: Map<string, string[]>;
+}> {
+  const map = new Map<string, string[]>();
+  if (!supabase) return { available: false, hasRows: false, map };
+
+  try {
+    const { data, error } = await supabase
+      .from('temple_solution_tags')
+      .select('temple_id, tag_id');
+
+    if (error || !Array.isArray(data)) {
+      return { available: false, hasRows: false, map };
+    }
+
+    for (const row of data as any[]) {
+      if (!row?.temple_id || !row?.tag_id) continue;
+      const existing = map.get(row.temple_id) || [];
+      if (!existing.includes(row.tag_id)) {
+        existing.push(row.tag_id);
+        map.set(row.temple_id, existing);
+      }
+    }
+
+    return { available: true, hasRows: data.length > 0, map };
+  } catch {
+    return { available: false, hasRows: false, map };
+  }
+}
+
+export async function syncTempleSolutionTagsInSupabase(templeId: string, tagIds: string[]): Promise<boolean> {
+  if (!supabase || !templeId) return false;
+  const cleanTagIds = Array.from(new Set((tagIds || []).filter(id => typeof id === 'string' && id.trim())));
+
+  try {
+    const { error: delError } = await supabase
+      .from('temple_solution_tags')
+      .delete()
+      .eq('temple_id', templeId);
+
+    if (delError) {
+      // Table may not exist yet prior to running migration SQL
+      return false;
+    }
+
+    if (cleanTagIds.length === 0) {
+      return true;
+    }
+
+    const rows = cleanTagIds.map(tagId => ({
+      temple_id: templeId,
+      tag_id: tagId,
+    }));
+
+    const { error: insError } = await supabase
+      .from('temple_solution_tags')
+      .upsert(rows, { onConflict: 'temple_id,tag_id' });
+
+    if (insError) {
+      console.warn('[Supabase] Could not sync temple_solution_tags rows:', insError.message);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function queryTemplesBySolutionTagsFromSupabase(
+  tagIds: string[],
+  mode: 'any' | 'all' = 'any'
+): Promise<{
+  available: boolean;
+  matches: { templeId: string; matchedTagIds: string[] }[];
+}> {
+  const cleanTagIds = Array.from(new Set((tagIds || []).filter(id => typeof id === 'string' && id.trim())));
+  if (!supabase || cleanTagIds.length === 0) {
+    return { available: false, matches: [] };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('temple_solution_tags')
+      .select('temple_id, tag_id')
+      .in('tag_id', cleanTagIds);
+
+    if (error || !Array.isArray(data)) {
+      return { available: false, matches: [] };
+    }
+
+    const byTemple = new Map<string, string[]>();
+    for (const row of data as any[]) {
+      if (!row?.temple_id || !row?.tag_id) continue;
+      const list = byTemple.get(row.temple_id) || [];
+      if (!list.includes(row.tag_id)) {
+        list.push(row.tag_id);
+        byTemple.set(row.temple_id, list);
+      }
+    }
+
+    const matches: { templeId: string; matchedTagIds: string[] }[] = [];
+    for (const [templeId, matchedTagIds] of byTemple.entries()) {
+      const orderedMatched = cleanTagIds.filter(id => matchedTagIds.includes(id));
+      if (mode === 'all' && orderedMatched.length < cleanTagIds.length) continue;
+      matches.push({ templeId, matchedTagIds: orderedMatched });
+    }
+
+    matches.sort((a, b) => b.matchedTagIds.length - a.matchedTagIds.length);
+    return { available: true, matches };
+  } catch {
+    return { available: false, matches: [] };
+  }
+}
+
 export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('temples')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [{ data, error }, junction] = await Promise.all([
+    supabase
+      .from('temples')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    fetchTempleSolutionTagsMapFromSupabase(),
+  ]);
 
   if (error) {
     console.error('[Supabase] Error fetching temples:', error.message);
@@ -45,11 +164,17 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
       row.jothidar_paarvai_notes !== undefined
         ? (row.jothidar_paarvai_notes || '')
         : (rawSubmittedBy?.jothidarPaarvaiNotes || '');
-    const solutionTags = Array.isArray(rawSubmittedBy?.solutionTags)
+    const jsonSolutionTags = Array.isArray(rawSubmittedBy?.solutionTags)
       ? rawSubmittedBy.solutionTags.filter((id: any) => typeof id === 'string' && id.trim())
       : Array.isArray(row.solution_tags)
       ? row.solution_tags.filter((id: any) => typeof id === 'string' && id.trim())
       : [];
+
+    // Prefer normalized parent-child temple_solution_tags table when populated; otherwise use JSONB fallback
+    const solutionTags =
+      junction.available && junction.hasRows
+        ? junction.map.get(row.id) || []
+        : jsonSolutionTags;
 
     const cleanSubmittedBy = rawSubmittedBy
       ? {
@@ -196,6 +321,10 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
     console.error('[Supabase] Error inserting/upserting temple:', error.message);
     throw error;
   }
+
+  if (Array.isArray(temple.solutionTags) && temple.solutionTags.length > 0) {
+    await syncTempleSolutionTagsInSupabase(temple.id, temple.solutionTags);
+  }
   return temple;
 }
 
@@ -211,6 +340,10 @@ export async function updateTempleInSupabase(
   if (error) {
     console.error('[Supabase] Error updating temple:', error.message);
     throw error;
+  }
+
+  if (updates.solutionTags !== undefined) {
+    await syncTempleSolutionTagsInSupabase(id, updates.solutionTags);
   }
 }
 

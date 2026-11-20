@@ -23,6 +23,7 @@ import {
   insertSolutionTagToSupabase,
   updateSolutionTagInSupabase,
   deleteSolutionTagFromSupabase,
+  queryTemplesBySolutionTagsFromSupabase,
   fetchSubmissionsFromSupabase,
   insertSubmissionToSupabase,
   updateSubmissionInSupabase,
@@ -942,6 +943,21 @@ export class Database {
     const next = current.filter(t => t.id !== id);
     if (next.length < current.length) {
       this.data.solutionTags = next;
+
+      // Mirror ON DELETE CASCADE: remove deleted tag ID from assigned temples cleanly
+      for (const temple of this.data.temples) {
+        if (Array.isArray(temple.solutionTags) && temple.solutionTags.includes(id)) {
+          const filtered = temple.solutionTags.filter(tagId => tagId !== id);
+          temple.solutionTags = filtered;
+          if (isSupabaseConfigured) {
+            this.trackSupabaseWrite(
+              updateTempleInSupabase(temple.id, { solutionTags: filtered }, temple),
+              'Cascade remove deleted solution tag from temple'
+            );
+          }
+        }
+      }
+
       this.saveData();
       if (isSupabaseConfigured) {
         this.trackSupabaseWrite(deleteSolutionTagFromSupabase(id, next), 'Delete solution tag');
@@ -949,6 +965,67 @@ export class Database {
       return true;
     }
     return false;
+  }
+
+  public async searchTemplesBySolutionTags(
+    tagIds: string[],
+    mode: 'any' | 'all' = 'any'
+  ): Promise<{ temple: Temple; matchedTagIds: string[]; matchCount: number }[]> {
+    const cleanTagIds = Array.from(new Set((tagIds || []).filter(id => typeof id === 'string' && id.trim())));
+    if (cleanTagIds.length === 0) return [];
+
+    this.reconcileApprovedSubmissions();
+
+    // Use indexed Supabase junction table query when available
+    if (isSupabaseConfigured) {
+      const remote = await queryTemplesBySolutionTagsFromSupabase(cleanTagIds, mode);
+      if (remote.available && remote.matches.length > 0) {
+        const templeMap = new Map(this.data.temples.map(t => [t.id, t]));
+        const resolved = remote.matches
+          .map(m => {
+            const temple = templeMap.get(m.templeId);
+            if (!temple) return null;
+            return {
+              temple,
+              matchedTagIds: m.matchedTagIds,
+              matchCount: m.matchedTagIds.length,
+            };
+          })
+          .filter((item): item is { temple: Temple; matchedTagIds: string[]; matchCount: number } => Boolean(item));
+
+        if (resolved.length > 0) {
+          return resolved;
+        }
+      }
+    }
+
+    // Fast indexed lookup in memory
+    const results = this.data.temples
+      .map(temple => {
+        const assigned = Array.isArray(temple.solutionTags) ? temple.solutionTags : [];
+        const matchedTagIds = cleanTagIds.filter(id => assigned.includes(id));
+        return {
+          temple,
+          matchedTagIds,
+          matchCount: matchedTagIds.length,
+        };
+      })
+      .filter(item =>
+        mode === 'all'
+          ? item.matchCount === cleanTagIds.length
+          : item.matchCount > 0
+      )
+      .sort((a, b) => {
+        if (b.matchCount !== a.matchCount) {
+          return b.matchCount - a.matchCount;
+        }
+        return (
+          new Date(b.temple.createdAt || 0).getTime() -
+          new Date(a.temple.createdAt || 0).getTime()
+        );
+      });
+
+    return results;
   }
 
   // ==========================================

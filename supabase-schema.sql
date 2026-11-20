@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS deities (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Solution / Problem Tags (தீர்வு குறிச்சொற்கள்) Table
+-- 5. Solution / Problem Tags (தீர்வு குறிச்சொற்கள் - Master Table)
 CREATE TABLE IF NOT EXISTS solution_tags (
   id TEXT PRIMARY KEY,
   name_tamil TEXT NOT NULL,
@@ -72,12 +72,27 @@ CREATE TABLE IF NOT EXISTS solution_tags (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Row Level Security (RLS) & Policies for Web App
+-- 6. Temple <-> Solution Tags (Parent-Child Many-to-Many Junction Table)
+CREATE TABLE IF NOT EXISTS temple_solution_tags (
+  temple_id TEXT NOT NULL REFERENCES temples(id) ON DELETE CASCADE,
+  tag_id TEXT NOT NULL REFERENCES solution_tags(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (temple_id, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_temple_solution_tags_tag_id
+  ON temple_solution_tags(tag_id, temple_id);
+
+CREATE INDEX IF NOT EXISTS idx_temple_solution_tags_temple_id
+  ON temple_solution_tags(temple_id);
+
+-- 7. Row Level Security (RLS) & Policies for Web App
 ALTER TABLE temples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solution_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE temple_solution_tags ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public/Anon or Backend Service read & write access
 CREATE POLICY "Allow public read on temples" ON temples FOR SELECT USING (true);
@@ -94,6 +109,9 @@ CREATE POLICY "Allow write on deities" ON deities FOR ALL USING (true);
 
 CREATE POLICY "Allow public read on solution_tags" ON solution_tags FOR SELECT USING (true);
 CREATE POLICY "Allow write on solution_tags" ON solution_tags FOR ALL USING (true);
+
+CREATE POLICY "Allow public read on temple_solution_tags" ON temple_solution_tags FOR SELECT USING (true);
+CREATE POLICY "Allow write on temple_solution_tags" ON temple_solution_tags FOR ALL USING (true);
 
 -- Insert Initial Essential Admin User
 INSERT INTO users (id, name, username, password, email, role, avatar_text, avatar_color, contributions_count, approved_count)
