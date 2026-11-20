@@ -256,7 +256,7 @@ export const FilterSidebar: React.FC = () => {
                     filters.jothidarPaarvaiOnly ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-400/80'
                   }`}
                 />
-                <span>Jothidar Paarvai (ஜோதிடர் பார்வை)</span>
+                <span>பாவ/ராசி தொடர்பு</span>
               </span>
               <input
                 type="checkbox"

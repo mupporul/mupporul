@@ -290,7 +290,7 @@ export const AddEditTempleModal: React.FC = () => {
       return;
     }
     if (formData.jothidarPaarvai && !formData.jothidarPaarvaiNotes.trim()) {
-      setErrorMessage('Please enter notes for Jothidar Paarvai or uncheck the box.');
+      setErrorMessage('பாவ/ராசி தொடர்பு குறிப்புகளை உள்ளிடவும் அல்லது தேர்வுப் பெட்டியை நீக்கவும்.');
       return;
     }
 
@@ -672,7 +672,7 @@ export const AddEditTempleModal: React.FC = () => {
               />
             </div>
 
-            {/* Jothidar Paarvai (ஜோதிடர் பார்வை) Astrologer Notes */}
+            {/* பாவ/ராசி தொடர்பு Notes */}
             <div className="bg-[#181a2a] p-3.5 rounded-2xl border border-cyan-500/35 space-y-2.5">
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
                 <input
@@ -692,18 +692,18 @@ export const AddEditTempleModal: React.FC = () => {
                   }`}
                 />
                 <span className="text-xs sm:text-sm font-semibold text-cyan-300 font-tamil">
-                  Jothidar Paarvai (ஜோதிடர் பார்வை)
+                  பாவ/ராசி தொடர்பு
                 </span>
               </label>
 
               {formData.jothidarPaarvai && (
                 <div className="space-y-1 animate-in fade-in duration-150">
                   <label className="block text-[11px] font-medium text-gray-300 font-tamil">
-                    ஜோதிடர் பார்வை குறிப்புகள் (Astrologer Special Notes) *
+                    பாவ/ராசி தொடர்பு குறிப்புகள் *
                   </label>
                   <textarea
                     rows={isMobileFrame ? 3 : 3}
-                    placeholder="Enter special astrological notes, planetary observations, or remedies (ஜோதிடர் பார்வை குறிப்புகள்)..."
+                    placeholder="பாவ/ராசி தொடர்பு குறிப்புகளை உள்ளிடவும்..."
                     value={formData.jothidarPaarvaiNotes}
                     onChange={(e) =>
                       setFormData(prev => ({ ...prev, jothidarPaarvaiNotes: e.target.value }))

@@ -593,12 +593,12 @@ describe('Phase 2: Jothidar Paarvai Feature Tests', () => {
 
     render(<AddEditTempleModal />);
 
-    const checkbox = screen.getByRole('checkbox', { name: /Jothidar Paarvai/i });
+    const checkbox = screen.getByRole('checkbox', { name: /பாவ\/ராசி தொடர்பு/i });
     expect(checkbox).not.toBeChecked();
-    expect(screen.queryByPlaceholderText(/astrological notes/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/பாவ\/ராசி தொடர்பு குறிப்புகளை/i)).not.toBeInTheDocument();
 
     fireEvent.click(checkbox);
-    const notesBox = screen.getByPlaceholderText(/astrological notes/i);
+    const notesBox = screen.getByPlaceholderText(/பாவ\/ராசி தொடர்பு குறிப்புகளை/i);
     expect(notesBox).toBeInTheDocument();
 
     fireEvent.change(notesBox, {
@@ -708,7 +708,7 @@ describe('Phase 2: Jothidar Paarvai Feature Tests', () => {
     expect(screen.getByText('Vayalur Murugan Temple')).toBeInTheDocument();
     expect(screen.getByText('Pampuranathar Temple')).toBeInTheDocument();
 
-    const searchCheckboxes = screen.getAllByRole('checkbox', { name: /Jothidar Paarvai/i });
+    const searchCheckboxes = screen.getAllByRole('checkbox', { name: /பாவ\/ராசி தொடர்பு/i });
     fireEvent.click(searchCheckboxes[0]);
 
     useAppSpy.mockImplementation(buildCtx);
@@ -765,20 +765,20 @@ describe('Phase 2: Jothidar Paarvai Feature Tests', () => {
     } as any);
 
     const { unmount } = render(<TempleCard temple={regularTemple} />);
-    expect(screen.queryByRole('button', { name: /View Jothidar Paarvai/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /பாவ\/ராசி தொடர்பு/i })).not.toBeInTheDocument();
     unmount();
 
     render(<TempleCard temple={jpTemple} />);
-    const cardStarBtn = screen.getByRole('button', { name: /View Jothidar Paarvai/i });
+    const cardStarBtn = screen.getByRole('button', { name: /பாவ\/ராசி தொடர்பு/i });
     expect(cardStarBtn).toBeInTheDocument();
     expect(screen.queryByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு')).not.toBeInTheDocument();
 
     fireEvent.click(cardStarBtn);
     expect(screen.getByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு')).toBeInTheDocument();
 
-    // Detail Modal also renders yellow star button & reveals notes on tap
+    // Detail Modal also renders cyan star button & reveals notes on tap
     render(<TempleDetailModal />);
-    const starBtns = screen.getAllByRole('button', { name: /View Jothidar Paarvai/i });
+    const starBtns = screen.getAllByRole('button', { name: /பாவ\/ராசி தொடர்பு/i });
     expect(starBtns.length).toBeGreaterThanOrEqual(2);
     fireEvent.click(starBtns[starBtns.length - 1]);
     expect(screen.getAllByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு').length).toBe(2);

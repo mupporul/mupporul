@@ -230,8 +230,8 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                   e.stopPropagation();
                   setShowJothidarNotes(true);
                 }}
-                aria-label="View Jothidar Paarvai"
-                title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
+                aria-label="பாவ/ராசி தொடர்பு"
+                title="பாவ/ராசி தொடர்பு"
                 className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-400/80 text-cyan-400 hover:bg-cyan-500/25 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm shadow-cyan-500/20"
               >
                 <Star className="w-4 h-4 fill-cyan-400 text-cyan-400" />
@@ -260,7 +260,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Jothidar Paarvai"
+              aria-label="பாவ/ராசி தொடர்பு"
               className="w-full max-w-md max-h-[85dvh] flex flex-col bg-[#141624] border border-cyan-500/50 rounded-2xl shadow-2xl shadow-cyan-950/40 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
@@ -269,7 +269,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                   <Star className="w-4 h-4 fill-cyan-400 text-cyan-400 shrink-0" />
                   <div className="min-w-0">
                     <h4 className="text-sm font-bold text-cyan-300 font-tamil truncate">
-                      ஜோதிடர் பார்வை (Jothidar Paarvai)
+                      பாவ/ராசி தொடர்பு
                     </h4>
                     <p className="text-[11px] text-gray-400 truncate">{temple.name}</p>
                   </div>
@@ -277,7 +277,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
                 <button
                   type="button"
                   onClick={() => setShowJothidarNotes(false)}
-                  aria-label="Close Jothidar Paarvai"
+                  aria-label="பாவ/ராசி தொடர்பு மூடு"
                   className="w-7 h-7 rounded-full bg-[#22253a] hover:bg-[#2c304a] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer shrink-0"
                 >
                   <X className="w-4 h-4" />

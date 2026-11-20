@@ -128,8 +128,8 @@ export const TempleDetailModal: React.FC = () => {
                     return next;
                   });
                 }}
-                aria-label="View Jothidar Paarvai"
-                title="ஜோதிடர் பார்வை (Jothidar Paarvai)"
+                aria-label="பாவ/ராசி தொடர்பு"
+                title="பாவ/ராசி தொடர்பு"
                 className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
                   showJothidarNotes
                     ? 'bg-cyan-400 text-black border-cyan-300 shadow-md shadow-cyan-500/30'
@@ -175,12 +175,12 @@ export const TempleDetailModal: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-cyan-300 font-bold text-sm font-tamil">
                   <Star className="w-4 h-4 fill-cyan-400 text-cyan-400 shrink-0" />
-                  <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
+                  <span>பாவ/ராசி தொடர்பு</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowJothidarNotes(false)}
-                  aria-label="Hide Jothidar Paarvai"
+                  aria-label="பாவ/ராசி தொடர்பு மூடு"
                   className="text-gray-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-4 h-4" />

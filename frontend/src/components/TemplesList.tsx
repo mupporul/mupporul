@@ -170,7 +170,7 @@ export const TemplesList: React.FC = () => {
                     title="Click to remove"
                   >
                     <Star className="w-3 h-3 fill-cyan-400 text-cyan-400" />
-                    <span>Jothidar Paarvai</span>
+                    <span className="font-tamil">பாவ/ராசி தொடர்பு</span>
                     <span className="text-xs ml-0.5">✕</span>
                   </span>
                 )}

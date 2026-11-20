@@ -313,7 +313,7 @@ export const ReviewTab: React.FC = () => {
                     <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/40 space-y-1">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 font-tamil">
                         <Star className="w-3.5 h-3.5 fill-cyan-400 text-cyan-400 shrink-0" />
-                        <span>ஜோதிடர் பார்வை (Jothidar Paarvai)</span>
+                        <span>பாவ/ராசி தொடர்பு</span>
                       </div>
                       <p className="text-xs text-gray-200 whitespace-pre-line font-tamil leading-relaxed">
                         {sub.templeData.jothidarPaarvaiNotes}
@@ -350,11 +350,11 @@ export const ReviewTab: React.FC = () => {
                       <div className="space-y-1 font-tamil">
                         {sub.previousData.jothidarPaarvaiNotes && (
                           <div className="text-red-400/90 line-through text-[11px]">
-                            - Old Jothidar Paarvai: {sub.previousData.jothidarPaarvaiNotes}
+                            - Old பாவ/ராசி தொடர்பு: {sub.previousData.jothidarPaarvaiNotes}
                           </div>
                         )}
                         <div className="text-emerald-400 text-[11px]">
-                          + New Jothidar Paarvai: {sub.templeData.jothidarPaarvaiNotes || '(Cleared)'}
+                          + New பாவ/ராசி தொடர்பு: {sub.templeData.jothidarPaarvaiNotes || '(Cleared)'}
                         </div>
                       </div>
                     )}
