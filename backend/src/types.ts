@@ -30,6 +30,12 @@ export interface Deity {
   nameEnglish: string;
 }
 
+export interface SolutionTag {
+  id: string;
+  nameTamil: string;
+  nameEnglish?: string;
+}
+
 export interface Temple {
   id: string;
   name: string;
@@ -41,6 +47,7 @@ export interface Temple {
   deity: string;
   significance: string;
   remedies?: string[];
+  solutionTags?: string[];
   descriptionTamil?: string;
   descriptionEnglish?: string;
   imageUrl: string;

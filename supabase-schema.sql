@@ -64,11 +64,20 @@ CREATE TABLE IF NOT EXISTS deities (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Row Level Security (RLS) & Policies for Web App
+-- 5. Solution / Problem Tags (தீர்வு குறிச்சொற்கள்) Table
+CREATE TABLE IF NOT EXISTS solution_tags (
+  id TEXT PRIMARY KEY,
+  name_tamil TEXT NOT NULL,
+  name_english TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Row Level Security (RLS) & Policies for Web App
 ALTER TABLE temples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE solution_tags ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public/Anon or Backend Service read & write access
 CREATE POLICY "Allow public read on temples" ON temples FOR SELECT USING (true);
@@ -82,6 +91,9 @@ CREATE POLICY "Allow write on submissions" ON submissions FOR ALL USING (true);
 
 CREATE POLICY "Allow public read on deities" ON deities FOR SELECT USING (true);
 CREATE POLICY "Allow write on deities" ON deities FOR ALL USING (true);
+
+CREATE POLICY "Allow public read on solution_tags" ON solution_tags FOR SELECT USING (true);
+CREATE POLICY "Allow write on solution_tags" ON solution_tags FOR ALL USING (true);
 
 -- Insert Initial Essential Admin User
 INSERT INTO users (id, name, username, password, email, role, avatar_text, avatar_color, contributions_count, approved_count)
@@ -99,6 +111,13 @@ VALUES
   ('pillaiyar', 'பிள்ளையார்', 'Pillaiyar / Ganesha'),
   ('bhairavar', 'பைரவர்', 'Bhairavar'),
   ('anjaneyar', 'ஆஞ்சநேயர்', 'Anjaneyar / Hanuman')
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert Initial Solution / Problem Tags
+INSERT INTO solution_tags (id, name_tamil, name_english)
+VALUES
+  ('veedu-katta-thadai', 'வீடு கட்ட தடை', 'Delay in building house'),
+  ('nilam-virka-thadai', 'நிலம் விற்க தடை', 'Delay in selling land')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================

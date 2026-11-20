@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ClipboardList, HelpCircle, User, BarChart3, PlusCircle } from 'lucide-react';
+import { Home, Lightbulb, ClipboardList, HelpCircle, User, BarChart3, PlusCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const BottomNav: React.FC = () => {
@@ -27,6 +27,20 @@ export const BottomNav: React.FC = () => {
           <Home className="w-5 h-5 mb-0.5 shrink-0" />
           <span className="text-[10px] sm:text-[11px] font-semibold tracking-tight truncate max-w-full text-center">Temples</span>
           {activeTab === 'temples' && (
+            <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
+          )}
+        </button>
+
+        {/* Solution Tab (Visible to all roles) */}
+        <button
+          onClick={() => setActiveTab('solution')}
+          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer relative ${
+            activeTab === 'solution' ? 'text-[#f5a623]' : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <Lightbulb className="w-5 h-5 mb-0.5 shrink-0" />
+          <span className="text-[10px] sm:text-[11px] font-semibold tracking-tight truncate max-w-full text-center">Solution</span>
+          {activeTab === 'solution' && (
             <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
           )}
         </button>

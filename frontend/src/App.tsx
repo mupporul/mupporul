@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { PlanetPillBar } from './components/PlanetPillBar';
 import { TemplesList } from './components/TemplesList';
+import { SolutionTab } from './components/SolutionTab';
 import { ReviewTab } from './components/ReviewTab';
 import { QuizTab } from './components/QuizTab';
 import { ProfileTab } from './components/ProfileTab';
@@ -74,6 +75,7 @@ const MainAppContent: React.FC = () => {
           ) : (
             <>
               {activeTab === 'temples' && <TemplesList />}
+              {activeTab === 'solution' && <SolutionTab />}
               {activeTab === 'review' && isContributorOrAdmin && (
                 <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
                   <ReviewTab />

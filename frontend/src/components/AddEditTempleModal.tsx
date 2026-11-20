@@ -37,6 +37,8 @@ export const AddEditTempleModal: React.FC = () => {
     createDeity,
     updateDeity,
     deleteDeity,
+    solutionTags,
+    createSolutionTag,
   } = useApp();
 
   const isEdit = !!templeToEdit;
@@ -57,6 +59,7 @@ export const AddEditTempleModal: React.FC = () => {
     contactNumber: '',
     jothidarPaarvai: false,
     jothidarPaarvaiNotes: '',
+    solutionTags: [] as string[],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +76,14 @@ export const AddEditTempleModal: React.FC = () => {
   const [deityFormEnglish, setDeityFormEnglish] = useState('');
   const [deityFormError, setDeityFormError] = useState<string | null>(null);
   const [deityActionLoading, setDeityActionLoading] = useState(false);
+
+  // Inline Solution Tag Quick-Add (Admin only) & Search Filter
+  const [showAddTagInline, setShowAddTagInline] = useState(false);
+  const [tagFormTamil, setTagFormTamil] = useState('');
+  const [tagFormEnglish, setTagFormEnglish] = useState('');
+  const [tagFormError, setTagFormError] = useState<string | null>(null);
+  const [tagActionLoading, setTagActionLoading] = useState(false);
+  const [tagFilterQuery, setTagFilterQuery] = useState('');
 
   useEffect(() => {
     setImageError(false);
@@ -98,6 +109,7 @@ export const AddEditTempleModal: React.FC = () => {
         contactNumber: templeToEdit.contactNumber || '',
         jothidarPaarvai: Boolean(templeToEdit.jothidarPaarvai || templeToEdit.jothidarPaarvaiNotes?.trim()),
         jothidarPaarvaiNotes: templeToEdit.jothidarPaarvaiNotes || '',
+        solutionTags: Array.isArray(templeToEdit.solutionTags) ? templeToEdit.solutionTags : [],
       });
       // If image is already set, select URL mode by default
       setPhotoMode('url');
@@ -118,6 +130,7 @@ export const AddEditTempleModal: React.FC = () => {
         contactNumber: '',
         jothidarPaarvai: false,
         jothidarPaarvaiNotes: '',
+        solutionTags: [],
       });
       setPhotoMode('url');
     }
@@ -126,6 +139,9 @@ export const AddEditTempleModal: React.FC = () => {
     setUploadStatus(null);
     setDeityModalMode('none');
     setDeityFormError(null);
+    setShowAddTagInline(false);
+    setTagFormError(null);
+    setTagFilterQuery('');
   }, [templeToEdit?.id, isAddEditModalOpen]);
 
   useEffect(() => {
@@ -144,6 +160,47 @@ export const AddEditTempleModal: React.FC = () => {
         ? prev.planets.filter(id => id !== planetId)
         : [...prev.planets, planetId],
     }));
+  };
+
+  const toggleSolutionTag = (tagId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      solutionTags: prev.solutionTags.includes(tagId)
+        ? prev.solutionTags.filter(id => id !== tagId)
+        : [...prev.solutionTags, tagId],
+    }));
+  };
+
+  const handleSaveNewSolutionTag = async () => {
+    if (!tagFormTamil.trim()) {
+      setTagFormError('குறிச்சொல் (தமிழ்) அவசியம்.');
+      return;
+    }
+    setTagActionLoading(true);
+    setTagFormError(null);
+    try {
+      const res = await createSolutionTag({
+        nameTamil: tagFormTamil.trim(),
+        nameEnglish: tagFormEnglish.trim() || undefined,
+      });
+      if (res.success && res.tag) {
+        setFormData(prev => ({
+          ...prev,
+          solutionTags: prev.solutionTags.includes(res.tag!.id)
+            ? prev.solutionTags
+            : [...prev.solutionTags, res.tag!.id],
+        }));
+        setShowAddTagInline(false);
+        setTagFormTamil('');
+        setTagFormEnglish('');
+      } else {
+        setTagFormError(res.message || 'Failed to add solution tag.');
+      }
+    } catch (err: any) {
+      setTagFormError(err?.message || 'Failed to add solution tag.');
+    } finally {
+      setTagActionLoading(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -304,6 +361,7 @@ export const AddEditTempleModal: React.FC = () => {
         imageUrl: formData.imageUrl || '',
         jothidarPaarvai: formData.jothidarPaarvai,
         jothidarPaarvaiNotes: formData.jothidarPaarvai ? formData.jothidarPaarvaiNotes.trim() : '',
+        solutionTags: formData.solutionTags || [],
       };
       const ok = await submitTemple(submissionData, templeToEdit?.id);
       if (!ok) {
@@ -711,6 +769,171 @@ export const AddEditTempleModal: React.FC = () => {
                     className="w-full bg-[#121422] text-gray-100 px-3.5 py-2.5 rounded-xl border border-cyan-500/40 focus:border-cyan-400 focus:outline-none leading-relaxed text-xs sm:text-sm font-tamil"
                   />
                 </div>
+              )}
+            </div>
+
+            {/* Problem / Solution Tags (தீர்வு குறிச்சொற்கள்) Multi-Select */}
+            <div className="bg-[#181a2a] p-3.5 rounded-2xl border border-[#2d314b] space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-amber-300 font-tamil">
+                    தீர்வு குறிச்சொற்கள் (Problem / Solution Tags)
+                  </label>
+                  <p className="text-[11px] text-gray-400">
+                    Select all life / astrological issues resolved by visiting this temple.
+                  </p>
+                </div>
+                {currentUser.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddTagInline(prev => !prev);
+                      setTagFormError(null);
+                    }}
+                    className="text-[11px] font-semibold text-[#f5a623] hover:text-amber-300 flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+                  >
+                    <Plus className="w-3 h-3 shrink-0" />
+                    <span className="font-tamil">குறிச்சொல் சேர்</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Admin Inline Quick-Add Solution Tag */}
+              {currentUser.role === 'admin' && showAddTagInline && (
+                <div className="p-3 rounded-xl bg-[#121422] border border-amber-500/40 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between border-b border-[#24273d] pb-1.5">
+                    <span className="text-xs font-bold text-amber-400 font-tamil">
+                      புதிய தீர்வு குறிச்சொல் சேர்க்க (Admin Only)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddTagInline(false);
+                        setTagFormError(null);
+                      }}
+                      className="text-gray-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {tagFormError && (
+                    <div className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg">
+                      {tagFormError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-300 mb-1 font-tamil">
+                        குறிச்சொல் (தமிழ்) *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="எ.கா. வீடு கட்ட தடை"
+                        value={tagFormTamil}
+                        onChange={(e) => setTagFormTamil(e.target.value)}
+                        className="w-full bg-[#1e2136] text-amber-200 font-tamil text-xs px-2.5 py-2 rounded-lg border border-[#343856] focus:border-[#f5a623] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                        English Label (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Delay in building house"
+                        value={tagFormEnglish}
+                        onChange={(e) => setTagFormEnglish(e.target.value)}
+                        className="w-full bg-[#1e2136] text-gray-200 text-xs px-2.5 py-2 rounded-lg border border-[#343856] focus:border-[#f5a623] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddTagInline(false);
+                        setTagFormError(null);
+                      }}
+                      className="px-3 py-1 rounded-lg bg-[#222538] text-gray-300 text-xs hover:bg-[#2b2f48] cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={tagActionLoading}
+                      onClick={handleSaveNewSolutionTag}
+                      className="px-3 py-1 rounded-lg bg-[#f5a623] hover:bg-[#e69818] text-black font-semibold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {tagActionLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>Save Tag</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(solutionTags || []).length > 6 && (
+                <input
+                  type="text"
+                  value={tagFilterQuery}
+                  onChange={(e) => setTagFilterQuery(e.target.value)}
+                  placeholder="Search tags..."
+                  className="w-full bg-[#121422] text-gray-100 text-xs px-3 py-2 rounded-lg border border-[#2b3048] focus:border-[#f5a623] focus:outline-none font-tamil"
+                />
+              )}
+
+              {(solutionTags || []).length === 0 ? (
+                <p className="text-xs text-gray-400">
+                  No problem tags configured yet.{currentUser.role !== 'admin' ? ' Log in as Admin to add tags.' : ''}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-0.5">
+                  {(solutionTags || [])
+                    .filter(tag => {
+                      const q = tagFilterQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        tag.nameTamil.toLowerCase().includes(q) ||
+                        (tag.nameEnglish && tag.nameEnglish.toLowerCase().includes(q))
+                      );
+                    })
+                    .map(tag => {
+                      const isChecked = formData.solutionTags.includes(tag.id);
+                      return (
+                        <label
+                          key={tag.id}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs cursor-pointer transition-all select-none ${
+                            isChecked
+                              ? 'bg-amber-500/15 border-[#f5a623] text-amber-200 font-semibold'
+                              : 'bg-[#121422] border-[#262a42] text-gray-300 hover:border-amber-500/40'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSolutionTag(tag.id)}
+                            className="w-3.5 h-3.5 rounded accent-[#f5a623] cursor-pointer shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <span className="font-tamil block truncate">{tag.nameTamil}</span>
+                            {tag.nameEnglish && (
+                              <span className="text-[10px] text-gray-400 block truncate">
+                                {tag.nameEnglish}
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
+              )}
+
+              {currentUser.role !== 'admin' && (
+                <p className="text-[11px] text-gray-400">
+                  Only an Admin account can configure new problem tags in the master list.
+                </p>
               )}
             </div>
 

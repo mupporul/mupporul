@@ -7,9 +7,15 @@ import { useApp } from '../context/AppContext';
 
 interface TempleCardProps {
   temple: Temple;
+  matchedSolutionTagIds?: string[];
+  totalRequestedSolutions?: number;
 }
 
-export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
+export const TempleCard: React.FC<TempleCardProps> = ({
+  temple,
+  matchedSolutionTagIds,
+  totalRequestedSolutions,
+}) => {
   const {
     currentUser,
     openEditModal,
@@ -17,6 +23,7 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
     openVideoModal,
     deleteTemple,
     deities,
+    solutionTags,
   } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -204,6 +211,26 @@ export const TempleCard: React.FC<TempleCardProps> = ({ temple }) => {
               </span>
             )}
           </div>
+
+          {matchedSolutionTagIds && matchedSolutionTagIds.length > 0 && (
+            <div className="mt-2.5 pt-2 border-t border-[#222538] text-xs font-tamil leading-relaxed">
+              <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-cyan-300">
+                {typeof totalRequestedSolutions === 'number' && totalRequestedSolutions > 1 && (
+                  <span className="font-semibold tabular-nums text-amber-300">
+                    {matchedSolutionTagIds.length}/{totalRequestedSolutions} தீர்வு
+                  </span>
+                )}
+                {typeof totalRequestedSolutions === 'number' && totalRequestedSolutions > 1 && (
+                  <span className="text-gray-600" aria-hidden="true">·</span>
+                )}
+                <span className="text-gray-200">
+                  {matchedSolutionTagIds
+                    .map(id => solutionTags?.find(t => t.id === id)?.nameTamil || id)
+                    .join(' · ')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Actions Row (Matching Screenshot 1) */}

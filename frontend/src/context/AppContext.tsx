@@ -8,10 +8,11 @@ import {
   FilterState,
   SubmissionStatus,
   Deity,
+  SolutionTag,
 } from '../types';
 import { INITIAL_TEMPLES } from '../data/initialTemples';
 import { INITIAL_SUBMISSIONS } from '../data/initialSubmissions';
-import { INITIAL_USERS, DEITIES } from '../data/constants';
+import { INITIAL_USERS, DEITIES, INITIAL_SOLUTION_TAGS } from '../data/constants';
 
 import { api } from '../services/api';
 
@@ -21,7 +22,7 @@ interface AppContextType {
   currentUser: UserProfile;
   users: UserProfile[];
   filters: FilterState;
-  activeTab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics';
+  activeTab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics';
   selectedTempleForDetail: Temple | null;
   videoModalUrl: { url: string; title: string } | null;
   isFilterOpen: boolean;
@@ -70,9 +71,15 @@ interface AppContextType {
   updateDeity: (id: string, updates: { nameTamil?: string; nameEnglish?: string }) => Promise<{ success: boolean; deity?: Deity; message?: string }>;
   deleteDeity: (id: string) => Promise<{ success: boolean; message?: string }>;
 
+  // Solution / Problem Tags (தீர்வு குறிச்சொற்கள்) State & Admin Actions
+  solutionTags: SolutionTag[];
+  createSolutionTag: (data: { nameTamil: string; nameEnglish?: string; id?: string }) => Promise<{ success: boolean; tag?: SolutionTag; message?: string }>;
+  updateSolutionTag: (id: string, updates: { nameTamil?: string; nameEnglish?: string }) => Promise<{ success: boolean; tag?: SolutionTag; message?: string }>;
+  deleteSolutionTag: (id: string) => Promise<{ success: boolean; message?: string }>;
+
   // Actions
-  setActiveTab: (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => void;
-  switchTab: (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => Promise<void>;
+  setActiveTab: (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => void;
+  switchTab: (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => Promise<void>;
   refreshFreshData: () => Promise<void>;
   isTabLoading: boolean;
   actionLoadingText: string | null;
@@ -202,6 +209,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEITIES;
   });
 
+  // Solution Tags (தீர்வு குறிச்சொற்கள்) state with starter fallback
+  const [solutionTags, setSolutionTags] = useState<SolutionTag[]>(() => {
+    try {
+      const saved = localStorage.getItem('mupporul_solution_tags_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load solution tags from localStorage', e);
+    }
+    return INITIAL_SOLUTION_TAGS;
+  });
+
   // Active Current User (Default: Admin Murugan)
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
@@ -225,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   });
-  const [activeTab, setActiveTabState] = useState<'temples' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
+  const [activeTab, setActiveTabState] = useState<'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
   const [isTabLoading, setIsTabLoading] = useState<boolean>(false);
   const [actionLoadingText, setActionLoadingText] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -245,11 +268,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Always fetch fresh data directly from Backend / Supabase API
   const refreshFreshData = async () => {
     try {
-      const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities] = await Promise.allSettled([
+      const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags] = await Promise.allSettled([
         api.getTemples(),
         api.getSubmissions(),
         api.getUsers(),
-        api.getDeities()
+        api.getDeities(),
+        api.getSolutionTags(),
       ]);
 
       let cleanedTemples: Temple[] = [];
@@ -307,6 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             deity: sub.templeData.deity || 'shivan',
             significance: sub.templeData.significance || (sub.templeData as any).descriptionTamil || '',
             remedies: [],
+            solutionTags: Array.isArray(sub.templeData.solutionTags) ? sub.templeData.solutionTags : [],
             imageUrl: sub.templeData.imageUrl || '',
             videoUrl: sub.templeData.videoUrl || '',
             timings: sub.templeData.timings || '',
@@ -343,13 +368,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('mupporul_deities_v2', JSON.stringify(remoteDeities.value));
         } catch {}
       }
+
+      if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
+        setSolutionTags(remoteSolutionTags.value);
+        try {
+          localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(remoteSolutionTags.value));
+        } catch {}
+      }
     } catch (e) {
       console.warn('[AppContext] Failed to refresh fresh data:', e);
     }
   };
 
   // Switch tabs with Tamil Nadu Temple Tower loading spinner & fresh API data
-  const switchTab = async (newTab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+  const switchTab = async (newTab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => {
     setIsTabLoading(true);
     setActiveTabState(newTab);
     try {
@@ -362,7 +394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const setActiveTab = (tab: 'temples' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+  const setActiveTab = (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => {
     switchTab(tab);
   };
 
@@ -401,11 +433,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const health = await api.checkHealth();
       if (health) {
         setBackendStatus('connected');
-        const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities] = await Promise.allSettled([
+        const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags] = await Promise.allSettled([
           api.getTemples(),
           api.getSubmissions(),
           api.getUsers(),
-          api.getDeities()
+          api.getDeities(),
+          api.getSolutionTags(),
         ]);
         if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
           const cleanedTemples = remoteTemples.value.map((t: Temple) => {
@@ -445,6 +478,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setDeities(remoteDeities.value);
           try {
             localStorage.setItem('mupporul_deities_v2', JSON.stringify(remoteDeities.value));
+          } catch {}
+        }
+        if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
+          setSolutionTags(remoteSolutionTags.value);
+          try {
+            localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(remoteSolutionTags.value));
           } catch {}
         }
         return true;
@@ -711,6 +750,142 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     } catch (e: any) {
       return { success: false, message: e.message || 'Failed to delete deity on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  // Solution / Problem Tag Admin Handlers - Restricted strictly to Admin role
+  const createSolutionTag = async (data: {
+    nameTamil: string;
+    nameEnglish?: string;
+    id?: string;
+  }): Promise<{ success: boolean; tag?: SolutionTag; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can configure problem tags.' };
+    }
+
+    const nameTamil = data.nameTamil?.trim();
+    if (!nameTamil) {
+      return { success: false, message: 'குறிச்சொல் (தமிழ்) அவசியம் (Problem tag in Tamil is required).' };
+    }
+
+    const exists = solutionTags.some(
+      t => t.nameTamil.trim().toLowerCase() === nameTamil.toLowerCase()
+    );
+    if (exists) {
+      return { success: false, message: `"${nameTamil}" ஏற்கனவே பட்டியலில் உள்ளது (Tag already exists).` };
+    }
+
+    const slug =
+      data.id?.trim() ||
+      (data.nameEnglish?.trim()
+        ? data.nameEnglish.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        : '') ||
+      `tag-${Date.now()}`;
+
+    const newTag: SolutionTag = {
+      id: slug,
+      nameTamil,
+      nameEnglish: data.nameEnglish?.trim() || '',
+    };
+
+    setActionLoadingText('குறிச்சொல் சேமிக்கப்படுகிறது...');
+    try {
+      const next = [...solutionTags, newTag];
+      setSolutionTags(next);
+      try {
+        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
+      } catch {}
+
+      const created = await api.createSolutionTag(newTag);
+      await refreshFreshData();
+      return {
+        success: true,
+        tag: created || newTag,
+        message: `"${nameTamil}" சேர்க்கப்பட்டது!`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to create tag on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const updateSolutionTag = async (
+    id: string,
+    updates: { nameTamil?: string; nameEnglish?: string }
+  ): Promise<{ success: boolean; tag?: SolutionTag; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can edit problem tags.' };
+    }
+
+    const existing = solutionTags.find(t => t.id === id);
+    if (!existing) {
+      return { success: false, message: 'Tag not found.' };
+    }
+
+    const nextTamil = updates.nameTamil?.trim();
+    if (nextTamil && solutionTags.some(t => t.id !== id && t.nameTamil.trim().toLowerCase() === nextTamil.toLowerCase())) {
+      return { success: false, message: `"${nextTamil}" ஏற்கனவே பட்டியலில் உள்ளது (Tag already exists).` };
+    }
+
+    setActionLoadingText('குறிச்சொல் புதுப்பிக்கப்படுகிறது...');
+    try {
+      const updatedTag: SolutionTag = {
+        ...existing,
+        nameTamil: nextTamil || existing.nameTamil,
+        nameEnglish: updates.nameEnglish !== undefined ? updates.nameEnglish.trim() : existing.nameEnglish,
+      };
+      const next = solutionTags.map(t => (t.id === id ? updatedTag : t));
+      setSolutionTags(next);
+      try {
+        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
+      } catch {}
+
+      const res = await api.updateSolutionTag(id, {
+        nameTamil: updatedTag.nameTamil,
+        nameEnglish: updatedTag.nameEnglish,
+      });
+      await refreshFreshData();
+      return {
+        success: true,
+        tag: res || updatedTag,
+        message: `"${updatedTag.nameTamil}" புதுப்பிக்கப்பட்டது!`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to update tag on backend.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const deleteSolutionTag = async (id: string): Promise<{ success: boolean; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only administrators can delete problem tags.' };
+    }
+
+    const target = solutionTags.find(t => t.id === id);
+    if (!target) {
+      return { success: false, message: 'Tag not found.' };
+    }
+
+    setActionLoadingText('குறிச்சொல் நீக்கப்படுகிறது...');
+    try {
+      const next = solutionTags.filter(t => t.id !== id);
+      setSolutionTags(next);
+      try {
+        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
+      } catch {}
+
+      await api.deleteSolutionTag(id);
+      await refreshFreshData();
+      return {
+        success: true,
+        message: `"${target.nameTamil}" நீக்கப்பட்டது.`,
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to delete tag on backend.' };
     } finally {
       setActionLoadingText(null);
     }
@@ -1147,6 +1322,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               deity: existingTemple.deity,
               timings: existingTemple.timings,
               significance: existingTemple.significance,
+              solutionTags: existingTemple.solutionTags || [],
               jothidarPaarvai: existingTemple.jothidarPaarvai,
               jothidarPaarvaiNotes: existingTemple.jothidarPaarvaiNotes,
             }
@@ -1189,6 +1365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           deity: targetSub.templeData.deity || 'shivan',
           significance: targetSub.templeData.significance || (targetSub.templeData as any).descriptionTamil || '',
           remedies: [],
+          solutionTags: Array.isArray(targetSub.templeData.solutionTags) ? targetSub.templeData.solutionTags : [],
           imageUrl: targetSub.templeData.imageUrl || '',
           videoUrl: targetSub.templeData.videoUrl || '',
           timings: targetSub.templeData.timings || '',
@@ -1355,6 +1532,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createDeity,
         updateDeity,
         deleteDeity,
+        solutionTags,
+        createSolutionTag,
+        updateSolutionTag,
+        deleteSolutionTag,
         templeToEdit,
         isLoading,
         setIsLoading,

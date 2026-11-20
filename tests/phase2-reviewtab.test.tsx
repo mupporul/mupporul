@@ -9,8 +9,10 @@ import { TempleCard } from '../frontend/src/components/TempleCard';
 import { Header } from '../frontend/src/components/Header';
 import { TemplesList } from '../frontend/src/components/TemplesList';
 import { TempleDetailModal } from '../frontend/src/components/TempleDetailModal';
+import { SolutionTab } from '../frontend/src/components/SolutionTab';
+import { AdminSolutionTagsPanel } from '../frontend/src/components/AdminSolutionTagsPanel';
 import * as AppContextModule from '../frontend/src/context/AppContext';
-import { TempleSubmission, Temple } from '../frontend/src/types';
+import { TempleSubmission, Temple, SolutionTag } from '../frontend/src/types';
 
 describe('Phase 2: ReviewTab Component Boundary & Resilience Tests', () => {
   const mockRefreshFreshData = vi.fn().mockResolvedValue(undefined);
@@ -250,6 +252,7 @@ describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
     render(<BottomNav />);
 
     expect(screen.getByRole('button', { name: /Temples/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Solution/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Quiz/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Profile/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Review/i })).not.toBeInTheDocument();
@@ -257,7 +260,7 @@ describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
     expect(screen.queryByRole('button', { name: /Analytics/i })).not.toBeInTheDocument();
   });
 
-  it('shows Review and Add tabs for contributor role, while hiding Analytics', () => {
+  it('shows Solution, Review and Add tabs for contributor role, while hiding Analytics', () => {
     vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
       ...baseNavContext,
       currentUser: { id: 'u-contrib', name: 'Contributor', username: 'contrib', role: 'contributor' },
@@ -265,12 +268,13 @@ describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
 
     render(<BottomNav />);
 
+    expect(screen.getByRole('button', { name: /Solution/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Review/i })).toBeInTheDocument();
     expect(screen.getByTitle('Add Temple')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Analytics/i })).not.toBeInTheDocument();
   });
 
-  it('shows Review, Add, and Analytics tabs for admin role', () => {
+  it('shows Solution, Review, Add, and Analytics tabs for admin role', () => {
     vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
       ...baseNavContext,
       currentUser: { id: 'u-admin', name: 'Admin', username: 'admin', role: 'admin' },
@@ -278,6 +282,7 @@ describe('Phase 2: BottomNav Role-Based Tab Visibility Guard', () => {
 
     render(<BottomNav />);
 
+    expect(screen.getByRole('button', { name: /Solution/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Review/i })).toBeInTheDocument();
     expect(screen.getByTitle('Add Temple')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Analytics/i })).toBeInTheDocument();
@@ -784,3 +789,214 @@ describe('Phase 2: Jothidar Paarvai Feature Tests', () => {
     expect(screen.getAllByText('வயலூர் - கடக ராசி குறிக்கும் ஜோதிடர் குறிப்பு').length).toBe(2);
   });
 });
+
+describe('Phase 2: Astrologer Solution Finder & Problem Tags Suite', () => {
+  const starterTags: SolutionTag[] = [
+    { id: 'veedu-katta-thadai', nameTamil: 'வீடு கட்ட தடை', nameEnglish: 'Delay in building house' },
+    { id: 'nilam-virka-thadai', nameTamil: 'நிலம் விற்க தடை', nameEnglish: 'Delay in selling land' },
+  ];
+
+  const sampleTemples: Temple[] = [
+    {
+      id: 't-parthasarathy',
+      name: 'Parthasarathy Temple',
+      location: 'Triplicane, Chennai',
+      state: 'Tamil Nadu',
+      planets: ['sani'],
+      deity: 'vishnu',
+      significance: '4,2 bhava remedy for house and land',
+      remedies: [],
+      solutionTags: ['veedu-katta-thadai', 'nilam-virka-thadai'],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 am - 9 pm',
+      viewsCount: 10,
+      createdAt: '2026-11-18T00:00:00Z',
+      updatedAt: '2026-11-18T00:00:00Z',
+    },
+    {
+      id: 't-vayalur',
+      name: 'Vayalur Murugan Temple',
+      location: 'Vayalur, Tiruchirappalli',
+      state: 'Tamil Nadu',
+      planets: ['sani', 'sev'],
+      deity: 'murugan',
+      significance: 'House construction remedy',
+      remedies: [],
+      solutionTags: ['veedu-katta-thadai'],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 am - 8 pm',
+      viewsCount: 5,
+      createdAt: '2026-11-19T00:00:00Z',
+      updatedAt: '2026-11-19T00:00:00Z',
+    },
+  ];
+
+  it('supports dynamic 1-by-1 problem dropdowns and BOTH Best Match (Any) & Match All (Exact) modes in SolutionTab', () => {
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      temples: sampleTemples,
+      solutionTags: starterTags,
+      currentUser: { id: 'u-user', name: 'Astrologer User', username: 'astro', role: 'user' },
+      isMobileFrame: false,
+      openAddModal: vi.fn(),
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      deleteTemple: vi.fn(),
+      deities: [],
+    } as any);
+
+    render(<SolutionTab />);
+
+    // Non-admin does not see Configure Solution Tags (Admin)
+    expect(screen.queryByRole('button', { name: /Configure Solution Tags/i })).not.toBeInTheDocument();
+
+    // Starts with Problem 1 dropdown
+    const problem1Select = screen.getByLabelText('Problem 1') as HTMLSelectElement;
+    expect(problem1Select).toBeInTheDocument();
+    fireEvent.change(problem1Select, { target: { value: 'veedu-katta-thadai' } });
+
+    expect(screen.getByText('Parthasarathy Temple')).toBeInTheDocument();
+    expect(screen.getByText('Vayalur Murugan Temple')).toBeInTheDocument();
+
+    // Add Problem 2 dynamically
+    fireEvent.click(screen.getByRole('button', { name: /\+ Add Problem/i }));
+    const problem2Select = screen.getByLabelText('Problem 2') as HTMLSelectElement;
+    expect(problem2Select).toBeInTheDocument();
+
+    // Already selected Problem 1 is excluded from Problem 2 dropdown options
+    expect(Array.from(problem2Select.options).some(o => o.value === 'veedu-katta-thadai')).toBe(false);
+
+    fireEvent.change(problem2Select, { target: { value: 'nilam-virka-thadai' } });
+
+    // Best Match (Any) keeps both temples, ranking 2/2 match (Parthasarathy) first
+    const headingsAny = screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
+    const parthaIdx = headingsAny.findIndex(t => t?.includes('Parthasarathy Temple'));
+    const vayalurIdx = headingsAny.findIndex(t => t?.includes('Vayalur Murugan Temple'));
+    expect(parthaIdx).toBeGreaterThanOrEqual(0);
+    expect(vayalurIdx).toBeGreaterThan(parthaIdx);
+    expect(screen.getByText(/2\/2 தீர்வு/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\/2 தீர்வு/i)).toBeInTheDocument();
+
+    // Switch to Match All (Exact)
+    fireEvent.click(screen.getByRole('button', { name: /Match All \(Exact\)/i }));
+    expect(screen.getByText('Parthasarathy Temple')).toBeInTheDocument();
+    expect(screen.queryByText('Vayalur Murugan Temple')).not.toBeInTheDocument();
+  });
+
+  it('opens Configure Solution Tags modal for Admin inside SolutionTab and supports CRUD in AdminSolutionTagsPanel', async () => {
+    const createSolutionTag = vi.fn().mockResolvedValue({ success: true, message: 'Tag added.' });
+    const updateSolutionTag = vi.fn().mockResolvedValue({ success: true, message: 'Tag updated.' });
+    const deleteSolutionTag = vi.fn().mockResolvedValue({ success: true, message: 'Tag removed.' });
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      temples: sampleTemples,
+      solutionTags: starterTags,
+      currentUser: { id: 'u-admin', name: 'Admin Murugan', username: 'admin', role: 'admin' },
+      isMobileFrame: false,
+      openAddModal: vi.fn(),
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      deleteTemple: vi.fn(),
+      deities: [],
+      createSolutionTag,
+      updateSolutionTag,
+      deleteSolutionTag,
+    } as any);
+
+    render(<SolutionTab />);
+
+    const manageBtn = screen.getByRole('button', { name: /Configure Solution Tags \(Admin\)/i });
+    fireEvent.click(manageBtn);
+
+    expect(screen.getByRole('dialog', { name: /Configure Solution Tags/i })).toBeInTheDocument();
+    expect(screen.getByText('2 temples')).toBeInTheDocument();
+
+    // Add a new tag
+    const tamilInput = screen.getByPlaceholderText(/திருமண தடை/i);
+    fireEvent.change(tamilInput, { target: { value: 'கடன் பிரச்சனை தீர' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add Tag/i }));
+
+    await waitFor(() => {
+      expect(createSolutionTag).toHaveBeenCalledWith({
+        nameTamil: 'கடன் பிரச்சனை தீர',
+        nameEnglish: '',
+      });
+    });
+
+    // Delete first tag after inline confirm
+    fireEvent.click(screen.getByRole('button', { name: 'Delete வீடு கட்ட தடை' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm Delete/i }));
+
+    await waitFor(() => {
+      expect(deleteSolutionTag).toHaveBeenCalledWith('veedu-katta-thadai');
+    });
+  });
+
+  it('allows selecting multiple solution tags in AddEditTempleModal and restricts inline add to admin', async () => {
+    const submitTempleMock = vi.fn().mockResolvedValue(true);
+    const useAppSpy = vi.spyOn(AppContextModule, 'useApp');
+
+    useAppSpy.mockReturnValue({
+      isAddEditModalOpen: true,
+      closeAddEditModal: vi.fn(),
+      templeToEdit: sampleTemples[1], // has ['veedu-katta-thadai']
+      submitTemple: submitTempleMock,
+      currentUser: { id: 'u-contrib', name: 'Contrib', username: 'contrib', role: 'contributor' },
+      switchRole: vi.fn(),
+      setActiveTab: vi.fn(),
+      isMobileFrame: false,
+      deities: [{ id: 'murugan', nameTamil: 'முருகன்', nameEnglish: 'Murugan' }],
+      createDeity: vi.fn(),
+      updateDeity: vi.fn(),
+      deleteDeity: vi.fn(),
+      solutionTags: starterTags,
+      createSolutionTag: vi.fn(),
+    } as any);
+
+    const { rerender } = render(<AddEditTempleModal />);
+
+    // Non-admin does not see inline add button, sees admin note
+    expect(screen.queryByRole('button', { name: /குறிச்சொல் சேர்/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Only an Admin account can configure new problem tags/i)).toBeInTheDocument();
+
+    const landCheckbox = screen.getByRole('checkbox', { name: /நிலம் விற்க தடை/i });
+    expect(landCheckbox).not.toBeChecked();
+    fireEvent.click(landCheckbox);
+    expect(landCheckbox).toBeChecked();
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Updates for Review/i }));
+    await waitFor(() => {
+      expect(submitTempleMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          solutionTags: ['veedu-katta-thadai', 'nilam-virka-thadai'],
+        }),
+        't-vayalur'
+      );
+    });
+
+    // Admin sees inline + குறிச்சொல் சேர் quick-add button
+    useAppSpy.mockReturnValue({
+      isAddEditModalOpen: true,
+      closeAddEditModal: vi.fn(),
+      templeToEdit: sampleTemples[1],
+      submitTemple: submitTempleMock,
+      currentUser: { id: 'u-admin', name: 'Admin', username: 'admin', role: 'admin' },
+      switchRole: vi.fn(),
+      setActiveTab: vi.fn(),
+      isMobileFrame: false,
+      deities: [{ id: 'murugan', nameTamil: 'முருகன்', nameEnglish: 'Murugan' }],
+      createDeity: vi.fn(),
+      updateDeity: vi.fn(),
+      deleteDeity: vi.fn(),
+      solutionTags: starterTags,
+      createSolutionTag: vi.fn().mockResolvedValue({ success: true }),
+    } as any);
+
+    rerender(<AddEditTempleModal />);
+    expect(screen.getByRole('button', { name: /குறிச்சொல் சேர்/i })).toBeInTheDocument();
+  });
+});
+

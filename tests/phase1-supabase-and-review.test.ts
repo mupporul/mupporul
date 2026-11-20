@@ -464,4 +464,111 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(filteredRes.body.data.some((t: any) => t.name === withNotesName)).toBe(true);
     expect(filteredRes.body.data.some((t: any) => t.name === withoutNotesName)).toBe(false);
   });
+
+  it('provides starter problem tags via GET /api/solution-tags and supports POST/PUT/DELETE CRUD', async () => {
+    const getRes = await request(app).get('/api/solution-tags');
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.success).toBe(true);
+    const tamilNames = getRes.body.data.map((t: any) => t.nameTamil);
+    expect(tamilNames).toContain('வீடு கட்ட தடை');
+    expect(tamilNames).toContain('நிலம் விற்க தடை');
+
+    // Create a custom problem tag
+    const createRes = await request(app)
+      .post('/api/solution-tags')
+      .send({
+        nameTamil: 'திருமண தடை ' + Date.now(),
+        nameEnglish: 'Marriage Delay',
+      });
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+    const createdId = createRes.body.data.id;
+    expect(createdId).toBeTruthy();
+
+    // Update the tag
+    const updateRes = await request(app)
+      .put(`/api/solution-tags/${createdId}`)
+      .send({
+        nameTamil: 'திருமண தடை நீங்க',
+        nameEnglish: 'Marriage Delay Remedy',
+      });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.nameTamil).toBe('திருமண தடை நீங்க');
+
+    // Delete the test tag cleanly
+    const delRes = await request(app).delete(`/api/solution-tags/${createdId}`);
+    expect(delRes.status).toBe(200);
+
+    const afterRes = await request(app).get('/api/solution-tags');
+    expect(afterRes.body.data.some((t: any) => t.id === createdId)).toBe(false);
+  });
+
+  it('persists temple.solutionTags inside submitted_by JSONB without un-migrated columns and via POST /api/temples', async () => {
+    const insertRow = buildSupabaseTempleRow({
+      id: 'temple-sol-schema-1',
+      name: 'Parthasarathy Solution Test Temple',
+      location: 'Triplicane, Chennai',
+      state: 'Tamil Nadu',
+      planets: ['sani'],
+      deity: 'vishnu',
+      significance: '4,2 bhava remedy',
+      remedies: [],
+      solutionTags: ['veedu-katta-thadai', 'nilam-virka-thadai'],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 AM - 9 PM',
+      jothidarPaarvai: true,
+      jothidarPaarvaiNotes: '4,2 பாவ அதிகார பிரச்னை தீர',
+      submittedBy: { id: 'user-admin', name: 'Admin Murugan', role: 'admin' },
+      viewsCount: 0,
+      createdAt: '2026-11-20T00:00:00Z',
+      updatedAt: '2026-11-20T00:00:00Z',
+    });
+
+    expect('solution_tags' in insertRow).toBe(false);
+    expect(insertRow.submitted_by.solutionTags).toEqual(['veedu-katta-thadai', 'nilam-virka-thadai']);
+    expect(insertRow.submitted_by.jothidarPaarvai).toBe(true);
+
+    const updateRow = buildSupabaseTempleUpdateRow(
+      { solutionTags: ['veedu-katta-thadai'] },
+      {
+        id: 'temple-sol-schema-1',
+        name: 'Parthasarathy Solution Test Temple',
+        location: 'Triplicane, Chennai',
+        state: 'Tamil Nadu',
+        planets: ['sani'],
+        deity: 'vishnu',
+        significance: '4,2 bhava remedy',
+        remedies: [],
+        imageUrl: '',
+        videoUrl: '',
+        timings: '6 AM - 9 PM',
+        jothidarPaarvai: true,
+        jothidarPaarvaiNotes: '4,2 பாவ அதிகார பிரச்னை தீர',
+        submittedBy: { id: 'user-admin', name: 'Admin Murugan', role: 'admin' },
+        viewsCount: 0,
+        createdAt: '2026-11-20T00:00:00Z',
+        updatedAt: '2026-11-20T00:00:00Z',
+      }
+    );
+    expect('solution_tags' in updateRow).toBe(false);
+    expect(updateRow.submitted_by.solutionTags).toEqual(['veedu-katta-thadai']);
+    expect(updateRow.submitted_by.jothidarPaarvai).toBe(true);
+    expect(updateRow.submitted_by.jothidarPaarvaiNotes).toBe('4,2 பாவ அதிகார பிரச்னை தீர');
+
+    const postRes = await request(app)
+      .post('/api/temples')
+      .send({
+        name: 'Solution Tagged Temple ' + Date.now(),
+        location: 'Triplicane, Chennai',
+        state: 'Tamil Nadu',
+        planets: ['sani'],
+        deity: 'vishnu',
+        significance: 'Property & housing remedies',
+        solutionTags: ['veedu-katta-thadai', 'nilam-virka-thadai'],
+      });
+    expect(postRes.status).toBe(201);
+    expect(postRes.body.data.solutionTags).toEqual(['veedu-katta-thadai', 'nilam-virka-thadai']);
+  });
 });
+

@@ -1,4 +1,4 @@
-import { Temple, TempleSubmission, UserProfile, Deity } from '../types';
+import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag } from '../types';
 
 const DEFAULT_REMOTE_RENDER_API = 'https://mupporul-backend.onrender.com/api';
 
@@ -373,6 +373,50 @@ class ApiService {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Failed to delete deity');
+    return true;
+  }
+
+  // Solution / Problem Tags (தீர்வு குறிச்சொற்கள்)
+  async getSolutionTags(): Promise<SolutionTag[]> {
+    try {
+      const res = await this.fetchWithAntiCache(`${this.baseUrl}/solution-tags`);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const json = await res.json();
+      return json.data || [];
+    } catch (e) {
+      console.warn('[ApiService] Failed to fetch solution tags:', e);
+      throw e;
+    }
+  }
+
+  async createSolutionTag(data: { nameTamil: string; nameEnglish?: string; id?: string }): Promise<SolutionTag> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/solution-tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to create solution tag');
+    return json.data;
+  }
+
+  async updateSolutionTag(id: string, updates: { nameTamil?: string; nameEnglish?: string }): Promise<SolutionTag> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/solution-tags/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update solution tag');
+    return json.data;
+  }
+
+  async deleteSolutionTag(id: string): Promise<boolean> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/solution-tags/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to delete solution tag');
     return true;
   }
 

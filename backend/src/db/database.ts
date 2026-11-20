@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Temple, TempleSubmission, UserProfile, Role, Deity } from '../types.js';
-import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_DEITIES } from './initialData.js';
+import { Temple, TempleSubmission, UserProfile, Role, Deity, SolutionTag } from '../types.js';
+import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_DEITIES, INITIAL_SOLUTION_TAGS } from './initialData.js';
 import {
   isSupabaseConfigured,
   fetchTemplesFromSupabase,
@@ -19,6 +19,10 @@ import {
   insertDeityToSupabase,
   updateDeityInSupabase,
   deleteDeityFromSupabase,
+  fetchSolutionTagsFromSupabase,
+  insertSolutionTagToSupabase,
+  updateSolutionTagInSupabase,
+  deleteSolutionTagFromSupabase,
   fetchSubmissionsFromSupabase,
   insertSubmissionToSupabase,
   updateSubmissionInSupabase,
@@ -31,6 +35,7 @@ interface DatabaseSchema {
   submissions: TempleSubmission[];
   users: UserProfile[];
   deities: Deity[];
+  solutionTags?: SolutionTag[];
 }
 
 export class Database {
@@ -90,11 +95,12 @@ export class Database {
 
     this.activeSyncPromise = (async () => {
       try {
-        const [supaTemples, supaUsers, supaDeities, supaSubmissions] = await Promise.allSettled([
+        const [supaTemples, supaUsers, supaDeities, supaSubmissions, supaSolutionTags] = await Promise.allSettled([
           fetchTemplesFromSupabase(),
           fetchUsersFromSupabase(),
           fetchDeitiesFromSupabase(),
           fetchSubmissionsFromSupabase(),
+          fetchSolutionTagsFromSupabase(),
         ]);
 
         if (supaTemples.status === 'fulfilled' && Array.isArray(supaTemples.value)) {
@@ -110,6 +116,9 @@ export class Database {
         }
         if (supaDeities.status === 'fulfilled' && Array.isArray(supaDeities.value) && supaDeities.value.length > 0) {
           this.data.deities = supaDeities.value;
+        }
+        if (supaSolutionTags.status === 'fulfilled' && Array.isArray(supaSolutionTags.value)) {
+          this.data.solutionTags = supaSolutionTags.value;
         }
         if (supaSubmissions.status === 'fulfilled' && Array.isArray(supaSubmissions.value)) {
           this.data.submissions = supaSubmissions.value.map(s => {
@@ -169,6 +178,10 @@ export class Database {
           if (!Array.isArray(parsed.deities) || parsed.deities.length === 0) {
             parsed.deities = [...INITIAL_DEITIES];
           }
+          // Ensure solutionTags array is initialized with starter tags if missing
+          if (!Array.isArray(parsed.solutionTags)) {
+            parsed.solutionTags = [...INITIAL_SOLUTION_TAGS];
+          }
           return parsed;
         }
       }
@@ -183,7 +196,8 @@ export class Database {
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
-      deities: [...INITIAL_DEITIES]
+      deities: [...INITIAL_DEITIES],
+      solutionTags: [...INITIAL_SOLUTION_TAGS],
     };
 
     this.saveData(defaultData);
@@ -293,9 +307,13 @@ export class Database {
     }
 
     const hasJp = Boolean(templeData.jothidarPaarvai || (templeData.jothidarPaarvaiNotes && templeData.jothidarPaarvaiNotes.trim()));
+    const cleanSolutionTags = Array.isArray(templeData.solutionTags)
+      ? Array.from(new Set(templeData.solutionTags.filter(id => typeof id === 'string' && id.trim())))
+      : [];
     const newTemple: Temple = {
       ...templeData,
       remedies: [],
+      solutionTags: cleanSolutionTags,
       jothidarPaarvai: hasJp,
       jothidarPaarvaiNotes: hasJp ? (templeData.jothidarPaarvaiNotes || '').trim() : '',
       id: `temple-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -324,6 +342,11 @@ export class Database {
       ...updates,
       remedies: [],
     };
+    if (updates.solutionTags !== undefined) {
+      sanitizedUpdates.solutionTags = Array.isArray(updates.solutionTags)
+        ? Array.from(new Set(updates.solutionTags.filter(tagId => typeof tagId === 'string' && tagId.trim())))
+        : [];
+    }
     if (sanitizedUpdates.jothidarPaarvai !== undefined) {
       sanitizedUpdates.jothidarPaarvai = Boolean(sanitizedUpdates.jothidarPaarvai);
       if (!sanitizedUpdates.jothidarPaarvai) {
@@ -584,6 +607,7 @@ export class Database {
           deity: sub.templeData.deity || 'shivan',
           significance: sub.templeData.significance || (sub.templeData as any).descriptionTamil || '',
           remedies: [],
+          solutionTags: Array.isArray(sub.templeData.solutionTags) ? sub.templeData.solutionTags : [],
           imageUrl: sub.templeData.imageUrl || '',
           videoUrl: sub.templeData.videoUrl || '',
           timings: sub.templeData.timings || '',
@@ -848,6 +872,86 @@ export class Database {
   }
 
   // ==========================================
+  // SOLUTION / PROBLEM TAGS (தீர்வு குறிச்சொற்கள்)
+  // ==========================================
+  public getSolutionTags(): SolutionTag[] {
+    if (!Array.isArray(this.data.solutionTags)) {
+      this.data.solutionTags = [...INITIAL_SOLUTION_TAGS];
+      this.saveData();
+    }
+    return this.data.solutionTags;
+  }
+
+  public createSolutionTag(tagData: { nameTamil: string; nameEnglish?: string; id?: string }): SolutionTag {
+    const existing = this.getSolutionTags();
+    const baseSlug =
+      tagData.id?.trim() ||
+      tagData.nameEnglish?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
+      `tag-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const id = baseSlug || `tag-${Date.now()}`;
+
+    const newTag: SolutionTag = {
+      id,
+      nameTamil: tagData.nameTamil.trim(),
+      nameEnglish: tagData.nameEnglish?.trim() || '',
+    };
+
+    const idx = existing.findIndex(t => t.id === id || t.nameTamil.trim() === newTag.nameTamil);
+    if (idx >= 0) {
+      existing[idx] = { ...existing[idx], ...newTag, id: existing[idx].id };
+      this.data.solutionTags = existing;
+      this.saveData();
+      if (isSupabaseConfigured) {
+        this.trackSupabaseWrite(insertSolutionTagToSupabase(existing[idx], existing), 'Upsert solution tag');
+      }
+      return existing[idx];
+    }
+
+    existing.push(newTag);
+    this.data.solutionTags = existing;
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      this.trackSupabaseWrite(insertSolutionTagToSupabase(newTag, existing), 'Insert solution tag');
+    }
+    return newTag;
+  }
+
+  public updateSolutionTag(id: string, updates: Partial<SolutionTag>): SolutionTag | null {
+    const existing = this.getSolutionTags();
+    const tag = existing.find(t => t.id === id);
+    if (!tag) return null;
+
+    if (updates.nameTamil !== undefined && updates.nameTamil.trim()) {
+      tag.nameTamil = updates.nameTamil.trim();
+    }
+    if (updates.nameEnglish !== undefined) {
+      tag.nameEnglish = updates.nameEnglish.trim();
+    }
+
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      this.trackSupabaseWrite(updateSolutionTagInSupabase(id, updates, existing), 'Update solution tag');
+    }
+    return tag;
+  }
+
+  public deleteSolutionTag(id: string): boolean {
+    const current = this.getSolutionTags();
+    const next = current.filter(t => t.id !== id);
+    if (next.length < current.length) {
+      this.data.solutionTags = next;
+      this.saveData();
+      if (isSupabaseConfigured) {
+        this.trackSupabaseWrite(deleteSolutionTagFromSupabase(id, next), 'Delete solution tag');
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // ==========================================
   // ANALYTICS & STATS
   // ==========================================
   public getStats() {
@@ -882,7 +986,8 @@ export class Database {
       temples: [...INITIAL_TEMPLES],
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
-      deities: [...INITIAL_DEITIES]
+      deities: [...INITIAL_DEITIES],
+      solutionTags: [...INITIAL_SOLUTION_TAGS],
     };
     this.saveData();
   }

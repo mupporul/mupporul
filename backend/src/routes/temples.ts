@@ -59,7 +59,7 @@ templesRouter.get('/:id', async (req: Request, res: Response) => {
 templesRouter.post('/', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
-    const { name, location, state, planets, deity, significance, remedies, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber, jothidarPaarvai, jothidarPaarvaiNotes } = req.body;
+    const { name, location, state, planets, deity, significance, remedies, solutionTags, imageUrl, videoUrl, timings, history, poojaDetails, contactNumber, jothidarPaarvai, jothidarPaarvaiNotes } = req.body;
 
     if (!name || !location || !deity || !significance) {
       res.status(400).json({
@@ -77,6 +77,7 @@ templesRouter.post('/', async (req: Request, res: Response) => {
       deity,
       significance,
       remedies: [],
+      solutionTags: Array.isArray(solutionTags) ? solutionTags : [],
       imageUrl: imageUrl || '',
       videoUrl: videoUrl || '',
       timings: timings || '',

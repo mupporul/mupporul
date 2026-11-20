@@ -29,6 +29,12 @@ export interface Deity {
   nameEnglish: string;
 }
 
+export interface SolutionTag {
+  id: string;
+  nameTamil: string;
+  nameEnglish?: string;
+}
+
 export interface Temple {
   id: string;
   name: string;
@@ -40,6 +46,7 @@ export interface Temple {
   deity: string; // Deity ID
   significance: string; // Multiline significance text
   remedies?: string[]; // Dynamic remedy & pariharam tags e.g. ['குழந்தை பாக்கியம்', 'விதி மாற்றம்']
+  solutionTags?: string[]; // Admin-configured problem/solution tag IDs
   descriptionTamil?: string;
   descriptionEnglish?: string;
   imageUrl: string;

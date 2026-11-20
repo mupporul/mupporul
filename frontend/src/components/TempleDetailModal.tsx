@@ -27,6 +27,7 @@ export const TempleDetailModal: React.FC = () => {
     isMobileFrame,
     deities,
     temples,
+    solutionTags,
   } = useApp();
 
   const [copiedShare, setCopiedShare] = useState(false);
@@ -283,6 +284,20 @@ export const TempleDetailModal: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Assigned Problem / Solution Tags */}
+          {Array.isArray(temple.solutionTags) && temple.solutionTags.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-[#181a29] border border-[#272a40] space-y-1.5">
+              <span className="text-xs font-semibold text-amber-300 font-tamil block">
+                தீர்வு குறிச்சொற்கள் (Solved Problems)
+              </span>
+              <p className="text-xs sm:text-sm text-gray-100 font-tamil leading-relaxed">
+                {temple.solutionTags
+                  .map(id => solutionTags?.find(t => t.id === id)?.nameTamil || id)
+                  .join(' · ')}
+              </p>
+            </div>
+          )}
 
           {/* Darshan Timings & Pooja Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

@@ -30,6 +30,7 @@ export const ReviewTab: React.FC = () => {
     openDetailModal,
     temples,
     deities,
+    solutionTags,
     refreshFreshData,
   } = useApp();
 
@@ -321,6 +322,18 @@ export const ReviewTab: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Solution Tags Preview */}
+                  {Array.isArray(sub.templeData?.solutionTags) && sub.templeData.solutionTags.length > 0 && (
+                    <div className="text-xs font-tamil text-amber-200/90">
+                      <span className="text-gray-400">தீர்வு குறிச்சொற்கள்: </span>
+                      <span>
+                        {sub.templeData.solutionTags
+                          .map(id => solutionTags?.find(t => t.id === id)?.nameTamil || id)
+                          .join(' · ')}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Timings */}
                   <p className="text-[11px] text-gray-400 font-tamil">
                     🕒 <span className="text-amber-400/90">தரிசன நேரம்:</span> {sub.templeData?.timings || 'காலை & மாலை'}
@@ -355,6 +368,27 @@ export const ReviewTab: React.FC = () => {
                         )}
                         <div className="text-emerald-400 text-[11px]">
                           + New பாவ/ராசி தொடர்பு: {sub.templeData.jothidarPaarvaiNotes || '(Cleared)'}
+                        </div>
+                      </div>
+                    )}
+
+                    {[...(sub.previousData.solutionTags || [])].sort().join(',') !==
+                      [...(sub.templeData.solutionTags || [])].sort().join(',') && (
+                      <div className="space-y-1 font-tamil">
+                        {(sub.previousData.solutionTags || []).length > 0 && (
+                          <div className="text-red-400/90 line-through text-[11px]">
+                            - Old தீர்வு: {(sub.previousData.solutionTags || [])
+                              .map(id => solutionTags?.find(t => t.id === id)?.nameTamil || id)
+                              .join(' · ')}
+                          </div>
+                        )}
+                        <div className="text-emerald-400 text-[11px]">
+                          + New தீர்வு:{' '}
+                          {(sub.templeData.solutionTags || []).length > 0
+                            ? (sub.templeData.solutionTags || [])
+                                .map(id => solutionTags?.find(t => t.id === id)?.nameTamil || id)
+                                .join(' · ')
+                            : '(Cleared)'}
                         </div>
                       </div>
                     )}

@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { Temple, TempleSubmission, UserProfile, Deity } from '../types.js';
+import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag } from '../types.js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -45,6 +45,11 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
       row.jothidar_paarvai_notes !== undefined
         ? (row.jothidar_paarvai_notes || '')
         : (rawSubmittedBy?.jothidarPaarvaiNotes || '');
+    const solutionTags = Array.isArray(rawSubmittedBy?.solutionTags)
+      ? rawSubmittedBy.solutionTags.filter((id: any) => typeof id === 'string' && id.trim())
+      : Array.isArray(row.solution_tags)
+      ? row.solution_tags.filter((id: any) => typeof id === 'string' && id.trim())
+      : [];
 
     const cleanSubmittedBy = rawSubmittedBy
       ? {
@@ -63,6 +68,7 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
       deity: row.deity,
       significance: row.significance,
       remedies: [],
+      solutionTags,
       imageUrl: row.image_url,
       videoUrl: row.video_url || '',
       timings: row.timings || '',
@@ -93,6 +99,9 @@ export function buildSupabaseTempleRow(temple: Temple) {
       };
 
   const hasJp = Boolean(temple.jothidarPaarvai || (temple.jothidarPaarvaiNotes && temple.jothidarPaarvaiNotes.trim()));
+  const cleanSolutionTags = Array.isArray(temple.solutionTags)
+    ? Array.from(new Set(temple.solutionTags.filter(id => typeof id === 'string' && id.trim())))
+    : [];
 
   return {
     id: temple.id,
@@ -112,6 +121,7 @@ export function buildSupabaseTempleRow(temple: Temple) {
       ...baseSubmittedBy,
       jothidarPaarvai: hasJp,
       jothidarPaarvaiNotes: hasJp ? (temple.jothidarPaarvaiNotes || '') : '',
+      solutionTags: cleanSolutionTags,
     },
     views_count: temple.viewsCount || 0,
     created_at: temple.createdAt || new Date().toISOString(),
@@ -141,6 +151,7 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
   if (
     updates.jothidarPaarvai !== undefined ||
     updates.jothidarPaarvaiNotes !== undefined ||
+    updates.solutionTags !== undefined ||
     updates.submittedBy !== undefined
   ) {
     const mergedSubmittedBy = updates.submittedBy || currentTemple?.submittedBy || {
@@ -156,6 +167,12 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
       updates.jothidarPaarvaiNotes !== undefined
         ? updates.jothidarPaarvaiNotes
         : (currentTemple?.jothidarPaarvaiNotes || '');
+    const nextSolutionTags =
+      updates.solutionTags !== undefined
+        ? Array.from(new Set((updates.solutionTags || []).filter(id => typeof id === 'string' && id.trim())))
+        : Array.isArray(currentTemple?.solutionTags)
+        ? currentTemple!.solutionTags
+        : [];
 
     row.submitted_by = {
       id: mergedSubmittedBy.id,
@@ -163,6 +180,7 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
       role: mergedSubmittedBy.role,
       jothidarPaarvai: nextJp,
       jothidarPaarvaiNotes: nextJp ? (nextNotes || '') : '',
+      solutionTags: nextSolutionTags,
     };
   }
 
@@ -350,6 +368,98 @@ export async function deleteDeityFromSupabase(id: string): Promise<boolean> {
   }
 }
 
+export async function fetchSolutionTagsFromSupabase(): Promise<SolutionTag[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('solution_tags')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (!error && Array.isArray(data)) {
+      return data.map((row: any) => ({
+        id: row.id,
+        nameTamil: row.name_tamil,
+        nameEnglish: row.name_english || '',
+      }));
+    }
+
+    // Fallback: read config record stored in submissions table so live production works without manual SQL DDL
+    const { data: cfgRow, error: cfgErr } = await supabase
+      .from('submissions')
+      .select('temple_data')
+      .eq('id', '__config_solution_tags__')
+      .maybeSingle();
+
+    if (!cfgErr && cfgRow?.temple_data) {
+      const parsed = safeParseJson(cfgRow.temple_data);
+      if (Array.isArray(parsed?.solutionTags)) {
+        return parsed.solutionTags;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Supabase] Exception fetching solution_tags:', err);
+    return null;
+  }
+}
+
+async function persistSolutionTagsFallback(allTags: SolutionTag[]): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('submissions').upsert({
+      id: '__config_solution_tags__',
+      type: 'config',
+      temple_id: null,
+      temple_data: { solutionTags: allTags },
+      submitted_by: { id: 'system', name: 'System Config', role: 'admin' },
+      submitted_at: new Date().toISOString(),
+      status: 'config',
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function insertSolutionTagToSupabase(tag: SolutionTag, allTags: SolutionTag[]): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('solution_tags').upsert({
+      id: tag.id,
+      name_tamil: tag.nameTamil,
+      name_english: tag.nameEnglish || '',
+    });
+    if (!error) return true;
+  } catch {}
+  return persistSolutionTagsFallback(allTags);
+}
+
+export async function updateSolutionTagInSupabase(
+  id: string,
+  updates: Partial<SolutionTag>,
+  allTags: SolutionTag[]
+): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: any = {};
+    if (updates.nameTamil !== undefined) payload.name_tamil = updates.nameTamil;
+    if (updates.nameEnglish !== undefined) payload.name_english = updates.nameEnglish;
+    const { error } = await supabase.from('solution_tags').update(payload).eq('id', id);
+    if (!error) return true;
+  } catch {}
+  return persistSolutionTagsFallback(allTags);
+}
+
+export async function deleteSolutionTagFromSupabase(id: string, allTags: SolutionTag[]): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('solution_tags').delete().eq('id', id);
+    if (!error) return true;
+  } catch {}
+  return persistSolutionTagsFallback(allTags);
+}
+
 // ==========================================
 // SUBMISSIONS METHODS
 // ==========================================
@@ -386,6 +496,7 @@ export function normalizeSupabaseSubmission(row: any): TempleSubmission {
       contactNumber: templeData?.contactNumber || '',
       jothidarPaarvai: Boolean(templeData?.jothidarPaarvai || (templeData?.jothidarPaarvaiNotes && templeData.jothidarPaarvaiNotes.trim())),
       jothidarPaarvaiNotes: templeData?.jothidarPaarvaiNotes || '',
+      solutionTags: Array.isArray(templeData?.solutionTags) ? templeData.solutionTags : [],
       remedies: [],
     },
     previousData: row.previous_data ? safeParseJson(row.previous_data) : undefined,
@@ -420,7 +531,9 @@ export async function fetchSubmissionsFromSupabase(): Promise<TempleSubmission[]
       return [];
     }
 
-    return (data || []).map(normalizeSupabaseSubmission);
+    return (data || [])
+      .filter((row: any) => row.id !== '__config_solution_tags__' && row.type !== 'config')
+      .map(normalizeSupabaseSubmission);
   } catch (err: any) {
     console.warn('[Supabase] Exception fetching submissions:', err);
     return [];

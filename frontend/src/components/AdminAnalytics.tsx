@@ -22,6 +22,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES } from '../data/constants';
 import { Role, UserProfile } from '../types';
+import { AdminSolutionTagsPanel } from './AdminSolutionTagsPanel';
 
 export const AdminAnalytics: React.FC = () => {
   const {
@@ -565,6 +566,9 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Admin Solution Tags Configuration */}
+      <AdminSolutionTagsPanel />
 
       {/* Database Maintenance & Clear Options */}
       <div className="space-y-4">
