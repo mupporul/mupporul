@@ -338,39 +338,31 @@ export const SolutionTab: React.FC = () => {
           }`}
         >
           {validSelectedIds.length === 0 ? (
-            /* Guidance & Quick-Start View */
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#141624] border border-[#23273d] space-y-5">
-              <div className="space-y-1.5">
-                <h3 className="text-base sm:text-lg font-bold text-gray-100">
-                  Astrologer Consultation — Temple Solution Finder
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                  Select one or more client problems on the left to prescribe matching temples. Use{' '}
-                  <strong className="text-amber-300">+ Add Problem</strong> to stack multiple issues dynamically.
-                </p>
-              </div>
-
-              {solutionTags.length > 0 && (
-                <div className="space-y-2.5 pt-2 border-t border-[#22263b]">
-                  <span className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                    Quick Pick Configured Problems
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {solutionTags.map(tag => (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        onClick={() => handleQuickSelectTag(tag.id)}
-                        className="px-3.5 py-2 rounded-xl bg-[#1a1d2e] hover:bg-amber-500/15 border border-[#2d324d] hover:border-amber-500/60 text-xs font-tamil font-medium text-gray-100 hover:text-amber-200 transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Plus className="w-3.5 h-3.5 text-[#f5a623]" />
-                        <span>{tag.nameTamil}</span>
-                      </button>
-                    ))}
-                  </div>
+            /* Quick-Start View */
+            solutionTags.length > 0 ? (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#141624] border border-[#23273d] space-y-3">
+                <span className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  Quick Pick Configured Problems
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {solutionTags.map(tag => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => handleQuickSelectTag(tag.id)}
+                      className="px-3.5 py-2 rounded-xl bg-[#1a1d2e] hover:bg-amber-500/15 border border-[#2d324d] hover:border-amber-500/60 text-xs font-tamil font-medium text-gray-100 hover:text-amber-200 transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[#f5a623]" />
+                      <span>{tag.nameTamil}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-[#141624] border border-[#23273d] text-xs text-gray-400">
+                No problem tags configured yet.
+              </div>
+            )
           ) : (
             <>
               {/* Active Summary Bar */}
