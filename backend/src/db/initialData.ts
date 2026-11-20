@@ -23,10 +23,8 @@ export const INITIAL_DEITIES: Deity[] = [
   { id: 'anjaneyar', nameTamil: 'ஆஞ்சநேயர்', nameEnglish: 'Anjaneyar / Hanuman' },
 ];
 
-export const INITIAL_SOLUTION_TAGS: SolutionTag[] = [
-  { id: 'veedu-katta-thadai', nameTamil: 'வீடு கட்ட தடை', nameEnglish: 'Delay in building house' },
-  { id: 'nilam-virka-thadai', nameTamil: 'நிலம் விற்க தடை', nameEnglish: 'Delay in selling land' },
-];
+// Zero hardcoded solution tags - dynamically populated from Supabase / database
+export const INITIAL_SOLUTION_TAGS: SolutionTag[] = [];
 
 export const INITIAL_USERS: UserProfile[] = [
   {

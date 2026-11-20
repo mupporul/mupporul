@@ -164,17 +164,8 @@ export async function fetchTemplesFromSupabase(): Promise<Temple[]> {
       row.jothidar_paarvai_notes !== undefined
         ? (row.jothidar_paarvai_notes || '')
         : (rawSubmittedBy?.jothidarPaarvaiNotes || '');
-    const jsonSolutionTags = Array.isArray(rawSubmittedBy?.solutionTags)
-      ? rawSubmittedBy.solutionTags.filter((id: any) => typeof id === 'string' && id.trim())
-      : Array.isArray(row.solution_tags)
-      ? row.solution_tags.filter((id: any) => typeof id === 'string' && id.trim())
-      : [];
-
-    // Prefer normalized parent-child temple_solution_tags table when populated; otherwise use JSONB fallback
-    const solutionTags =
-      junction.available && junction.hasRows
-        ? junction.map.get(row.id) || []
-        : jsonSolutionTags;
+    // Read problem/solution tags strictly from parent-child temple_solution_tags table
+    const solutionTags = junction.available ? junction.map.get(row.id) || [] : [];
 
     const cleanSubmittedBy = rawSubmittedBy
       ? {
@@ -224,9 +215,6 @@ export function buildSupabaseTempleRow(temple: Temple) {
       };
 
   const hasJp = Boolean(temple.jothidarPaarvai || (temple.jothidarPaarvaiNotes && temple.jothidarPaarvaiNotes.trim()));
-  const cleanSolutionTags = Array.isArray(temple.solutionTags)
-    ? Array.from(new Set(temple.solutionTags.filter(id => typeof id === 'string' && id.trim())))
-    : [];
 
   return {
     id: temple.id,
@@ -246,7 +234,6 @@ export function buildSupabaseTempleRow(temple: Temple) {
       ...baseSubmittedBy,
       jothidarPaarvai: hasJp,
       jothidarPaarvaiNotes: hasJp ? (temple.jothidarPaarvaiNotes || '') : '',
-      solutionTags: cleanSolutionTags,
     },
     views_count: temple.viewsCount || 0,
     created_at: temple.createdAt || new Date().toISOString(),
@@ -276,7 +263,6 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
   if (
     updates.jothidarPaarvai !== undefined ||
     updates.jothidarPaarvaiNotes !== undefined ||
-    updates.solutionTags !== undefined ||
     updates.submittedBy !== undefined
   ) {
     const mergedSubmittedBy = updates.submittedBy || currentTemple?.submittedBy || {
@@ -292,12 +278,6 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
       updates.jothidarPaarvaiNotes !== undefined
         ? updates.jothidarPaarvaiNotes
         : (currentTemple?.jothidarPaarvaiNotes || '');
-    const nextSolutionTags =
-      updates.solutionTags !== undefined
-        ? Array.from(new Set((updates.solutionTags || []).filter(id => typeof id === 'string' && id.trim())))
-        : Array.isArray(currentTemple?.solutionTags)
-        ? currentTemple!.solutionTags
-        : [];
 
     row.submitted_by = {
       id: mergedSubmittedBy.id,
@@ -305,7 +285,6 @@ export function buildSupabaseTempleUpdateRow(updates: Partial<Temple>, currentTe
       role: mergedSubmittedBy.role,
       jothidarPaarvai: nextJp,
       jothidarPaarvaiNotes: nextJp ? (nextNotes || '') : '',
-      solutionTags: nextSolutionTags,
     };
   }
 
@@ -322,9 +301,7 @@ export async function insertTempleToSupabase(temple: Temple): Promise<Temple> {
     throw error;
   }
 
-  if (Array.isArray(temple.solutionTags) && temple.solutionTags.length > 0) {
-    await syncTempleSolutionTagsInSupabase(temple.id, temple.solutionTags);
-  }
+  await syncTempleSolutionTagsInSupabase(temple.id, temple.solutionTags || []);
   return temple;
 }
 
@@ -501,61 +478,31 @@ export async function deleteDeityFromSupabase(id: string): Promise<boolean> {
   }
 }
 
-export async function fetchSolutionTagsFromSupabase(): Promise<SolutionTag[] | null> {
-  if (!supabase) return null;
+export async function fetchSolutionTagsFromSupabase(): Promise<SolutionTag[]> {
+  if (!supabase) return [];
   try {
     const { data, error } = await supabase
       .from('solution_tags')
       .select('*')
       .order('created_at', { ascending: true });
 
-    if (!error && Array.isArray(data)) {
-      return data.map((row: any) => ({
-        id: row.id,
-        nameTamil: row.name_tamil,
-        nameEnglish: row.name_english || '',
-      }));
+    if (error) {
+      console.warn('[Supabase] Could not fetch solution_tags:', error.message);
+      return [];
     }
 
-    // Fallback: read config record stored in submissions table so live production works without manual SQL DDL
-    const { data: cfgRow, error: cfgErr } = await supabase
-      .from('submissions')
-      .select('temple_data')
-      .eq('id', '__config_solution_tags__')
-      .maybeSingle();
-
-    if (!cfgErr && cfgRow?.temple_data) {
-      const parsed = safeParseJson(cfgRow.temple_data);
-      if (Array.isArray(parsed?.solutionTags)) {
-        return parsed.solutionTags;
-      }
-    }
-    return null;
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      nameTamil: row.name_tamil,
+      nameEnglish: row.name_english || '',
+    }));
   } catch (err) {
     console.warn('[Supabase] Exception fetching solution_tags:', err);
-    return null;
+    return [];
   }
 }
 
-async function persistSolutionTagsFallback(allTags: SolutionTag[]): Promise<boolean> {
-  if (!supabase) return false;
-  try {
-    const { error } = await supabase.from('submissions').upsert({
-      id: '__config_solution_tags__',
-      type: 'config',
-      temple_id: null,
-      temple_data: { solutionTags: allTags },
-      submitted_by: { id: 'system', name: 'System Config', role: 'admin' },
-      submitted_at: new Date().toISOString(),
-      status: 'config',
-    });
-    return !error;
-  } catch {
-    return false;
-  }
-}
-
-export async function insertSolutionTagToSupabase(tag: SolutionTag, allTags: SolutionTag[]): Promise<boolean> {
+export async function insertSolutionTagToSupabase(tag: SolutionTag): Promise<boolean> {
   if (!supabase) return false;
   try {
     const { error } = await supabase.from('solution_tags').upsert({
@@ -563,15 +510,20 @@ export async function insertSolutionTagToSupabase(tag: SolutionTag, allTags: Sol
       name_tamil: tag.nameTamil,
       name_english: tag.nameEnglish || '',
     });
-    if (!error) return true;
-  } catch {}
-  return persistSolutionTagsFallback(allTags);
+    if (error) {
+      console.error('[Supabase] Error inserting solution_tag:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.error('[Supabase] Exception inserting solution_tag:', err?.message || err);
+    return false;
+  }
 }
 
 export async function updateSolutionTagInSupabase(
   id: string,
-  updates: Partial<SolutionTag>,
-  allTags: SolutionTag[]
+  updates: Partial<SolutionTag>
 ): Promise<boolean> {
   if (!supabase) return false;
   try {
@@ -579,18 +531,30 @@ export async function updateSolutionTagInSupabase(
     if (updates.nameTamil !== undefined) payload.name_tamil = updates.nameTamil;
     if (updates.nameEnglish !== undefined) payload.name_english = updates.nameEnglish;
     const { error } = await supabase.from('solution_tags').update(payload).eq('id', id);
-    if (!error) return true;
-  } catch {}
-  return persistSolutionTagsFallback(allTags);
+    if (error) {
+      console.error('[Supabase] Error updating solution_tag:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.error('[Supabase] Exception updating solution_tag:', err?.message || err);
+    return false;
+  }
 }
 
-export async function deleteSolutionTagFromSupabase(id: string, allTags: SolutionTag[]): Promise<boolean> {
+export async function deleteSolutionTagFromSupabase(id: string): Promise<boolean> {
   if (!supabase) return false;
   try {
     const { error } = await supabase.from('solution_tags').delete().eq('id', id);
-    if (!error) return true;
-  } catch {}
-  return persistSolutionTagsFallback(allTags);
+    if (error) {
+      console.error('[Supabase] Error deleting solution_tag:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.error('[Supabase] Exception deleting solution_tag:', err?.message || err);
+    return false;
+  }
 }
 
 // ==========================================
@@ -664,9 +628,7 @@ export async function fetchSubmissionsFromSupabase(): Promise<TempleSubmission[]
       return [];
     }
 
-    return (data || [])
-      .filter((row: any) => row.id !== '__config_solution_tags__' && row.type !== 'config')
-      .map(normalizeSupabaseSubmission);
+    return (data || []).map(normalizeSupabaseSubmission);
   } catch (err: any) {
     console.warn('[Supabase] Exception fetching submissions:', err);
     return [];

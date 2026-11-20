@@ -465,15 +465,13 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(filteredRes.body.data.some((t: any) => t.name === withoutNotesName)).toBe(false);
   });
 
-  it('provides starter problem tags via GET /api/solution-tags and supports POST/PUT/DELETE CRUD', async () => {
+  it('reads solution tags strictly from DB (no hardcoded seeds) and supports POST/PUT/DELETE CRUD', async () => {
     const getRes = await request(app).get('/api/solution-tags');
     expect(getRes.status).toBe(200);
     expect(getRes.body.success).toBe(true);
-    const tamilNames = getRes.body.data.map((t: any) => t.nameTamil);
-    expect(tamilNames).toContain('வீடு கட்ட தடை');
-    expect(tamilNames).toContain('நிலம் விற்க தடை');
+    expect(Array.isArray(getRes.body.data)).toBe(true);
 
-    // Create a custom problem tag
+    // Create a problem tag
     const createRes = await request(app)
       .post('/api/solution-tags')
       .send({
@@ -503,7 +501,7 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     expect(afterRes.body.data.some((t: any) => t.id === createdId)).toBe(false);
   });
 
-  it('persists temple.solutionTags inside submitted_by JSONB without un-migrated columns and via POST /api/temples', async () => {
+  it('keeps temples.submitted_by JSONB clean (stores links in temple_solution_tags) and handles POST /api/temples', async () => {
     const insertRow = buildSupabaseTempleRow({
       id: 'temple-sol-schema-1',
       name: 'Parthasarathy Solution Test Temple',
@@ -526,7 +524,7 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
     });
 
     expect('solution_tags' in insertRow).toBe(false);
-    expect(insertRow.submitted_by.solutionTags).toEqual(['veedu-katta-thadai', 'nilam-virka-thadai']);
+    expect('solutionTags' in insertRow.submitted_by).toBe(false);
     expect(insertRow.submitted_by.jothidarPaarvai).toBe(true);
 
     const updateRow = buildSupabaseTempleUpdateRow(
@@ -552,9 +550,7 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
       }
     );
     expect('solution_tags' in updateRow).toBe(false);
-    expect(updateRow.submitted_by.solutionTags).toEqual(['veedu-katta-thadai']);
-    expect(updateRow.submitted_by.jothidarPaarvai).toBe(true);
-    expect(updateRow.submitted_by.jothidarPaarvaiNotes).toBe('4,2 பாவ அதிகார பிரச்னை தீர');
+    expect('submitted_by' in updateRow).toBe(false);
 
     const postRes = await request(app)
       .post('/api/temples')
@@ -569,6 +565,7 @@ describe('Phase 1: Submission Review Route & Workflow Guard', () => {
       });
     expect(postRes.status).toBe(201);
     expect(postRes.body.data.solutionTags).toEqual(['veedu-katta-thadai', 'nilam-virka-thadai']);
+    await request(app).delete(`/api/temples/${postRes.body.data.id}`);
   });
 
   it('supports GET /api/solution-tags/search in any/all modes and cascades deleted tag removal across temples', async () => {

@@ -1,4 +1,4 @@
-import { Planet, Deity, SolutionTag, UserProfile, QuizQuestion } from '../types';
+import { Planet, Deity, UserProfile, QuizQuestion } from '../types';
 
 export const PLANETS: Planet[] = [
   { id: 'suri', nameTamil: 'சூரி', nameEnglish: 'Surya (Sun)', grahaLord: 'சூரிய பகவான்', color: '#f59e0b', day: 'ஞாயிறு (Sunday)', gemstone: 'மாணிக்கம் (Ruby)' },
@@ -21,11 +21,6 @@ export const DEITIES: Deity[] = [
   { id: 'pillaiyar', nameTamil: 'பிள்ளையார்', nameEnglish: 'Pillaiyar / Ganesha' },
   { id: 'bhairavar', nameTamil: 'பைரவர்', nameEnglish: 'Bhairavar' },
   { id: 'anjaneyar', nameTamil: 'ஆஞ்சநேயர்', nameEnglish: 'Anjaneyar / Hanuman' },
-];
-
-export const INITIAL_SOLUTION_TAGS: SolutionTag[] = [
-  { id: 'veedu-katta-thadai', nameTamil: 'வீடு கட்ட தடை', nameEnglish: 'Delay in building house' },
-  { id: 'nilam-virka-thadai', nameTamil: 'நிலம் விற்க தடை', nameEnglish: 'Delay in selling land' },
 ];
 
 export const STATES = [

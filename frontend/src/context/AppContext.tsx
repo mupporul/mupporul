@@ -12,7 +12,7 @@ import {
 } from '../types';
 import { INITIAL_TEMPLES } from '../data/initialTemples';
 import { INITIAL_SUBMISSIONS } from '../data/initialSubmissions';
-import { INITIAL_USERS, DEITIES, INITIAL_SOLUTION_TAGS } from '../data/constants';
+import { INITIAL_USERS, DEITIES } from '../data/constants';
 
 import { api } from '../services/api';
 
@@ -209,21 +209,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEITIES;
   });
 
-  // Solution Tags (தீர்வு குறிச்சொற்கள்) state with starter fallback
-  const [solutionTags, setSolutionTags] = useState<SolutionTag[]>(() => {
-    try {
-      const saved = localStorage.getItem('mupporul_solution_tags_v1');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load solution tags from localStorage', e);
-    }
-    return INITIAL_SOLUTION_TAGS;
-  });
+  // Solution Tags (தீர்வு குறிச்சொற்கள்) - strictly sourced from Database only
+  const [solutionTags, setSolutionTags] = useState<SolutionTag[]>([]);
 
   // Active Current User (Default: Admin Murugan)
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
@@ -371,10 +358,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
         setSolutionTags(remoteSolutionTags.value);
-        try {
-          localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(remoteSolutionTags.value));
-        } catch {}
       }
+      try {
+        localStorage.removeItem('mupporul_solution_tags_v1');
+      } catch {}
     } catch (e) {
       console.warn('[AppContext] Failed to refresh fresh data:', e);
     }
@@ -482,10 +469,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
           setSolutionTags(remoteSolutionTags.value);
-          try {
-            localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(remoteSolutionTags.value));
-          } catch {}
         }
+        try {
+          localStorage.removeItem('mupporul_solution_tags_v1');
+        } catch {}
         return true;
       } else {
         setBackendStatus('offline');
@@ -792,12 +779,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActionLoadingText('குறிச்சொல் சேமிக்கப்படுகிறது...');
     try {
-      const next = [...solutionTags, newTag];
-      setSolutionTags(next);
-      try {
-        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
-      } catch {}
-
       const created = await api.createSolutionTag(newTag);
       await refreshFreshData();
       return {
@@ -806,7 +787,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message: `"${nameTamil}" சேர்க்கப்பட்டது!`,
       };
     } catch (e: any) {
-      return { success: false, message: e.message || 'Failed to create tag on backend.' };
+      return { success: false, message: e.message || 'Failed to create tag on database.' };
     } finally {
       setActionLoadingText(null);
     }
@@ -837,11 +818,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         nameTamil: nextTamil || existing.nameTamil,
         nameEnglish: updates.nameEnglish !== undefined ? updates.nameEnglish.trim() : existing.nameEnglish,
       };
-      const next = solutionTags.map(t => (t.id === id ? updatedTag : t));
-      setSolutionTags(next);
-      try {
-        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
-      } catch {}
 
       const res = await api.updateSolutionTag(id, {
         nameTamil: updatedTag.nameTamil,
@@ -854,7 +830,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message: `"${updatedTag.nameTamil}" புதுப்பிக்கப்பட்டது!`,
       };
     } catch (e: any) {
-      return { success: false, message: e.message || 'Failed to update tag on backend.' };
+      return { success: false, message: e.message || 'Failed to update tag on database.' };
     } finally {
       setActionLoadingText(null);
     }
@@ -872,19 +848,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActionLoadingText('குறிச்சொல் நீக்கப்படுகிறது...');
     try {
-      const next = solutionTags.filter(t => t.id !== id);
-      setSolutionTags(next);
-      setTemples(prev =>
-        prev.map(t =>
-          Array.isArray(t.solutionTags) && t.solutionTags.includes(id)
-            ? { ...t, solutionTags: t.solutionTags.filter(tagId => tagId !== id) }
-            : t
-        )
-      );
-      try {
-        localStorage.setItem('mupporul_solution_tags_v1', JSON.stringify(next));
-      } catch {}
-
       await api.deleteSolutionTag(id);
       await refreshFreshData();
       return {
@@ -892,7 +855,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message: `"${target.nameTamil}" நீக்கப்பட்டது.`,
       };
     } catch (e: any) {
-      return { success: false, message: e.message || 'Failed to delete tag on backend.' };
+      return { success: false, message: e.message || 'Failed to delete tag on database.' };
     } finally {
       setActionLoadingText(null);
     }
@@ -1498,8 +1461,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('mupporul_submissions_v2');
     localStorage.removeItem('mupporul_users_v2');
     localStorage.removeItem('mupporul_current_user_id');
+    localStorage.removeItem('mupporul_solution_tags_v1');
     setTemples([]);
     setSubmissions([]);
+    setSolutionTags([]);
     setUsers(INITIAL_USERS);
     setCurrentUserId('user-admin');
     setFilters(initialFilters);

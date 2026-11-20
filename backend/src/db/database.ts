@@ -179,9 +179,9 @@ export class Database {
           if (!Array.isArray(parsed.deities) || parsed.deities.length === 0) {
             parsed.deities = [...INITIAL_DEITIES];
           }
-          // Ensure solutionTags array is initialized with starter tags if missing
+          // Ensure solutionTags array is present (sourced strictly from DB, never hardcoded)
           if (!Array.isArray(parsed.solutionTags)) {
-            parsed.solutionTags = [...INITIAL_SOLUTION_TAGS];
+            parsed.solutionTags = [];
           }
           return parsed;
         }
@@ -198,7 +198,7 @@ export class Database {
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
       deities: [...INITIAL_DEITIES],
-      solutionTags: [...INITIAL_SOLUTION_TAGS],
+      solutionTags: [],
     };
 
     this.saveData(defaultData);
@@ -877,8 +877,7 @@ export class Database {
   // ==========================================
   public getSolutionTags(): SolutionTag[] {
     if (!Array.isArray(this.data.solutionTags)) {
-      this.data.solutionTags = [...INITIAL_SOLUTION_TAGS];
-      this.saveData();
+      this.data.solutionTags = [];
     }
     return this.data.solutionTags;
   }
@@ -903,7 +902,7 @@ export class Database {
       this.data.solutionTags = existing;
       this.saveData();
       if (isSupabaseConfigured) {
-        this.trackSupabaseWrite(insertSolutionTagToSupabase(existing[idx], existing), 'Upsert solution tag');
+        this.trackSupabaseWrite(insertSolutionTagToSupabase(existing[idx]), 'Upsert solution tag');
       }
       return existing[idx];
     }
@@ -913,7 +912,7 @@ export class Database {
     this.saveData();
 
     if (isSupabaseConfigured) {
-      this.trackSupabaseWrite(insertSolutionTagToSupabase(newTag, existing), 'Insert solution tag');
+      this.trackSupabaseWrite(insertSolutionTagToSupabase(newTag), 'Insert solution tag');
     }
     return newTag;
   }
@@ -933,7 +932,7 @@ export class Database {
     this.saveData();
 
     if (isSupabaseConfigured) {
-      this.trackSupabaseWrite(updateSolutionTagInSupabase(id, updates, existing), 'Update solution tag');
+      this.trackSupabaseWrite(updateSolutionTagInSupabase(id, updates), 'Update solution tag');
     }
     return tag;
   }
@@ -947,20 +946,13 @@ export class Database {
       // Mirror ON DELETE CASCADE: remove deleted tag ID from assigned temples cleanly
       for (const temple of this.data.temples) {
         if (Array.isArray(temple.solutionTags) && temple.solutionTags.includes(id)) {
-          const filtered = temple.solutionTags.filter(tagId => tagId !== id);
-          temple.solutionTags = filtered;
-          if (isSupabaseConfigured) {
-            this.trackSupabaseWrite(
-              updateTempleInSupabase(temple.id, { solutionTags: filtered }, temple),
-              'Cascade remove deleted solution tag from temple'
-            );
-          }
+          temple.solutionTags = temple.solutionTags.filter(tagId => tagId !== id);
         }
       }
 
       this.saveData();
       if (isSupabaseConfigured) {
-        this.trackSupabaseWrite(deleteSolutionTagFromSupabase(id, next), 'Delete solution tag');
+        this.trackSupabaseWrite(deleteSolutionTagFromSupabase(id), 'Delete solution tag');
       }
       return true;
     }
@@ -1064,7 +1056,7 @@ export class Database {
       submissions: [...INITIAL_SUBMISSIONS],
       users: [...INITIAL_USERS],
       deities: [...INITIAL_DEITIES],
-      solutionTags: [...INITIAL_SOLUTION_TAGS],
+      solutionTags: [],
     };
     this.saveData();
   }
