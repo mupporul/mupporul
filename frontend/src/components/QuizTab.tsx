@@ -20,6 +20,7 @@ import { Temple } from '../types';
 
 // Canonical Tamil Navagraha order
 const CANONICAL_PLANET_ORDER = ['suri', 'san', 'sev', 'puth', 'guru', 'suk', 'sani', 'rahu', 'kethu'];
+const VALID_QUIZ_PLANET_SET = new Set(CANONICAL_PLANET_ORDER);
 
 interface QuestionHistoryItem {
   templeId: string;
@@ -36,7 +37,16 @@ interface QuestionHistoryItem {
 export const QuizTab: React.FC = () => {
   const { temples, setActiveTab, openDetailModal, isMobileFrame, deities } = useApp();
 
-  // Pick up to 10 randomized temples on the fly from the live temples database
+  // Only include temples that have at least 1 valid Navagraha planet assigned
+  const eligibleTemples = useMemo(
+    () =>
+      (temples || []).filter(
+        t => Array.isArray(t.planets) && t.planets.some(p => VALID_QUIZ_PLANET_SET.has(p))
+      ),
+    [temples]
+  );
+
+  // Pick up to 10 randomized temples on the fly from eligible planet-tagged temples
   const [quizTemples, setQuizTemples] = useState<Temple[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
@@ -47,12 +57,12 @@ export const QuizTab: React.FC = () => {
 
   // Initialize or reshuffle quiz temples (max 10 random on the fly)
   const initializeQuiz = () => {
-    if (!temples || temples.length === 0) {
+    if (eligibleTemples.length === 0) {
       setQuizTemples([]);
       return;
     }
     // Random shuffle
-    const shuffled = [...temples].sort(() => Math.random() - 0.5);
+    const shuffled = [...eligibleTemples].sort(() => Math.random() - 0.5);
     // Take all if <= 10, or randomly pick 10
     const selected = shuffled.slice(0, 10);
     setQuizTemples(selected);
@@ -66,10 +76,12 @@ export const QuizTab: React.FC = () => {
 
   useEffect(() => {
     initializeQuiz();
-  }, [temples]);
+  }, [eligibleTemples]);
 
   const currentTemple: Temple | undefined = quizTemples[currentIndex];
-  const targetPlanets: string[] = currentTemple?.planets || [];
+  const targetPlanets: string[] = (currentTemple?.planets || []).filter(p =>
+    VALID_QUIZ_PLANET_SET.has(p)
+  );
 
   // Sort canonical planets for display
   const orderedPlanets = useMemo(() => {
@@ -160,8 +172,8 @@ export const QuizTab: React.FC = () => {
     }
   };
 
-  // 1. EMPTY STATE IF NO TEMPLES IN CATALOG
-  if (temples.length === 0) {
+  // 1. EMPTY STATE IF NO PLANET-TAGGED TEMPLES IN CATALOG
+  if (eligibleTemples.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-12 text-center space-y-5">
         <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
@@ -169,10 +181,14 @@ export const QuizTab: React.FC = () => {
         </div>
         <div className="space-y-1.5">
           <h2 className="text-xl font-bold text-gray-100">
-            No Temples in Database Yet
+            {temples.length === 0
+              ? 'No Temples in Database Yet'
+              : 'No Planet-Tagged Temples Available'}
           </h2>
           <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-            The quiz generates questions dynamically from the temples stored in your catalog. Please add your first temple to start the Navagraha quiz!
+            {temples.length === 0
+              ? 'The quiz generates questions dynamically from the temples stored in your catalog. Please add your first temple to start the Navagraha quiz!'
+              : 'Only temples linked with one or more Navagraha planets appear in the quiz. Assign planets to a temple to play!'}
           </p>
         </div>
         <button

@@ -7,6 +7,7 @@ import { BottomNav } from '../frontend/src/components/BottomNav';
 import { Header } from '../frontend/src/components/Header';
 import { NaamaVilakkamTab } from '../frontend/src/components/NaamaVilakkamTab';
 import { AddEditNaamaModal } from '../frontend/src/components/AddEditNaamaModal';
+import { QuizTab } from '../frontend/src/components/QuizTab';
 import * as AppContextModule from '../frontend/src/context/AppContext';
 import { NaamaVilakkamEntry } from '../frontend/src/types';
 
@@ -300,5 +301,65 @@ describe('Phase 4 UI: நாம விளக்கம் Tab, Role Permissions &
         notes: 'சிறப்பு குறிப்பு',
       });
     });
+  });
+
+  it('excludes temples without planets from QuizTab and shows empty state when none have planets', () => {
+    const planetTemple = {
+      id: 'temple-with-planet',
+      name: 'Vayalur Murugan Temple',
+      location: 'Tiruchirappalli',
+      state: 'Tamil Nadu',
+      planets: ['sev'],
+      deity: 'murugan',
+      significance: 'செவ்வாய் பரிகார தலம்',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '',
+      createdAt: '2026-11-20T00:00:00Z',
+      updatedAt: '2026-11-20T00:00:00Z',
+      viewsCount: 0,
+    };
+    const noPlanetTemple = {
+      id: 'temple-no-planet',
+      name: 'Parthasarathy Temple',
+      location: 'Triplicane, Chennai',
+      state: 'Tamil Nadu',
+      planets: [],
+      deity: 'vishnu',
+      significance: 'Divya Desam',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '',
+      createdAt: '2026-11-20T00:00:00Z',
+      updatedAt: '2026-11-20T00:00:00Z',
+      viewsCount: 0,
+    };
+
+    const quizBaseCtx = {
+      ...baseMockContext,
+      deities: [],
+      openDetailModal: vi.fn(),
+    };
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...quizBaseCtx,
+      temples: [noPlanetTemple, planetTemple],
+    } as any);
+
+    const { rerender } = render(<QuizTab />);
+    expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
+    expect(screen.getByText('Vayalur Murugan Temple')).toBeInTheDocument();
+    expect(screen.queryByText('Parthasarathy Temple')).not.toBeInTheDocument();
+
+    // If only planetless temples exist, show empty state instead of unwinnable quiz
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...quizBaseCtx,
+      temples: [noPlanetTemple],
+    } as any);
+
+    rerender(<QuizTab />);
+    expect(screen.getByText('No Planet-Tagged Temples Available')).toBeInTheDocument();
   });
 });
