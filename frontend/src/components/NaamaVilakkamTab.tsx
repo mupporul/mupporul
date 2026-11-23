@@ -213,7 +213,7 @@ export const NaamaVilakkamTab: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="நாமத்தைத் தட்டச்சு செய்க — கிரகச் சேர்க்கையைக் காண..."
+            placeholder="நாமம் தேடுக — கிரகச் சேர்க்கை காண..."
             aria-label="நாமத்தைத் தட்டச்சு செய்க"
             className="w-full min-h-[44px] pl-10 pr-11 py-2 rounded-xl bg-[#151828] border border-[#282d47] focus:border-[#f5a623] focus:outline-none text-sm text-gray-100 font-tamil placeholder:text-gray-400"
           />

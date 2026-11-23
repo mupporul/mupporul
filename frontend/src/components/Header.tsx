@@ -24,10 +24,12 @@ export const Header: React.FC = () => {
       filters.jothidarPaarvaiOnly,
     ].filter(Boolean).length;
 
+  const showTemplesSearchRow = activeTab !== 'solution' && activeTab !== 'naama_vilakkam';
+
   return (
     <header className="w-full px-4 pt-3 pb-3 border-b border-[#1f2233]/70">
       {/* Top Row: Gopuram Logo + App Name + User Avatar */}
-      <div className="flex items-center justify-between gap-3 mb-3">
+      <div className={`flex items-center justify-between gap-3 ${showTemplesSearchRow ? 'mb-3' : ''}`}>
         {/* Logo and Brand */}
         <div 
           onClick={() => setActiveTab('temples')}
@@ -76,8 +78,8 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Search Bar + பாவ/ராசி தொடர்பு Checkbox + Filter Button (hidden on Solution tab) */}
-      {activeTab !== 'solution' && (
+      {/* Row 2: Search Bar + பாவ/ராசி தொடர்பு Checkbox + Filter Button (hidden on Solution & Naama Vilakkam tabs) */}
+      {showTemplesSearchRow && (
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 mt-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[180px]">

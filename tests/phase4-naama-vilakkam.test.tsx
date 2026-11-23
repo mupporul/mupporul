@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import request from 'supertest';
 import { createBackendApp } from '../backend/src/app.js';
 import { BottomNav } from '../frontend/src/components/BottomNav';
+import { Header } from '../frontend/src/components/Header';
 import { NaamaVilakkamTab } from '../frontend/src/components/NaamaVilakkamTab';
 import { AddEditNaamaModal } from '../frontend/src/components/AddEditNaamaModal';
 import * as AppContextModule from '../frontend/src/context/AppContext';
@@ -160,6 +161,33 @@ describe('Phase 4 UI: நாம விளக்கம் Tab, Role Permissions &
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('hides Search temples and Filter bar in Header when activeTab is naama_vilakkam', () => {
+    const headerContext = {
+      ...baseMockContext,
+      filters: { searchQuery: '', planet: null, planets: [], deity: null, state: null, jothidarPaarvaiOnly: false },
+      setFilters: vi.fn(),
+      setIsFilterOpen: vi.fn(),
+      isLoggedIn: true,
+      openLoginModal: vi.fn(),
+    };
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...headerContext,
+      activeTab: 'temples',
+    } as any);
+    const { rerender } = render(<Header />);
+    expect(screen.getByPlaceholderText('Search temples...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Filter/i })).toBeInTheDocument();
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
+      ...headerContext,
+      activeTab: 'naama_vilakkam',
+    } as any);
+    rerender(<Header />);
+    expect(screen.queryByPlaceholderText('Search temples...')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Filter/i })).not.toBeInTheDocument();
   });
 
   it('places நாம விளக்கம் right after Quiz in BottomNav when enabled and hides it completely when turned OFF', () => {
