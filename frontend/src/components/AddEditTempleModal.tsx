@@ -1071,13 +1071,13 @@ export const AddEditTempleModal: React.FC = () => {
               )}
 
               {/* Photo Preview Card */}
-              {formData.imageUrl ? (
+              {formData.imageUrl && formData.imageUrl.trim() ? (
                 <div className={`mt-2 rounded-xl overflow-hidden border border-[#2d314b] bg-[#101220] ${
                   isMobileFrame ? 'w-full' : 'max-w-md'
                 }`}>
                   <div className="aspect-[16/9] w-full bg-black/40 overflow-hidden relative">
                     <img
-                      src={formData.imageUrl}
+                      src={formData.imageUrl.trim()}
                       alt="Temple preview"
                       onError={() => setImageError(true)}
                       className="w-full h-full object-cover"

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Temple, TempleSubmission, UserProfile, Role, Deity, SolutionTag } from '../types.js';
+import { Temple, TempleSubmission, UserProfile, Role, Deity, SolutionTag, NaamaVilakkamEntry } from '../types.js';
 import { INITIAL_TEMPLES, INITIAL_SUBMISSIONS, INITIAL_USERS, INITIAL_DEITIES, INITIAL_SOLUTION_TAGS } from './initialData.js';
 import {
   isSupabaseConfigured,
@@ -27,6 +27,11 @@ import {
   fetchSubmissionsFromSupabase,
   insertSubmissionToSupabase,
   updateSubmissionInSupabase,
+  fetchFeatureFlagFromSupabase,
+  upsertFeatureFlagToSupabase,
+  fetchNaamaVilakkamFromSupabase,
+  upsertNaamaVilakkamToSupabase,
+  deleteNaamaVilakkamFromSupabase,
 } from './supabaseClient.js';
 
 interface DatabaseSchema {
@@ -37,6 +42,10 @@ interface DatabaseSchema {
   users: UserProfile[];
   deities: Deity[];
   solutionTags?: SolutionTag[];
+  naamaVilakkam?: NaamaVilakkamEntry[];
+  featureFlags?: {
+    naamaVilakkamEnabled?: boolean;
+  };
 }
 
 export class Database {
@@ -96,12 +105,14 @@ export class Database {
 
     this.activeSyncPromise = (async () => {
       try {
-        const [supaTemples, supaUsers, supaDeities, supaSubmissions, supaSolutionTags] = await Promise.allSettled([
+        const [supaTemples, supaUsers, supaDeities, supaSubmissions, supaSolutionTags, supaNaama, supaNaamaFlag] = await Promise.allSettled([
           fetchTemplesFromSupabase(),
           fetchUsersFromSupabase(),
           fetchDeitiesFromSupabase(),
           fetchSubmissionsFromSupabase(),
           fetchSolutionTagsFromSupabase(),
+          fetchNaamaVilakkamFromSupabase(),
+          fetchFeatureFlagFromSupabase('naama_vilakkam'),
         ]);
 
         if (supaTemples.status === 'fulfilled' && Array.isArray(supaTemples.value)) {
@@ -120,6 +131,15 @@ export class Database {
         }
         if (supaSolutionTags.status === 'fulfilled' && Array.isArray(supaSolutionTags.value)) {
           this.data.solutionTags = supaSolutionTags.value;
+        }
+        if (supaNaama.status === 'fulfilled' && supaNaama.value?.available) {
+          this.data.naamaVilakkam = supaNaama.value.entries;
+        }
+        if (supaNaamaFlag.status === 'fulfilled' && supaNaamaFlag.value?.available && typeof supaNaamaFlag.value.enabled === 'boolean') {
+          this.data.featureFlags = {
+            ...(this.data.featureFlags || {}),
+            naamaVilakkamEnabled: supaNaamaFlag.value.enabled,
+          };
         }
         if (supaSubmissions.status === 'fulfilled' && Array.isArray(supaSubmissions.value)) {
           this.data.submissions = supaSubmissions.value.map(s => {
@@ -183,6 +203,14 @@ export class Database {
           if (!Array.isArray(parsed.solutionTags)) {
             parsed.solutionTags = [];
           }
+          if (!Array.isArray(parsed.naamaVilakkam)) {
+            parsed.naamaVilakkam = [];
+          }
+          if (!parsed.featureFlags || typeof parsed.featureFlags !== 'object') {
+            parsed.featureFlags = { naamaVilakkamEnabled: true };
+          } else if (typeof parsed.featureFlags.naamaVilakkamEnabled !== 'boolean') {
+            parsed.featureFlags.naamaVilakkamEnabled = true;
+          }
           return parsed;
         }
       }
@@ -199,6 +227,8 @@ export class Database {
       users: [...INITIAL_USERS],
       deities: [...INITIAL_DEITIES],
       solutionTags: [],
+      naamaVilakkam: [],
+      featureFlags: { naamaVilakkamEnabled: true },
     };
 
     this.saveData(defaultData);
@@ -1021,6 +1051,125 @@ export class Database {
   }
 
   // ==========================================
+  // STANDALONE நாம விளக்கம் (NAAMA VILAKKAM) & FEATURE FLAGS
+  // ==========================================
+  public getNaamaVilakkamEnabled(): boolean {
+    if (!this.data.featureFlags || typeof this.data.featureFlags.naamaVilakkamEnabled !== 'boolean') {
+      return true;
+    }
+    return this.data.featureFlags.naamaVilakkamEnabled;
+  }
+
+  public setNaamaVilakkamEnabled(enabled: boolean): boolean {
+    const cleanEnabled = Boolean(enabled);
+    this.data.featureFlags = {
+      ...(this.data.featureFlags || {}),
+      naamaVilakkamEnabled: cleanEnabled,
+    };
+    this.saveData();
+    if (isSupabaseConfigured) {
+      this.trackSupabaseWrite(
+        upsertFeatureFlagToSupabase('naama_vilakkam', cleanEnabled),
+        'Upsert naama_vilakkam feature flag'
+      );
+    }
+    return cleanEnabled;
+  }
+
+  public getNaamaVilakkamList(): NaamaVilakkamEntry[] {
+    if (!Array.isArray(this.data.naamaVilakkam)) {
+      this.data.naamaVilakkam = [];
+    }
+    return [...this.data.naamaVilakkam].sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+  }
+
+  public createNaamaVilakkam(input: {
+    nameTamil: string;
+    planets: string[];
+    notes?: string;
+    createdBy?: { id: string; name: string; role: Role };
+  }): NaamaVilakkamEntry {
+    if (!Array.isArray(this.data.naamaVilakkam)) {
+      this.data.naamaVilakkam = [];
+    }
+    const cleanPlanets = Array.from(
+      new Set((input.planets || []).filter(p => typeof p === 'string' && p.trim()))
+    );
+    const now = new Date().toISOString();
+    const entry: NaamaVilakkamEntry = {
+      id: `naama-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      nameTamil: input.nameTamil.trim(),
+      planets: cleanPlanets,
+      notes: (input.notes || '').trim(),
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.data.naamaVilakkam.unshift(entry);
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      this.trackSupabaseWrite(upsertNaamaVilakkamToSupabase(entry), 'Insert naama_vilakkam');
+    }
+    return entry;
+  }
+
+  public updateNaamaVilakkam(
+    id: string,
+    updates: { nameTamil?: string; planets?: string[]; notes?: string }
+  ): NaamaVilakkamEntry | null {
+    if (!Array.isArray(this.data.naamaVilakkam)) {
+      this.data.naamaVilakkam = [];
+    }
+    const index = this.data.naamaVilakkam.findIndex(item => item.id === id);
+    if (index === -1) return null;
+
+    const current = this.data.naamaVilakkam[index];
+    const cleanPlanets =
+      updates.planets !== undefined
+        ? Array.from(new Set(updates.planets.filter(p => typeof p === 'string' && p.trim())))
+        : current.planets;
+
+    const updated: NaamaVilakkamEntry = {
+      ...current,
+      nameTamil:
+        updates.nameTamil !== undefined && updates.nameTamil.trim()
+          ? updates.nameTamil.trim()
+          : current.nameTamil,
+      planets: cleanPlanets,
+      notes: updates.notes !== undefined ? updates.notes.trim() : current.notes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.data.naamaVilakkam[index] = updated;
+    this.saveData();
+
+    if (isSupabaseConfigured) {
+      this.trackSupabaseWrite(upsertNaamaVilakkamToSupabase(updated), 'Update naama_vilakkam');
+    }
+    return updated;
+  }
+
+  public deleteNaamaVilakkam(id: string): boolean {
+    if (!Array.isArray(this.data.naamaVilakkam)) {
+      this.data.naamaVilakkam = [];
+    }
+    const prevLen = this.data.naamaVilakkam.length;
+    this.data.naamaVilakkam = this.data.naamaVilakkam.filter(item => item.id !== id);
+    if (this.data.naamaVilakkam.length < prevLen) {
+      this.saveData();
+      if (isSupabaseConfigured) {
+        this.trackSupabaseWrite(deleteNaamaVilakkamFromSupabase(id), 'Delete naama_vilakkam');
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // ==========================================
   // ANALYTICS & STATS
   // ==========================================
   public getStats() {
@@ -1057,6 +1206,8 @@ export class Database {
       users: [...INITIAL_USERS],
       deities: [...INITIAL_DEITIES],
       solutionTags: [],
+      naamaVilakkam: this.data.naamaVilakkam || [],
+      featureFlags: this.data.featureFlags || { naamaVilakkamEnabled: true },
     };
     this.saveData();
   }

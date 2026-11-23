@@ -69,13 +69,25 @@ export const TempleCard: React.FC<TempleCardProps> = ({
       {/* Temple Banner Image with 3-dot action menu (menu lives outside overflow-hidden so items are never clipped) */}
       <div className="relative aspect-[16/9] w-full shrink-0 bg-[#10121d] rounded-t-2xl">
         <div className="absolute inset-0 overflow-hidden rounded-t-2xl">
-          <img
-            src={temple.imageUrl}
-            alt={temple.name}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 cursor-pointer"
-            loading="lazy"
-            onClick={() => openDetailModal(temple)}
-          />
+          {temple.imageUrl && temple.imageUrl.trim() ? (
+            <img
+              src={temple.imageUrl.trim()}
+              alt={temple.name}
+              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 cursor-pointer"
+              loading="lazy"
+              onClick={() => openDetailModal(temple)}
+            />
+          ) : (
+            <div
+              onClick={() => openDetailModal(temple)}
+              className="w-full h-full bg-gradient-to-br from-[#171a2b] via-[#131524] to-[#1e1b2e] flex flex-col items-center justify-center px-4 text-center cursor-pointer"
+            >
+              <span className="text-2xl text-amber-400/80 mb-1" aria-hidden="true">ॐ</span>
+              <span className="text-[11px] font-medium text-gray-400 font-tamil">
+                திருத்தலம்
+              </span>
+            </div>
+          )}
 
           {/* Gradient Overlay for contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#161825] via-transparent to-black/30 pointer-events-none" />

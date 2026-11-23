@@ -18,6 +18,7 @@ import {
   AlertCircle,
   FileCheck2,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES } from '../data/constants';
@@ -39,6 +40,9 @@ export const AdminAnalytics: React.FC = () => {
     resetToDefaultData,
     setActiveTab,
     deities,
+    naamaVilakkamEnabled,
+    toggleNaamaVilakkamFeature,
+    naamaVilakkamList,
   } = useApp();
 
   const [filterUserRole, setFilterUserRole] = useState<'all' | Role>('all');
@@ -207,6 +211,67 @@ export const AdminAnalytics: React.FC = () => {
           <span>{roleUpdatedMsg.text}</span>
         </div>
       )}
+
+      {/* Module Feature Toggle Control (Admin Only) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#141626] border border-[#2a2f4b] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-center shrink-0">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-100 font-tamil">
+                நாம விளக்கம் (Naama Vilakkam) — Feature Toggle
+              </h3>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
+                  naamaVilakkamEnabled
+                    ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40'
+                    : 'bg-gray-800 text-gray-400 border-gray-700'
+                }`}
+              >
+                {naamaVilakkamEnabled ? 'ENABLED' : 'TURNED OFF'}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Independent Tamil-only 9-planet name lookup screen ({naamaVilakkamList.length} entries in standalone DB). Turning this OFF hides the entire module from all users without touching Temples, Quiz, or User Roles.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {naamaVilakkamEnabled && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('naama_vilakkam')}
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#1b1f34] border border-[#2f3657] text-amber-300 hover:text-amber-200 text-xs font-semibold font-tamil whitespace-nowrap cursor-pointer"
+            >
+              நாம விளக்கம் திற
+            </button>
+          )}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={naamaVilakkamEnabled}
+            aria-label="Toggle Naama Vilakkam module"
+            onClick={async () => {
+              const res = await toggleNaamaVilakkamFeature(!naamaVilakkamEnabled);
+              setRoleUpdatedMsg({
+                type: res.success ? 'success' : 'error',
+                text: res.message || (res.enabled ? 'நாம விளக்கம் enabled.' : 'நாம விளக்கம் turned off.'),
+              });
+              setTimeout(() => setRoleUpdatedMsg(null), 4000);
+            }}
+            className={`min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+              naamaVilakkamEnabled
+                ? 'bg-rose-600/90 hover:bg-rose-500 text-white'
+                : 'bg-[#f5a623] hover:bg-[#e69818] text-black'
+            }`}
+          >
+            {naamaVilakkamEnabled ? 'Turn OFF Module' : 'Turn ON Module'}
+          </button>
+        </div>
+      </div>
 
       {/* 5 Key Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

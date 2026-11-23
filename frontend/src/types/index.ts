@@ -117,3 +117,18 @@ export interface QuizQuestion {
     reason: string;
   }[];
 }
+
+export interface NaamaVilakkamEntry {
+  id: string;
+  nameTamil: string;
+  planets: string[];
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    name: string;
+    role: Role;
+  };
+}
+

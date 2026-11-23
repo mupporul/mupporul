@@ -9,6 +9,7 @@ import {
   SubmissionStatus,
   Deity,
   SolutionTag,
+  NaamaVilakkamEntry,
 } from '../types';
 import { INITIAL_TEMPLES } from '../data/initialTemples';
 import { INITIAL_SUBMISSIONS } from '../data/initialSubmissions';
@@ -16,13 +17,15 @@ import { INITIAL_USERS, DEITIES } from '../data/constants';
 
 import { api } from '../services/api';
 
+export type AppTab = 'temples' | 'solution' | 'review' | 'quiz' | 'naama_vilakkam' | 'profile' | 'analytics';
+
 interface AppContextType {
   temples: Temple[];
   submissions: TempleSubmission[];
   currentUser: UserProfile;
   users: UserProfile[];
   filters: FilterState;
-  activeTab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics';
+  activeTab: AppTab;
   selectedTempleForDetail: Temple | null;
   videoModalUrl: { url: string; title: string } | null;
   isFilterOpen: boolean;
@@ -77,9 +80,22 @@ interface AppContextType {
   updateSolutionTag: (id: string, updates: { nameTamil?: string; nameEnglish?: string }) => Promise<{ success: boolean; tag?: SolutionTag; message?: string }>;
   deleteSolutionTag: (id: string) => Promise<{ success: boolean; message?: string }>;
 
+  // Standalone நாம விளக்கம் (Naama Vilakkam) State & Feature Toggle
+  naamaVilakkamEnabled: boolean;
+  toggleNaamaVilakkamFeature: (enabled: boolean) => Promise<{ success: boolean; enabled: boolean; message?: string }>;
+  naamaVilakkamList: NaamaVilakkamEntry[];
+  isNaamaModalOpen: boolean;
+  naamaToEdit: NaamaVilakkamEntry | null;
+  openAddNaamaModal: () => void;
+  openEditNaamaModal: (entry: NaamaVilakkamEntry) => void;
+  closeNaamaModal: () => void;
+  createNaamaVilakkam: (data: { nameTamil: string; planets: string[]; notes?: string }) => Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }>;
+  updateNaamaVilakkam: (id: string, updates: { nameTamil: string; planets: string[]; notes?: string }) => Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }>;
+  deleteNaamaVilakkam: (id: string) => Promise<{ success: boolean; message?: string }>;
+
   // Actions
-  setActiveTab: (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => void;
-  switchTab: (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => Promise<void>;
+  setActiveTab: (tab: AppTab) => void;
+  switchTab: (tab: AppTab) => Promise<void>;
   refreshFreshData: () => Promise<void>;
   isTabLoading: boolean;
   actionLoadingText: string | null;
@@ -212,6 +228,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Solution Tags (தீர்வு குறிச்சொற்கள்) - strictly sourced from Database only
   const [solutionTags, setSolutionTags] = useState<SolutionTag[]>([]);
 
+  // Standalone நாம விளக்கம் (Naama Vilakkam) - isolated state & Admin feature toggle
+  const [naamaVilakkamEnabled, setNaamaVilakkamEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('mupporul_feature_naama_vilakkam');
+      if (saved === 'false') return false;
+      if (saved === 'true') return true;
+    } catch {}
+    return true;
+  });
+  const [naamaVilakkamList, setNaamaVilakkamList] = useState<NaamaVilakkamEntry[]>([]);
+  const [isNaamaModalOpen, setIsNaamaModalOpen] = useState<boolean>(false);
+  const [naamaToEdit, setNaamaToEdit] = useState<NaamaVilakkamEntry | null>(null);
+
   // Active Current User (Default: Admin Murugan)
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
@@ -235,7 +264,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   });
-  const [activeTab, setActiveTabState] = useState<'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics'>('temples');
+  const [activeTab, setActiveTabState] = useState<AppTab>('temples');
   const [isTabLoading, setIsTabLoading] = useState<boolean>(false);
   const [actionLoadingText, setActionLoadingText] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -255,12 +284,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Always fetch fresh data directly from Backend / Supabase API
   const refreshFreshData = async () => {
     try {
-      const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags] = await Promise.allSettled([
+      const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags, remoteNaama] = await Promise.allSettled([
         api.getTemples(),
         api.getSubmissions(),
         api.getUsers(),
         api.getDeities(),
         api.getSolutionTags(),
+        api.getNaamaVilakkam(),
       ]);
 
       let cleanedTemples: Temple[] = [];
@@ -359,6 +389,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
         setSolutionTags(remoteSolutionTags.value);
       }
+      if (remoteNaama.status === 'fulfilled' && remoteNaama.value) {
+        setNaamaVilakkamList(Array.isArray(remoteNaama.value.data) ? remoteNaama.value.data : []);
+        if (typeof remoteNaama.value.enabled === 'boolean') {
+          setNaamaVilakkamEnabled(remoteNaama.value.enabled);
+          try {
+            localStorage.setItem('mupporul_feature_naama_vilakkam', String(remoteNaama.value.enabled));
+          } catch {}
+        }
+      }
       try {
         localStorage.removeItem('mupporul_solution_tags_v1');
       } catch {}
@@ -368,7 +407,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Switch tabs with Tamil Nadu Temple Tower loading spinner & fresh API data
-  const switchTab = async (newTab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+  const switchTab = async (newTab: AppTab) => {
     setIsTabLoading(true);
     setActiveTabState(newTab);
     try {
@@ -381,7 +420,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const setActiveTab = (tab: 'temples' | 'solution' | 'review' | 'quiz' | 'profile' | 'analytics') => {
+  const setActiveTab = (tab: AppTab) => {
     switchTab(tab);
   };
 
@@ -420,12 +459,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const health = await api.checkHealth();
       if (health) {
         setBackendStatus('connected');
-        const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags] = await Promise.allSettled([
+        const [remoteTemples, remoteSubmissions, remoteUsers, remoteDeities, remoteSolutionTags, remoteNaama] = await Promise.allSettled([
           api.getTemples(),
           api.getSubmissions(),
           api.getUsers(),
           api.getDeities(),
           api.getSolutionTags(),
+          api.getNaamaVilakkam(),
         ]);
         if (remoteTemples.status === 'fulfilled' && Array.isArray(remoteTemples.value)) {
           const cleanedTemples = remoteTemples.value.map((t: Temple) => {
@@ -469,6 +509,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (remoteSolutionTags.status === 'fulfilled' && Array.isArray(remoteSolutionTags.value)) {
           setSolutionTags(remoteSolutionTags.value);
+        }
+        if (remoteNaama.status === 'fulfilled' && remoteNaama.value) {
+          setNaamaVilakkamList(Array.isArray(remoteNaama.value.data) ? remoteNaama.value.data : []);
+          if (typeof remoteNaama.value.enabled === 'boolean') {
+            setNaamaVilakkamEnabled(remoteNaama.value.enabled);
+            try {
+              localStorage.setItem('mupporul_feature_naama_vilakkam', String(remoteNaama.value.enabled));
+            } catch {}
+          }
         }
         try {
           localStorage.removeItem('mupporul_solution_tags_v1');
@@ -856,6 +905,160 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     } catch (e: any) {
       return { success: false, message: e.message || 'Failed to delete tag on database.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  // Standalone நாம விளக்கம் (Naama Vilakkam) & Admin Feature Toggle Handlers
+  const toggleNaamaVilakkamFeature = async (
+    enabled: boolean
+  ): Promise<{ success: boolean; enabled: boolean; message?: string }> => {
+    if (currentUser.role !== 'admin') {
+      return {
+        success: false,
+        enabled: naamaVilakkamEnabled,
+        message: 'Unauthorized: Only administrators can toggle modules.',
+      };
+    }
+
+    const previous = naamaVilakkamEnabled;
+    setNaamaVilakkamEnabled(enabled);
+    try {
+      localStorage.setItem('mupporul_feature_naama_vilakkam', String(enabled));
+    } catch {}
+
+    setActionLoadingText(enabled ? 'Enabling நாம விளக்கம்...' : 'Turning off நாம விளக்கம்...');
+    try {
+      const confirmed = await api.setNaamaVilakkamEnabled(enabled, currentUser.role);
+      setNaamaVilakkamEnabled(confirmed);
+      try {
+        localStorage.setItem('mupporul_feature_naama_vilakkam', String(confirmed));
+      } catch {}
+      return {
+        success: true,
+        enabled: confirmed,
+        message: confirmed
+          ? 'நாம விளக்கம் tab is now ENABLED for all roles.'
+          : 'நாம விளக்கம் tab is now TURNED OFF cleanly without affecting live Temples, Quiz, or Roles.',
+      };
+    } catch (e: any) {
+      // Revert if backend explicitly rejects
+      setNaamaVilakkamEnabled(previous);
+      try {
+        localStorage.setItem('mupporul_feature_naama_vilakkam', String(previous));
+      } catch {}
+      return {
+        success: false,
+        enabled: previous,
+        message: e?.message || 'Failed to update Naama Vilakkam toggle.',
+      };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const openAddNaamaModal = () => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') return;
+    setNaamaToEdit(null);
+    setIsNaamaModalOpen(true);
+  };
+
+  const openEditNaamaModal = (entry: NaamaVilakkamEntry) => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') return;
+    setNaamaToEdit(entry);
+    setIsNaamaModalOpen(true);
+  };
+
+  const closeNaamaModal = () => {
+    setIsNaamaModalOpen(false);
+    setNaamaToEdit(null);
+  };
+
+  const createNaamaVilakkam = async (data: {
+    nameTamil: string;
+    planets: string[];
+    notes?: string;
+  }): Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }> => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') {
+      return { success: false, message: 'Unauthorized: Contributors and Admins only.' };
+    }
+    const cleanName = data.nameTamil?.trim();
+    if (!cleanName) {
+      return { success: false, message: 'நாமம் (தமிழ்) அவசியம்.' };
+    }
+    if (!Array.isArray(data.planets) || data.planets.length === 0) {
+      return { success: false, message: 'குறைந்தது ஒரு கிரகத்தைத் தேர்ந்தெடுக்கவும்.' };
+    }
+
+    setActionLoadingText('நாம விளக்கம் சேமிக்கப்படுகிறது...');
+    try {
+      const created = await api.createNaamaVilakkam({
+        nameTamil: cleanName,
+        planets: data.planets,
+        notes: data.notes?.trim() || '',
+        createdBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role,
+        },
+        actorRole: currentUser.role,
+      });
+      await refreshFreshData();
+      return { success: true, entry: created, message: `"${cleanName}" சேர்க்கப்பட்டது!` };
+    } catch (e: any) {
+      return { success: false, message: e?.message || 'Failed to save Naama Vilakkam entry.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const updateNaamaVilakkam = async (
+    id: string,
+    updates: { nameTamil: string; planets: string[]; notes?: string }
+  ): Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }> => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') {
+      return { success: false, message: 'Unauthorized: Contributors and Admins only.' };
+    }
+    const cleanName = updates.nameTamil?.trim();
+    if (!cleanName) {
+      return { success: false, message: 'நாமம் (தமிழ்) காலியாக இருக்கக் கூடாது.' };
+    }
+    if (!Array.isArray(updates.planets) || updates.planets.length === 0) {
+      return { success: false, message: 'குறைந்தது ஒரு கிரகத்தைத் தேர்ந்தெடுக்கவும்.' };
+    }
+
+    setActionLoadingText('நாம விளக்கம் புதுப்பிக்கப்படுகிறது...');
+    try {
+      const updated = await api.updateNaamaVilakkam(id, {
+        nameTamil: cleanName,
+        planets: updates.planets,
+        notes: updates.notes?.trim() || '',
+        actorRole: currentUser.role,
+      });
+      await refreshFreshData();
+      return { success: true, entry: updated, message: `"${cleanName}" புதுப்பிக்கப்பட்டது!` };
+    } catch (e: any) {
+      return { success: false, message: e?.message || 'Failed to update Naama Vilakkam entry.' };
+    } finally {
+      setActionLoadingText(null);
+    }
+  };
+
+  const deleteNaamaVilakkam = async (
+    id: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') {
+      return { success: false, message: 'Unauthorized: Contributors and Admins only.' };
+    }
+
+    setActionLoadingText('நாம விளக்கம் நீக்கப்படுகிறது...');
+    try {
+      await api.deleteNaamaVilakkam(id, currentUser.role);
+      await refreshFreshData();
+      return { success: true, message: 'நாம விளக்கம் நீக்கப்பட்டது.' };
+    } catch (e: any) {
+      return { success: false, message: e?.message || 'Failed to delete Naama Vilakkam entry.' };
     } finally {
       setActionLoadingText(null);
     }
@@ -1508,6 +1711,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createSolutionTag,
         updateSolutionTag,
         deleteSolutionTag,
+        naamaVilakkamEnabled,
+        toggleNaamaVilakkamFeature,
+        naamaVilakkamList,
+        isNaamaModalOpen,
+        naamaToEdit,
+        openAddNaamaModal,
+        openEditNaamaModal,
+        closeNaamaModal,
+        createNaamaVilakkam,
+        updateNaamaVilakkam,
+        deleteNaamaVilakkam,
         templeToEdit,
         isLoading,
         setIsLoading,

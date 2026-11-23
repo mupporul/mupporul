@@ -406,10 +406,10 @@ export const QuizTab: React.FC = () => {
       {/* Temple Showcase Card */}
       <div className="rounded-3xl bg-[#141624] border border-[#272b44] shadow-xl overflow-hidden space-y-0">
         {/* Temple Photo if available */}
-        {currentTemple.imageUrl ? (
+        {currentTemple.imageUrl && currentTemple.imageUrl.trim() ? (
           <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full bg-black/40 overflow-hidden">
             <img
-              src={currentTemple.imageUrl}
+              src={currentTemple.imageUrl.trim()}
               alt={currentTemple.name}
               className="w-full h-full object-cover"
             />

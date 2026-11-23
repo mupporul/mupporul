@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Lightbulb, ClipboardList, HelpCircle, User, BarChart3, PlusCircle } from 'lucide-react';
+import { Home, Lightbulb, ClipboardList, HelpCircle, BookOpen, User, BarChart3, PlusCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const BottomNav: React.FC = () => {
@@ -9,6 +9,7 @@ export const BottomNav: React.FC = () => {
     submissions,
     currentUser,
     openAddModal,
+    naamaVilakkamEnabled,
   } = useApp();
 
   const pendingReviewCount = submissions.filter(s => s.status === 'pending').length;
@@ -92,6 +93,25 @@ export const BottomNav: React.FC = () => {
             <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
           )}
         </button>
+
+        {/* நாம விளக்கம் Tab (Controlled via Admin Feature Toggle) */}
+        {naamaVilakkamEnabled && (
+          <button
+            onClick={() => setActiveTab('naama_vilakkam')}
+            className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer relative ${
+              activeTab === 'naama_vilakkam' ? 'text-[#f5a623]' : 'text-gray-400 hover:text-gray-200'
+            }`}
+            title="நாம விளக்கம்"
+          >
+            <BookOpen className="w-5 h-5 mb-0.5 shrink-0" />
+            <span className="text-[9px] sm:text-[11px] font-semibold font-tamil tracking-tight truncate max-w-full text-center">
+              நாம விளக்கம்
+            </span>
+            {activeTab === 'naama_vilakkam' && (
+              <span className="w-6 h-0.5 bg-[#f5a623] rounded-full absolute bottom-0" />
+            )}
+          </button>
+        )}
 
         {/* Profile Tab */}
         <button

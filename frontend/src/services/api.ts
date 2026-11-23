@@ -1,4 +1,4 @@
-import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag } from '../types';
+import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag, NaamaVilakkamEntry } from '../types';
 
 const DEFAULT_REMOTE_RENDER_API = 'https://mupporul-backend.onrender.com/api';
 
@@ -433,6 +433,70 @@ class ApiService {
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const json = await res.json();
     return json.data || [];
+  }
+
+  // Standalone நாம விளக்கம் (Naama Vilakkam) & Feature Toggle
+  async getNaamaVilakkam(): Promise<{ enabled: boolean; data: NaamaVilakkamEntry[] }> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/naama-vilakkam`);
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const json = await res.json();
+    return {
+      enabled: typeof json.enabled === 'boolean' ? json.enabled : true,
+      data: Array.isArray(json.data) ? json.data : [],
+    };
+  }
+
+  async setNaamaVilakkamEnabled(enabled: boolean, actorRole?: string): Promise<boolean> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/naama-vilakkam/feature-toggle`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, actorRole }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update Naama Vilakkam feature toggle');
+    return Boolean(json.enabled);
+  }
+
+  async createNaamaVilakkam(data: {
+    nameTamil: string;
+    planets: string[];
+    notes?: string;
+    createdBy?: { id: string; name: string; role: string };
+    actorRole?: string;
+  }): Promise<NaamaVilakkamEntry> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/naama-vilakkam`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to add Naama Vilakkam');
+    return json.data;
+  }
+
+  async updateNaamaVilakkam(
+    id: string,
+    updates: { nameTamil?: string; planets?: string[]; notes?: string; actorRole?: string }
+  ): Promise<NaamaVilakkamEntry> {
+    const res = await this.fetchWithAntiCache(`${this.baseUrl}/naama-vilakkam/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update Naama Vilakkam');
+    return json.data;
+  }
+
+  async deleteNaamaVilakkam(id: string, actorRole?: string): Promise<boolean> {
+    const url = new URL(`${this.baseUrl}/naama-vilakkam/${encodeURIComponent(id)}`, window.location.origin);
+    if (actorRole) url.searchParams.set('actorRole', actorRole);
+    const res = await this.fetchWithAntiCache(url.toString(), {
+      method: 'DELETE',
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to delete Naama Vilakkam');
+    return true;
   }
 
   // Upload Image to Supabase Storage

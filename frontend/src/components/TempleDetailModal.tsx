@@ -195,11 +195,20 @@ export const TempleDetailModal: React.FC = () => {
 
           {/* Temple Hero Banner: Kept on Fluid Wide desktop, hidden on Mobile viewport to save massive space */}
           <div className={`${isMobileFrame ? 'hidden' : 'hidden md:block'} relative aspect-[16/9] w-full rounded-2xl bg-[#0d0f18] overflow-hidden border border-[#23273c]`}>
-            <img
-              src={temple.imageUrl}
-              alt={temple.name}
-              className="w-full h-full object-cover"
-            />
+            {temple.imageUrl && temple.imageUrl.trim() ? (
+              <img
+                src={temple.imageUrl.trim()}
+                alt={temple.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#171a2b] via-[#131524] to-[#1e1b2e] flex flex-col items-center justify-center px-4 text-center">
+                <span className="text-3xl text-amber-400/80 mb-1" aria-hidden="true">ॐ</span>
+                <span className="text-xs font-medium text-gray-400 font-tamil">
+                  திருத்தலம்
+                </span>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#141624] via-transparent to-black/30 pointer-events-none" />
 
             {/* Floating Video Watch Button */}

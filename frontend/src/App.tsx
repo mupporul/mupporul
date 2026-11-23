@@ -6,6 +6,8 @@ import { TemplesList } from './components/TemplesList';
 import { SolutionTab } from './components/SolutionTab';
 import { ReviewTab } from './components/ReviewTab';
 import { QuizTab } from './components/QuizTab';
+import { NaamaVilakkamTab } from './components/NaamaVilakkamTab';
+import { AddEditNaamaModal } from './components/AddEditNaamaModal';
 import { ProfileTab } from './components/ProfileTab';
 import { AdminAnalytics } from './components/AdminAnalytics';
 import { FilterModal } from './components/FilterModal';
@@ -20,7 +22,7 @@ import { BottomNav } from './components/BottomNav';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, setActiveTab, currentUser, isLoggedIn, isLoading, isTabLoading, actionLoadingText } = useApp();
+  const { activeTab, setActiveTab, currentUser, isLoggedIn, isLoading, isTabLoading, actionLoadingText, naamaVilakkamEnabled } = useApp();
   const isContributorOrAdmin = currentUser.role === 'contributor' || currentUser.role === 'admin';
 
   React.useEffect(() => {
@@ -28,8 +30,10 @@ const MainAppContent: React.FC = () => {
       setActiveTab('temples');
     } else if (activeTab === 'analytics' && currentUser.role !== 'admin') {
       setActiveTab('temples');
+    } else if (activeTab === 'naama_vilakkam' && !naamaVilakkamEnabled) {
+      setActiveTab('temples');
     }
-  }, [activeTab, currentUser.role, isContributorOrAdmin]);
+  }, [activeTab, currentUser.role, isContributorOrAdmin, naamaVilakkamEnabled]);
 
   if (isLoading) {
     return (
@@ -86,6 +90,9 @@ const MainAppContent: React.FC = () => {
                   <QuizTab />
                 </div>
               )}
+              {activeTab === 'naama_vilakkam' && naamaVilakkamEnabled && (
+                <NaamaVilakkamTab />
+              )}
               {activeTab === 'profile' && (
                 <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
                   <ProfileTab />
@@ -107,6 +114,7 @@ const MainAppContent: React.FC = () => {
       {/* Global Interactive Modals */}
       <FilterModal />
       <AddEditTempleModal />
+      {naamaVilakkamEnabled && <AddEditNaamaModal />}
       <TempleDetailModal />
       <VideoModal />
       <LoginModal />

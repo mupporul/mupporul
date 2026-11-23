@@ -7,6 +7,7 @@ import { metaRouter } from './routes/meta.js';
 import { uploadRouter } from './routes/upload.js';
 import { deitiesRouter } from './routes/deities.js';
 import { solutionTagsRouter } from './routes/solutionTags.js';
+import { naamaVilakkamRouter } from './routes/naamaVilakkam.js';
 
 export function createBackendApp(): Express {
   const app = express();
@@ -37,6 +38,7 @@ export function createBackendApp(): Express {
   app.use('/api/users', usersRouter);
   app.use('/api/deities', deitiesRouter);
   app.use('/api/solution-tags', solutionTagsRouter);
+  app.use('/api/naama-vilakkam', naamaVilakkamRouter);
   app.use('/api/upload', uploadRouter);
   app.use('/api', metaRouter);
 

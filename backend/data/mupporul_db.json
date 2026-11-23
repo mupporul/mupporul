@@ -592,5 +592,9 @@
       "nameTamil": "ஆஞ்சநேயர்",
       "nameEnglish": "Anjaneyar / Hanuman"
     }
-  ]
+  ],
+  "naamaVilakkam": [],
+  "featureFlags": {
+    "naamaVilakkamEnabled": true
+  }
 }

@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag } from '../types.js';
+import { Temple, TempleSubmission, UserProfile, Deity, SolutionTag, NaamaVilakkamEntry } from '../types.js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -719,4 +719,162 @@ export async function uploadImageToSupabaseStorage(
     return { url: null, error: err.message };
   }
 }
+
+// ==========================================
+// STANDALONE நாம விளக்கம் (NAAMA VILAKKAM) & FEATURE FLAGS
+// ==========================================
+
+export async function fetchFeatureFlagFromSupabase(
+  key: string
+): Promise<{ available: boolean; enabled?: boolean }> {
+  if (!supabase) return { available: false };
+  try {
+    const { data, error } = await supabase
+      .from('app_feature_flags')
+      .select('enabled')
+      .eq('key', key)
+      .maybeSingle();
+
+    if (error) {
+      return { available: false };
+    }
+    if (!data) {
+      return { available: true };
+    }
+    return { available: true, enabled: Boolean(data.enabled) };
+  } catch {
+    return { available: false };
+  }
+}
+
+export async function upsertFeatureFlagToSupabase(key: string, enabled: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('app_feature_flags').upsert({
+      key,
+      enabled: Boolean(enabled),
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.warn('[Supabase] Could not upsert app_feature_flags:', error.message);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchNaamaVilakkamFromSupabase(): Promise<{
+  available: boolean;
+  entries: NaamaVilakkamEntry[];
+}> {
+  if (!supabase) return { available: false, entries: [] };
+  try {
+    const [masterRes, planetsRes] = await Promise.all([
+      supabase.from('naama_vilakkam').select('*').order('created_at', { ascending: false }),
+      supabase.from('naama_vilakkam_planets').select('naama_id, planet_id'),
+    ]);
+
+    if (masterRes.error) {
+      console.warn('[Supabase] Could not fetch naama_vilakkam:', masterRes.error.message);
+      return { available: false, entries: [] };
+    }
+
+    const planetMap = new Map<string, string[]>();
+    if (!planetsRes.error && Array.isArray(planetsRes.data)) {
+      for (const row of planetsRes.data as any[]) {
+        if (!row?.naama_id || !row?.planet_id) continue;
+        const list = planetMap.get(row.naama_id) || [];
+        if (!list.includes(row.planet_id)) {
+          list.push(row.planet_id);
+          planetMap.set(row.naama_id, list);
+        }
+      }
+    }
+
+    const entries: NaamaVilakkamEntry[] = (masterRes.data || []).map((row: any) => ({
+      id: row.id,
+      nameTamil: row.name_tamil || '',
+      planets: planetMap.get(row.id) || [],
+      notes: row.notes || '',
+      createdBy: row.created_by || undefined,
+      createdAt: row.created_at || new Date().toISOString(),
+      updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
+    }));
+
+    return { available: true, entries };
+  } catch (err) {
+    console.warn('[Supabase] Exception fetching naama_vilakkam:', err);
+    return { available: false, entries: [] };
+  }
+}
+
+export async function syncNaamaPlanetsInSupabase(naamaId: string, planets: string[]): Promise<boolean> {
+  if (!supabase || !naamaId) return false;
+  const cleanPlanets = Array.from(new Set((planets || []).filter(p => typeof p === 'string' && p.trim())));
+  try {
+    const { error: delError } = await supabase
+      .from('naama_vilakkam_planets')
+      .delete()
+      .eq('naama_id', naamaId);
+
+    if (delError) {
+      return false;
+    }
+
+    if (cleanPlanets.length === 0) return true;
+
+    const rows = cleanPlanets.map(planetId => ({
+      naama_id: naamaId,
+      planet_id: planetId,
+    }));
+
+    const { error: insError } = await supabase
+      .from('naama_vilakkam_planets')
+      .upsert(rows, { onConflict: 'naama_id,planet_id' });
+
+    return !insError;
+  } catch {
+    return false;
+  }
+}
+
+export async function upsertNaamaVilakkamToSupabase(entry: NaamaVilakkamEntry): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('naama_vilakkam').upsert({
+      id: entry.id,
+      name_tamil: entry.nameTamil,
+      notes: entry.notes || '',
+      created_by: entry.createdBy || null,
+      created_at: entry.createdAt,
+      updated_at: entry.updatedAt,
+    });
+    if (error) {
+      console.warn('[Supabase] Error upserting naama_vilakkam:', error.message);
+      return false;
+    }
+    await syncNaamaPlanetsInSupabase(entry.id, entry.planets || []);
+    return true;
+  } catch (err: any) {
+    console.warn('[Supabase] Exception upserting naama_vilakkam:', err?.message || err);
+    return false;
+  }
+}
+
+export async function deleteNaamaVilakkamFromSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('naama_vilakkam').delete().eq('id', id);
+    if (error) {
+      console.warn('[Supabase] Error deleting naama_vilakkam:', error.message);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 
