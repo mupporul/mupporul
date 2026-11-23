@@ -391,32 +391,23 @@ export const NaamaVilakkamTab: React.FC = () => {
         {/* Desktop Left Filter Sidebar (Hidden on Mobile / Mobile Frame) */}
         {!isMobileFrame && (
           <aside className="hidden md:flex flex-col w-72 lg:w-80 shrink-0 h-full min-h-0 bg-[#121523] border border-[#22263c] rounded-2xl p-4 space-y-4 overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#20243a]">
-              <div>
-                <h3 className="text-sm font-bold text-gray-100 font-tamil">
-                  நவக்கிரக வடிகட்டி
-                </h3>
-                <p className="text-[11px] text-gray-400 font-tamil">
-                  1 அல்லது கூட்டுக் கிரகங்களைத் தேர்ந்தெடுக்கவும்
-                </p>
-              </div>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetAllFilters}
-                  className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 whitespace-nowrap cursor-pointer"
-                >
-                  <FilterX className="w-3.5 h-3.5" />
-                  <span>Clear</span>
-                </button>
-              )}
-            </div>
-
             {/* Both Filter Match Modes Visible, Default = Contains Any */}
             <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-gray-300 font-tamil block">
-                தேடல் முறை
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-gray-300 font-tamil block">
+                  தேடல் முறை
+                </span>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                  >
+                    <FilterX className="w-3.5 h-3.5" />
+                    <span>Clear</span>
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#0c0e18] border border-[#22263c]">
                 <button
                   type="button"
@@ -441,11 +432,6 @@ export const NaamaVilakkamTab: React.FC = () => {
                   Exact Combo
                 </button>
               </div>
-              <p className="text-[11px] text-gray-400 font-tamil">
-                {matchMode === 'any'
-                  ? 'தேர்ந்தெடுத்த கிரகங்களில் ஏதேனும் ஒன்று உள்ள நாமங்கள் (அதிக பொருத்தம் முதலில்)'
-                  : 'தேர்ந்தெடுத்த அதே கிரகச் சேர்க்கை மட்டும்'}
-              </p>
             </div>
 
             {/* 9 Planets Multi-Select Buttons (Tamil Only) */}
