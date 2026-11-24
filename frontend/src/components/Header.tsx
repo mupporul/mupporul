@@ -28,47 +28,47 @@ export const Header: React.FC = () => {
 
   return (
     <header className="w-full px-4 pt-3 pb-3 border-b border-[#1f2233]/70">
-      {/* Top Row: Gopuram Logo + App Name + User Avatar */}
-      <div className={`flex items-center justify-between gap-3 ${showTemplesSearchRow ? 'mb-3' : ''}`}>
+      {/* Top Row: Gopuram Logo + App Name + User Badge (all uniform h-9 & top-aligned) */}
+      <div className={`flex items-start justify-between gap-2 sm:gap-3 ${showTemplesSearchRow ? 'mb-3' : ''}`}>
         {/* Logo and Brand */}
         <div 
           onClick={() => setActiveTab('temples')}
-          className="flex items-center gap-2.5 cursor-pointer select-none group min-w-0"
+          className="flex items-start gap-2 sm:gap-2.5 cursor-pointer select-none group min-w-0"
         >
-          {/* Stylized Gopuram SVG matching Screenshot */}
+          {/* Stylized Gopuram SVG */}
           <div className="w-9 h-9 text-[#f5a623] flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
-            <TempleLogoSvg className="w-8 h-8" />
+            <TempleLogoSvg className="w-9 h-9" />
           </div>
-          <div className="min-w-0">
-            <h1 className="font-tamil text-base sm:text-xl font-bold tracking-normal text-[#f5a623] leading-tight flex flex-wrap items-baseline gap-x-1.5">
+          <div className="min-w-0 h-9 flex items-center">
+            <h1 className="font-tamil text-[14px] sm:text-xl font-bold tracking-normal text-[#f5a623] leading-[18px] sm:leading-none flex flex-col sm:flex-row sm:items-center sm:gap-x-1.5">
               <span className="whitespace-nowrap">கிரஹங்களே</span>
               <span className="whitespace-nowrap">கோவில்களாய்</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-start gap-2 shrink-0 h-9">
           {/* User Status / Login Pill */}
           {isLoggedIn ? (
             <button
               onClick={() => setActiveTab('profile')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#181a27] border border-[#2e3146] hover:border-amber-500/50 cursor-pointer transition-all shadow-sm"
+              className="h-9 flex items-center gap-1.5 px-2.5 rounded-full bg-[#181a27] border border-[#2e3146] hover:border-amber-500/50 cursor-pointer transition-all shadow-sm"
               title={`Logged in as ${currentUser.name} (@${currentUser.username || currentUser.name})`}
             >
               <div className={`w-5 h-5 rounded-full bg-gradient-to-tr ${currentUser.avatarColor} text-white font-bold text-[10px] flex items-center justify-center shrink-0`}>
                 {currentUser.avatarText}
               </div>
-              <span className="text-xs font-semibold text-gray-200 hidden sm:inline">
+              <span className="text-[11px] sm:text-xs font-semibold text-gray-200 max-w-[72px] sm:max-w-none truncate">
                 @{currentUser.username || currentUser.name}
               </span>
-              <span className="text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+              <span className="text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                 {currentUser.role}
               </span>
             </button>
           ) : (
             <button
               onClick={openLoginModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-sm cursor-pointer"
+              className="h-9 flex items-center gap-1.5 px-3 rounded-full bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-sm cursor-pointer"
             >
               <span>Sign In</span>
             </button>
