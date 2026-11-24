@@ -38,16 +38,16 @@ describe('Phase 4 Backend API: Standalone நாம விளக்கம் & F
     expect(restored.body.enabled).toBe(originalState);
   });
 
-  it('supports Tamil-only Naama Vilakkam CRUD for contributor/admin and blocks user role mutations', async () => {
-    // Reject user role creation
-    const userDenied = await request(app)
+  it('supports Naama Vilakkam add/edit for user/contributor/admin and restricts delete to contributor/admin', async () => {
+    // Reject unrecognized role creation
+    const unknownDenied = await request(app)
       .post('/api/naama-vilakkam')
       .send({
         nameTamil: 'பார்த்தசாரதி',
         planets: ['suri', 'sev'],
-        actorRole: 'user',
+        actorRole: 'guest',
       });
-    expect(userDenied.status).toBe(403);
+    expect(unknownDenied.status).toBe(403);
 
     // Reject missing Tamil name or missing planets
     const invalidRes = await request(app)
@@ -55,36 +55,36 @@ describe('Phase 4 Backend API: Standalone நாம விளக்கம் & F
       .send({
         nameTamil: '   ',
         planets: ['sani'],
-        actorRole: 'contributor',
+        actorRole: 'user',
       });
     expect(invalidRes.status).toBe(400);
 
-    // Create combo-planet entry as contributor
-    const created = await request(app)
+    // Allow user role to create combo-planet entry
+    const createdByUser = await request(app)
       .post('/api/naama-vilakkam')
       .send({
         nameTamil: 'பார்த்தசாரதி',
         planets: ['suri', 'sev'],
         notes: '4,2 பாவ தொடர்புக்கு உரிய நாமம்',
-        actorRole: 'contributor',
+        actorRole: 'user',
       });
-    expect(created.status).toBe(201);
-    expect(created.body.success).toBe(true);
-    expect(created.body.data.nameTamil).toBe('பார்த்தசாரதி');
-    expect(created.body.data.planets).toEqual(['suri', 'sev']);
-    const id = created.body.data.id;
+    expect(createdByUser.status).toBe(201);
+    expect(createdByUser.body.success).toBe(true);
+    expect(createdByUser.body.data.nameTamil).toBe('பார்த்தசாரதி');
+    expect(createdByUser.body.data.planets).toEqual(['suri', 'sev']);
+    const id = createdByUser.body.data.id;
 
-    // Update entry as admin
-    const updated = await request(app)
+    // Allow user role to edit entry
+    const updatedByUser = await request(app)
       .put(`/api/naama-vilakkam/${encodeURIComponent(id)}`)
       .send({
         nameTamil: 'ஸ்ரீ பார்த்தசாரதி',
         planets: ['suri', 'sev', 'guru'],
         notes: 'திருவல்லிக்கேணி தல நாம விளக்கம்',
-        actorRole: 'admin',
+        actorRole: 'user',
       });
-    expect(updated.status).toBe(200);
-    expect(updated.body.data.planets).toEqual(['suri', 'sev', 'guru']);
+    expect(updatedByUser.status).toBe(200);
+    expect(updatedByUser.body.data.planets).toEqual(['suri', 'sev', 'guru']);
 
     // Verify listed in GET
     const listed = await request(app).get('/api/naama-vilakkam');
@@ -216,24 +216,32 @@ describe('Phase 4 UI: நாம விளக்கம் Tab, Role Permissions &
     expect(screen.getByText('Quiz')).toBeInTheDocument();
   });
 
-  it('enforces read/search-only for user role and shows add/edit/delete for contributor and admin', () => {
-    // 1. User role -> no Add button, no Entry options menu
+  it('grants add/edit without delete for user role and full add/edit/delete for contributor and admin', () => {
+    // 1. User role -> Add & Edit visible, Delete strictly hidden
     vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
       ...baseMockContext,
       currentUser: { ...baseMockContext.currentUser, role: 'user' },
     } as any);
-    const { rerender } = render(<NaamaVilakkamTab />);
-    expect(screen.queryByRole('button', { name: /நாமம் சேர்/i })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Entry options')).not.toBeInTheDocument();
+    const { unmount } = render(<NaamaVilakkamTab />);
+    expect(screen.getByRole('button', { name: /நாமம் சேர்/i })).toBeInTheDocument();
+    const userMenuButtons = screen.getAllByLabelText('Entry options');
+    expect(userMenuButtons.length).toBe(3);
+    fireEvent.click(userMenuButtons[0]);
+    expect(screen.getByText('திருத்து (Edit)')).toBeInTheDocument();
+    expect(screen.queryByText('நீக்கு (Delete)')).not.toBeInTheDocument();
+    unmount();
 
-    // 2. Contributor role -> Add button & Entry options visible
+    // 2. Contributor role -> Add, Edit, AND Delete visible
     vi.spyOn(AppContextModule, 'useApp').mockReturnValue({
       ...baseMockContext,
       currentUser: { ...baseMockContext.currentUser, role: 'contributor' },
     } as any);
-    rerender(<NaamaVilakkamTab />);
+    render(<NaamaVilakkamTab />);
     expect(screen.getByRole('button', { name: /நாமம் சேர்/i })).toBeInTheDocument();
-    expect(screen.getAllByLabelText('Entry options').length).toBe(3);
+    const contribMenuButtons = screen.getAllByLabelText('Entry options');
+    fireEvent.click(contribMenuButtons[0]);
+    expect(screen.getByText('திருத்து (Edit)')).toBeInTheDocument();
+    expect(screen.getByText('நீக்கு (Delete)')).toBeInTheDocument();
   });
 
   it('supports 2-way Name search -> Planet Combination output and defaults to Contains Any vs Exact Combo', () => {

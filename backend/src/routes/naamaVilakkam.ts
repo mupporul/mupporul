@@ -6,7 +6,10 @@ export const naamaVilakkamRouter = Router();
 
 const VALID_PLANET_IDS = new Set(INITIAL_PLANETS.map(p => p.id));
 
-const isEditorRole = (role: unknown): boolean =>
+const canAddOrEditNaama = (role: unknown): boolean =>
+  role === 'admin' || role === 'contributor' || role === 'user';
+
+const canDeleteNaama = (role: unknown): boolean =>
   role === 'admin' || role === 'contributor';
 
 // GET /api/naama-vilakkam/feature-toggle - Get feature toggle status
@@ -57,17 +60,17 @@ naamaVilakkamRouter.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/naama-vilakkam - Create entry (Contributor & Admin)
+// POST /api/naama-vilakkam - Create entry (User, Contributor & Admin)
 naamaVilakkamRouter.post('/', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
     const { nameTamil, planets, notes, createdBy, actorRole } = req.body || {};
 
     const roleToCheck = actorRole || createdBy?.role;
-    if (roleToCheck !== undefined && !isEditorRole(roleToCheck)) {
+    if (roleToCheck !== undefined && !canAddOrEditNaama(roleToCheck)) {
       return res.status(403).json({
         success: false,
-        error: 'Only contributors and administrators can add Naama Vilakkam entries',
+        error: 'Unauthorized role for adding Naama Vilakkam entries',
       });
     }
 
@@ -103,17 +106,17 @@ naamaVilakkamRouter.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/naama-vilakkam/:id - Update entry (Contributor & Admin)
+// PUT /api/naama-vilakkam/:id - Update entry (User, Contributor & Admin)
 naamaVilakkamRouter.put('/:id', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
     const { id } = req.params;
     const { nameTamil, planets, notes, actorRole } = req.body || {};
 
-    if (actorRole !== undefined && !isEditorRole(actorRole)) {
+    if (actorRole !== undefined && !canAddOrEditNaama(actorRole)) {
       return res.status(403).json({
         success: false,
-        error: 'Only contributors and administrators can edit Naama Vilakkam entries',
+        error: 'Unauthorized role for editing Naama Vilakkam entries',
       });
     }
 
@@ -154,14 +157,14 @@ naamaVilakkamRouter.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/naama-vilakkam/:id - Delete entry (Contributor & Admin)
+// DELETE /api/naama-vilakkam/:id - Delete entry (Contributor & Admin only)
 naamaVilakkamRouter.delete('/:id', async (req: Request, res: Response) => {
   try {
     await db.syncFromSupabase();
     const { id } = req.params;
     const actorRole = req.query.actorRole || req.body?.actorRole;
 
-    if (actorRole !== undefined && !isEditorRole(actorRole)) {
+    if (actorRole !== undefined && !canDeleteNaama(actorRole)) {
       return res.status(403).json({
         success: false,
         error: 'Only contributors and administrators can delete Naama Vilakkam entries',

@@ -959,13 +959,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const openAddNaamaModal = () => {
-    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') return;
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor' && currentUser.role !== 'user') return;
     setNaamaToEdit(null);
     setIsNaamaModalOpen(true);
   };
 
   const openEditNaamaModal = (entry: NaamaVilakkamEntry) => {
-    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') return;
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor' && currentUser.role !== 'user') return;
     setNaamaToEdit(entry);
     setIsNaamaModalOpen(true);
   };
@@ -980,8 +980,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     planets: string[];
     notes?: string;
   }): Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }> => {
-    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') {
-      return { success: false, message: 'Unauthorized: Contributors and Admins only.' };
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor' && currentUser.role !== 'user') {
+      return { success: false, message: 'Unauthorized.' };
     }
     const cleanName = data.nameTamil?.trim();
     if (!cleanName) {
@@ -1017,8 +1017,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     id: string,
     updates: { nameTamil: string; planets: string[]; notes?: string }
   ): Promise<{ success: boolean; entry?: NaamaVilakkamEntry; message?: string }> => {
-    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor') {
-      return { success: false, message: 'Unauthorized: Contributors and Admins only.' };
+    if (currentUser.role !== 'admin' && currentUser.role !== 'contributor' && currentUser.role !== 'user') {
+      return { success: false, message: 'Unauthorized.' };
     }
     const cleanName = updates.nameTamil?.trim();
     if (!cleanName) {

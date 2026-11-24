@@ -19,7 +19,7 @@ export const AddEditNaamaModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const canEdit = currentUser.role === 'admin' || currentUser.role === 'contributor';
+  const canEdit = currentUser.role === 'admin' || currentUser.role === 'contributor' || currentUser.role === 'user';
 
   useEffect(() => {
     if (!isNaamaModalOpen) return;

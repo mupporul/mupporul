@@ -35,7 +35,8 @@ export const NaamaVilakkamTab: React.FC = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const mobileStripRef = useRef<HTMLDivElement>(null);
-  const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
+  const canAddOrEdit = currentUser.role === 'contributor' || currentUser.role === 'admin' || currentUser.role === 'user';
+  const canDelete = currentUser.role === 'contributor' || currentUser.role === 'admin';
 
   // Close card dropdown on outside click
   useEffect(() => {
@@ -194,7 +195,7 @@ export const NaamaVilakkamTab: React.FC = () => {
             </div>
           </div>
 
-          {canEdit && (
+          {canAddOrEdit && (
             <button
               type="button"
               onClick={openAddNaamaModal}
@@ -568,7 +569,7 @@ export const NaamaVilakkamTab: React.FC = () => {
                         <div className="flex items-start justify-between gap-2">
                           {renderPlanetBadgeRow(entry.planets || [])}
 
-                          {canEdit && (
+                          {canAddOrEdit && (
                             <div
                               className="relative shrink-0"
                               onClick={(e) => e.stopPropagation()}
@@ -599,38 +600,40 @@ export const NaamaVilakkamTab: React.FC = () => {
                                     <span>திருத்து (Edit)</span>
                                   </button>
 
-                                  {!isConfirmingDel ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteId(entry.id)}
-                                      className="w-full min-h-[38px] flex items-center gap-2 px-3 py-2 text-rose-400 hover:bg-rose-500/10 text-left font-tamil font-semibold cursor-pointer"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                      <span>நீக்கு (Delete)</span>
-                                    </button>
-                                  ) : (
-                                    <div className="px-3 py-2 border-t border-[#2a2f4a] space-y-1.5">
-                                      <p className="text-[11px] text-rose-300 font-tamil font-semibold">
-                                        உறுதியாக நீக்கவா?
-                                      </p>
-                                      <div className="flex items-center gap-1.5">
-                                        <button
-                                          type="button"
-                                          disabled={deletingId === entry.id}
-                                          onClick={() => handleConfirmDelete(entry.id)}
-                                          className="flex-1 min-h-[32px] px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-tamil font-bold cursor-pointer disabled:opacity-50"
-                                        >
-                                          ஆம்
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setConfirmDeleteId(null)}
-                                          className="flex-1 min-h-[32px] px-2 py-1 rounded-lg bg-[#252a44] text-gray-300 font-tamil cursor-pointer"
-                                        >
-                                          இல்லை
-                                        </button>
+                                  {canDelete && (
+                                    !isConfirmingDel ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmDeleteId(entry.id)}
+                                        className="w-full min-h-[38px] flex items-center gap-2 px-3 py-2 text-rose-400 hover:bg-rose-500/10 text-left font-tamil font-semibold cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span>நீக்கு (Delete)</span>
+                                      </button>
+                                    ) : (
+                                      <div className="px-3 py-2 border-t border-[#2a2f4a] space-y-1.5">
+                                        <p className="text-[11px] text-rose-300 font-tamil font-semibold">
+                                          உறுதியாக நீக்கவா?
+                                        </p>
+                                        <div className="flex items-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            disabled={deletingId === entry.id}
+                                            onClick={() => handleConfirmDelete(entry.id)}
+                                            className="flex-1 min-h-[32px] px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-tamil font-bold cursor-pointer disabled:opacity-50"
+                                          >
+                                            ஆம்
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setConfirmDeleteId(null)}
+                                            className="flex-1 min-h-[32px] px-2 py-1 rounded-lg bg-[#252a44] text-gray-300 font-tamil cursor-pointer"
+                                          >
+                                            இல்லை
+                                          </button>
+                                        </div>
                                       </div>
-                                    </div>
+                                    )
                                   )}
                                 </div>
                               )}
@@ -671,12 +674,12 @@ export const NaamaVilakkamTab: React.FC = () => {
                   நாம விளக்கம் பட்டியல் காலியாக உள்ளது
                 </h3>
                 <p className="text-xs text-gray-400 font-tamil max-w-md mx-auto">
-                  {canEdit
+                  {canAddOrEdit
                     ? '1 அல்லது கூட்டுக் கிரகங்களுடன் முதல் தமிழ் நாமத்தைச் சேர்க்கவும்.'
                     : 'தற்போது நாம விளக்கம் பதிவுகள் எதுவும் சேர்க்கப்படவில்லை.'}
                 </p>
               </div>
-              {canEdit && (
+              {canAddOrEdit && (
                 <button
                   type="button"
                   onClick={openAddNaamaModal}
