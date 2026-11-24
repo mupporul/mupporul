@@ -33,20 +33,21 @@ export const Header: React.FC = () => {
         {/* Logo and Brand */}
         <div 
           onClick={() => setActiveTab('temples')}
-          className="flex items-center gap-2.5 cursor-pointer select-none group"
+          className="flex items-center gap-2.5 cursor-pointer select-none group min-w-0"
         >
           {/* Stylized Gopuram SVG matching Screenshot */}
           <div className="w-9 h-9 text-[#f5a623] flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
             <TempleLogoSvg className="w-8 h-8" />
           </div>
           <div className="min-w-0">
-            <h1 className="font-tamil text-base sm:text-xl font-bold tracking-normal text-[#f5a623] leading-snug">
-              கிரஹங்களே கோவில்களாய்
+            <h1 className="font-tamil text-base sm:text-xl font-bold tracking-normal text-[#f5a623] leading-tight flex flex-wrap items-baseline gap-x-1.5">
+              <span className="whitespace-nowrap">கிரஹங்களே</span>
+              <span className="whitespace-nowrap">கோவில்களாய்</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* User Status / Login Pill */}
           {isLoggedIn ? (
             <button
