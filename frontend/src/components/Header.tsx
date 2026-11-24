@@ -58,10 +58,10 @@ export const Header: React.FC = () => {
               <div className={`w-5 h-5 rounded-full bg-gradient-to-tr ${currentUser.avatarColor} text-white font-bold text-[10px] flex items-center justify-center shrink-0`}>
                 {currentUser.avatarText}
               </div>
-              <span className="text-[11px] sm:text-xs font-semibold text-gray-200 max-w-[72px] sm:max-w-none truncate">
+              <span className="text-[11px] sm:text-xs font-semibold text-gray-200 max-w-[115px] sm:max-w-none truncate">
                 @{currentUser.username || currentUser.name}
               </span>
-              <span className="text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+              <span className="hidden sm:inline text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                 {currentUser.role}
               </span>
             </button>
