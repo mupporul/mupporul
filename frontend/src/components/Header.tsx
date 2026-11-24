@@ -39,13 +39,10 @@ export const Header: React.FC = () => {
           <div className="w-9 h-9 text-[#f5a623] flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
             <TempleLogoSvg className="w-8 h-8" />
           </div>
-          <div>
-            <h1 className="font-cinzel text-xl sm:text-2xl font-bold tracking-[0.2em] text-[#f5a623] leading-none">
-              MUPPORUL
+          <div className="min-w-0">
+            <h1 className="font-tamil text-base sm:text-xl font-bold tracking-normal text-[#f5a623] leading-snug">
+              கிரஹங்களே கோவில்களாய்
             </h1>
-            <span className="text-[10px] text-amber-300/60 font-tamil tracking-wider">
-              திருக்கோவில்கள் & பரிகாரங்கள்
-            </span>
           </div>
         </div>
 
