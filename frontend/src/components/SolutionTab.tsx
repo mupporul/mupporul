@@ -12,15 +12,22 @@ import {
 import { useApp } from '../context/AppContext';
 import { TempleCard } from './TempleCard';
 import { AdminSolutionTagsPanel } from './AdminSolutionTagsPanel';
+import { buildTempleNumberMap } from '../utils/templeNumbering';
 
 export const SolutionTab: React.FC = () => {
   const {
     temples,
+    templeNumberMap,
     solutionTags,
     currentUser,
     isMobileFrame,
     openAddModal,
   } = useApp();
+
+  const resolvedNumberMap = useMemo(
+    () => templeNumberMap ?? buildTempleNumberMap(temples),
+    [templeNumberMap, temples]
+  );
 
   // Dynamic one-by-one problem dropdown rows (starts with 1 empty dropdown)
   const [dropdownRows, setDropdownRows] = useState<string[]>(['']);
@@ -404,6 +411,7 @@ export const SolutionTab: React.FC = () => {
                     <TempleCard
                       key={temple.id}
                       temple={temple}
+                      templeNumber={resolvedNumberMap.get(temple.id)}
                       matchedSolutionTagIds={matchedIds}
                       totalRequestedSolutions={validSelectedIds.length}
                     />

@@ -4,15 +4,18 @@ import { MapPin, Play, MoreVertical, Share2, Edit3, Trash2, Info, Star, X } from
 import { Temple } from '../types';
 import { PLANETS, DEITIES } from '../data/constants';
 import { useApp } from '../context/AppContext';
+import { buildTempleNumberMap } from '../utils/templeNumbering';
 
 interface TempleCardProps {
   temple: Temple;
+  templeNumber?: number;
   matchedSolutionTagIds?: string[];
   totalRequestedSolutions?: number;
 }
 
 export const TempleCard: React.FC<TempleCardProps> = ({
   temple,
+  templeNumber,
   matchedSolutionTagIds,
   totalRequestedSolutions,
 }) => {
@@ -24,7 +27,14 @@ export const TempleCard: React.FC<TempleCardProps> = ({
     deleteTemple,
     deities,
     solutionTags,
+    temples,
+    templeNumberMap,
   } = useApp();
+
+  const resolvedTempleNumber =
+    templeNumber ??
+    templeNumberMap?.get(temple.id) ??
+    (Array.isArray(temples) && temples.length > 0 ? buildTempleNumberMap(temples).get(temple.id) : undefined);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -92,6 +102,19 @@ export const TempleCard: React.FC<TempleCardProps> = ({
           {/* Gradient Overlay for contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#161825] via-transparent to-black/30 pointer-events-none" />
         </div>
+
+        {/* Option A: Adaptive Cyan Temple Number Pill (Top Left, opposite 3-dot button) */}
+        {resolvedTempleNumber !== undefined && (
+          <div
+            className="absolute top-3 left-3 z-20 pointer-events-none"
+            aria-label={`Temple number ${resolvedTempleNumber}`}
+            title={`Temple #${resolvedTempleNumber}`}
+          >
+            <span className="inline-flex items-center justify-center min-w-8 h-8 px-2.5 rounded-full bg-[#0a1320]/75 backdrop-blur-md border border-cyan-400/80 text-cyan-300 text-xs font-bold tabular-nums leading-none shadow-md shadow-cyan-950/50">
+              #{resolvedTempleNumber}
+            </span>
+          </div>
+        )}
 
         {/* 3-dot Action Menu Button (Top Right) */}
         <div className="absolute top-3 right-3 z-20" ref={menuRef}>

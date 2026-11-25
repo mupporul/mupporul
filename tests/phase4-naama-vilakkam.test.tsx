@@ -8,8 +8,11 @@ import { Header } from '../frontend/src/components/Header';
 import { NaamaVilakkamTab } from '../frontend/src/components/NaamaVilakkamTab';
 import { AddEditNaamaModal } from '../frontend/src/components/AddEditNaamaModal';
 import { QuizTab } from '../frontend/src/components/QuizTab';
+import { TempleCard } from '../frontend/src/components/TempleCard';
+import { TemplesList } from '../frontend/src/components/TemplesList';
+import { buildTempleNumberMap } from '../frontend/src/utils/templeNumbering';
 import * as AppContextModule from '../frontend/src/context/AppContext';
-import { NaamaVilakkamEntry } from '../frontend/src/types';
+import { NaamaVilakkamEntry, Temple } from '../frontend/src/types';
 
 describe('Phase 4 Backend API: Standalone நாம விளக்கம் & Feature Toggle', () => {
   const app = createBackendApp();
@@ -369,5 +372,80 @@ describe('Phase 4 UI: நாம விளக்கம் Tab, Role Permissions &
 
     rerender(<QuizTab />);
     expect(screen.getByText('No Planet-Tagged Temples Available')).toBeInTheDocument();
+  });
+
+  it('assigns read-only temple numbers starting at #1 from oldest, renders top-left cyan pill, and searches by #number', () => {
+    const oldestTemple: Temple = {
+      id: 't-oldest',
+      name: 'First Oldest Temple',
+      location: 'Kumbakonam',
+      state: 'Tamil Nadu',
+      planets: ['suri'],
+      deity: 'shivan',
+      significance: 'Oldest entry',
+      remedies: [],
+      imageUrl: '',
+      videoUrl: '',
+      timings: '6 am - 8 pm',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      viewsCount: 0,
+    };
+    const middleTemple: Temple = {
+      ...oldestTemple,
+      id: 't-middle',
+      name: 'Second Middle Temple',
+      createdAt: '2026-05-01T00:00:00Z',
+      updatedAt: '2026-05-01T00:00:00Z',
+    };
+    const newestTemple: Temple = {
+      ...oldestTemple,
+      id: 't-newest',
+      name: 'Third Newest Temple',
+      createdAt: '2026-11-20T00:00:00Z',
+      updatedAt: '2026-11-20T00:00:00Z',
+    };
+
+    const numberMap = buildTempleNumberMap([newestTemple, oldestTemple, middleTemple]);
+    expect(numberMap.get('t-oldest')).toBe(1);
+    expect(numberMap.get('t-middle')).toBe(2);
+    expect(numberMap.get('t-newest')).toBe(3);
+
+    const listCtx = {
+      ...baseMockContext,
+      temples: [newestTemple, oldestTemple, middleTemple],
+      templeNumberMap: numberMap,
+      filters: {
+        planets: [],
+        planetMatchMode: 'exact' as const,
+        planet: null,
+        deity: null,
+        state: null,
+        significance: null,
+        jothidarPaarvaiOnly: false,
+        searchQuery: '#1',
+      },
+      setFilters: vi.fn(),
+      resetFilters: vi.fn(),
+      setPlanetMatchMode: vi.fn(),
+      togglePlanetFilter: vi.fn(),
+      openEditModal: vi.fn(),
+      openDetailModal: vi.fn(),
+      openVideoModal: vi.fn(),
+      deleteTemple: vi.fn(),
+      deities: [],
+      solutionTags: [],
+    };
+
+    vi.spyOn(AppContextModule, 'useApp').mockReturnValue(listCtx as any);
+    const { rerender } = render(<TemplesList />);
+    expect(screen.getByText('#1')).toBeInTheDocument();
+    expect(screen.getByText('First Oldest Temple')).toBeInTheDocument();
+    expect(screen.queryByText('Second Middle Temple')).not.toBeInTheDocument();
+    expect(screen.queryByText('Third Newest Temple')).not.toBeInTheDocument();
+
+    // Direct TempleCard render with multi-digit scaling up to 750
+    rerender(<TempleCard temple={newestTemple} templeNumber={750} />);
+    expect(screen.getByLabelText('Temple number 750')).toHaveTextContent('#750');
   });
 });

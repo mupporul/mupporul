@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PLANETS, DEITIES } from '../data/constants';
+import { buildTempleNumberMap } from '../utils/templeNumbering';
 
 export const TempleDetailModal: React.FC = () => {
   const {
@@ -27,6 +28,7 @@ export const TempleDetailModal: React.FC = () => {
     isMobileFrame,
     deities,
     temples,
+    templeNumberMap,
     solutionTags,
   } = useApp();
 
@@ -53,6 +55,8 @@ export const TempleDetailModal: React.FC = () => {
   if (!selectedTempleForDetail) return null;
 
   const temple = temples?.find(t => t.id === selectedTempleForDetail.id) || selectedTempleForDetail;
+  const resolvedNumberMap = templeNumberMap ?? buildTempleNumberMap(temples || []);
+  const templeNumber = resolvedNumberMap.get(temple.id);
   const canEdit = currentUser.role === 'contributor' || currentUser.role === 'admin';
   const canDelete = currentUser.role === 'admin';
   const deityObj = deities?.find(d => d.id === temple.deity) || DEITIES.find(d => d.id === temple.deity);
@@ -105,9 +109,19 @@ export const TempleDetailModal: React.FC = () => {
               🕉️
             </span>
             <div className="min-w-0">
-              <h2 className={`font-bold text-gray-100 truncate ${isMobileFrame ? 'text-base' : 'text-base sm:text-lg'}`}>
-                {temple.name}
-              </h2>
+              <div className="flex items-center gap-2 min-w-0">
+                {templeNumber !== undefined && (
+                  <span
+                    className="inline-flex items-center justify-center h-6 px-2 rounded-full bg-cyan-500/15 border border-cyan-400/75 text-cyan-300 text-xs font-bold tabular-nums shrink-0"
+                    title={`Temple #${templeNumber}`}
+                  >
+                    #{templeNumber}
+                  </span>
+                )}
+                <h2 className={`font-bold text-gray-100 truncate ${isMobileFrame ? 'text-base' : 'text-base sm:text-lg'}`}>
+                  {temple.name}
+                </h2>
+              </div>
               <div className="flex items-center gap-1.5 text-[11px] text-amber-400 truncate">
                 <MapPin className="w-3 h-3 text-[#f5a623] shrink-0" />
                 <span className="truncate">{temple.location}</span>

@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SlidersHorizontal, Sparkles, FilterX, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleCard } from './TempleCard';
 import { FilterSidebar } from './FilterSidebar';
 import { PLANETS, DEITIES } from '../data/constants';
+import { buildTempleNumberMap } from '../utils/templeNumbering';
 
 export const TemplesList: React.FC = () => {
   const {
     temples,
+    templeNumberMap,
     filters,
     setFilters,
     resetFilters,
@@ -18,6 +20,11 @@ export const TemplesList: React.FC = () => {
     isMobileFrame,
     deities,
   } = useApp();
+
+  const resolvedNumberMap = useMemo(
+    () => templeNumberMap ?? buildTempleNumberMap(temples),
+    [templeNumberMap, temples]
+  );
 
   const selectedPlanets = filters.planets && filters.planets.length > 0
     ? filters.planets
@@ -78,17 +85,28 @@ export const TemplesList: React.FC = () => {
       }
     }
 
-    // 6. Search query
-    if (filters.searchQuery.trim()) {
-      const q = filters.searchQuery.toLowerCase().trim();
-      const matchName = temple.name.toLowerCase().includes(q);
-      const matchLocation = temple.location.toLowerCase().includes(q);
-      const matchSignificance = temple.significance?.toLowerCase().includes(q);
-      const matchDesc = temple.descriptionTamil?.toLowerCase().includes(q);
-      const matchEng = temple.descriptionEnglish?.toLowerCase().includes(q);
-      const matchJothidar = temple.jothidarPaarvaiNotes?.toLowerCase().includes(q);
-      if (!matchName && !matchLocation && !matchSignificance && !matchDesc && !matchEng && !matchJothidar) {
-        return false;
+    // 6. Search query (supports temple number lookup e.g. "#16" or "16" + text fields)
+    const trimmedQuery = filters.searchQuery.trim();
+    if (trimmedQuery) {
+      const templeNum = resolvedNumberMap.get(temple.id);
+      const hashNumberMatch = trimmedQuery.match(/^#\s*(\d+)$/);
+      if (hashNumberMatch) {
+        if (templeNum !== Number(hashNumberMatch[1])) {
+          return false;
+        }
+      } else {
+        const q = trimmedQuery.toLowerCase();
+        const plainNumberMatch = trimmedQuery.match(/^(\d+)$/);
+        const matchNumber = plainNumberMatch ? templeNum === Number(plainNumberMatch[1]) : false;
+        const matchName = temple.name.toLowerCase().includes(q);
+        const matchLocation = temple.location.toLowerCase().includes(q);
+        const matchSignificance = temple.significance?.toLowerCase().includes(q);
+        const matchDesc = temple.descriptionTamil?.toLowerCase().includes(q);
+        const matchEng = temple.descriptionEnglish?.toLowerCase().includes(q);
+        const matchJothidar = temple.jothidarPaarvaiNotes?.toLowerCase().includes(q);
+        if (!matchNumber && !matchName && !matchLocation && !matchSignificance && !matchDesc && !matchEng && !matchJothidar) {
+          return false;
+        }
       }
     }
 
@@ -212,7 +230,11 @@ export const TemplesList: React.FC = () => {
                 : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3'
             }`}>
               {filteredTemples.map(temple => (
-                <TempleCard key={temple.id} temple={temple} />
+                <TempleCard
+                  key={temple.id}
+                  temple={temple}
+                  templeNumber={resolvedNumberMap.get(temple.id)}
+                />
               ))}
             </div>
           ) : temples.length === 0 ? (

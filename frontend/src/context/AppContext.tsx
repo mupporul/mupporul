@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Temple,
@@ -16,11 +16,13 @@ import { INITIAL_SUBMISSIONS } from '../data/initialSubmissions';
 import { INITIAL_USERS, DEITIES } from '../data/constants';
 
 import { api } from '../services/api';
+import { buildTempleNumberMap } from '../utils/templeNumbering';
 
 export type AppTab = 'temples' | 'solution' | 'review' | 'quiz' | 'naama_vilakkam' | 'profile' | 'analytics';
 
 interface AppContextType {
   temples: Temple[];
+  templeNumberMap: Map<string, number>;
   submissions: TempleSubmission[];
   currentUser: UserProfile;
   users: UserProfile[];
@@ -1673,10 +1675,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFilters(initialFilters);
   };
 
+  const templeNumberMap = useMemo(() => buildTempleNumberMap(temples), [temples]);
+
   return (
     <AppContext.Provider
       value={{
         temples,
+        templeNumberMap,
         submissions,
         currentUser,
         users,
