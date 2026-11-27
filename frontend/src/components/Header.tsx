@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SlidersHorizontal, ChevronDown, Star } from 'lucide-react';
+import { Search, SlidersHorizontal, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TempleLogoSvg } from './LoadingSpinner';
 
@@ -76,11 +76,11 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Search Bar + பாவ/ராசி தொடர்பு Checkbox + Filter Button (hidden on Solution & Naama Vilakkam tabs) */}
+      {/* Row 2: Search Bar + Desktop பாவ/ராசி தொடர்பு + Mobile Filter Icon Button */}
       {showTemplesSearchRow && (
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 mt-3">
+        <div className="flex flex-nowrap items-center gap-2 sm:gap-2.5 mt-3">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[180px]">
+          <div className="relative flex-1 min-w-0">
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
@@ -92,17 +92,17 @@ export const Header: React.FC = () => {
             {filters.searchQuery && (
               <button
                 onClick={() => setFilters(prev => ({ ...prev, searchQuery: '' }))}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-xs bg-[#24273c] w-4 h-4 rounded-full flex items-center justify-center"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-xs bg-[#24273c] w-4 h-4 rounded-full flex items-center justify-center cursor-pointer"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* பாவ/ராசி தொடர்பு Filter Checkbox (visible on temples search) */}
+          {/* பாவ/ராசி தொடர்பு Filter Checkbox (Desktop/Tablet only; available inside FilterModal on mobile) */}
           {activeTab === 'temples' && (
             <label
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-full border text-xs sm:text-sm font-medium cursor-pointer select-none transition-all shrink-0 ${
+              className={`hidden md:flex items-center gap-2 px-3.5 py-2.5 rounded-full border text-xs sm:text-sm font-medium cursor-pointer select-none transition-all shrink-0 ${
                 filters.jothidarPaarvaiOnly
                   ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 shadow-sm'
                   : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-cyan-400/50'
@@ -129,23 +129,24 @@ export const Header: React.FC = () => {
             </label>
           )}
 
-          {/* Filter Button with Count Badge (Visible on mobile view, hidden on desktop where sidebar is present) */}
+          {/* Compact Filter Icon Button (Mobile view only, next to search text box) */}
           <button
+            type="button"
             onClick={() => setIsFilterOpen(true)}
-            className={`flex md:hidden items-center gap-1.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all shrink-0 ${
+            aria-label="Filter"
+            title="Filter"
+            className={`relative flex md:hidden items-center justify-center w-10 h-10 rounded-full border transition-all shrink-0 cursor-pointer ${
               activeFilterCount > 0
                 ? 'bg-amber-500/15 border-[#f5a623] text-[#f5a623] shadow-sm'
                 : 'bg-[#181a27] border-[#2e3146] text-gray-200 hover:border-gray-500'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4 text-[#f5a623]" />
-            <span>Filter</span>
             {activeFilterCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-[#f5a623] text-black text-xs font-bold flex items-center justify-center ml-0.5">
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#f5a623] text-black text-[10px] font-bold flex items-center justify-center ring-1 ring-[#0d0f18]">
                 {activeFilterCount}
               </span>
             )}
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
           </button>
         </div>
       )}
