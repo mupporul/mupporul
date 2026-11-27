@@ -85,11 +85,7 @@ const MainAppContent: React.FC = () => {
                   <ReviewTab />
                 </div>
               )}
-              {activeTab === 'quiz' && (
-                <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-                  <QuizTab />
-                </div>
-              )}
+              {activeTab === 'quiz' && <QuizTab />}
               {activeTab === 'naama_vilakkam' && naamaVilakkamEnabled && (
                 <NaamaVilakkamTab />
               )}

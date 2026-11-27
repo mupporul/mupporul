@@ -24,7 +24,7 @@ export const Header: React.FC = () => {
       filters.jothidarPaarvaiOnly,
     ].filter(Boolean).length;
 
-  const showTemplesSearchRow = activeTab !== 'solution' && activeTab !== 'naama_vilakkam';
+  const showTemplesSearchRow = activeTab !== 'solution' && activeTab !== 'naama_vilakkam' && activeTab !== 'quiz';
 
   return (
     <header className="w-full px-4 pt-3 pb-3 border-b border-[#1f2233]/70">
